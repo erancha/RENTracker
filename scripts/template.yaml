@@ -1115,7 +1115,7 @@ Resources:
     Properties:
       Name: !Sub '${AWS::StackName}-commands-event-bus'
 
-  PaymentCommandsEventRule:
+  ApartmentUpdateCommandEventRule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CommandsEventBus
@@ -1124,14 +1124,14 @@ Resources:
           - 'RenTracker-service' # An identifier that needs to match exactly with the Source field we specify when publishing events
         detail-type:
           - 'command-executed'
-        detail: # This rule will now only trigger the target Lambda when:
+        detail: # This rule will trigger the target Lambda when:
           # 1. The event source is 'RenTracker-service'
           # 2. The detail-type is 'command-executed'
-          # 3. The event detail contains a nested structure where dataCreated.payments.aaaFunction equals 'transfer'
-          dataCreated:
-            payments:
-              aaaFunction:
-                - 'transfer'
+          # 3. The event detail is a nested structure where 'dataUpdated' contains a key named 'apartments', e.g. "dataUpdated": {"apartments": {"rent_amount": 8600, ...
+          dataUpdated:
+            apartments:
+              is_disabled:
+                - false
       State: ENABLED
       Targets:
         - Arn: !Ref TargetChattyLambdaArn
@@ -1143,7 +1143,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref TargetChattyLambdaArn
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt PaymentCommandsEventRule.Arn
+      SourceArn: !GetAtt ApartmentUpdateCommandEventRule.Arn
 
   # ------------------------------------------------------------------------------
   # S3 web site and cloudfront

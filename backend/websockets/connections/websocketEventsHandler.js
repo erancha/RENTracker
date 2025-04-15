@@ -32,13 +32,12 @@ exports.handler = async (event) => {
           if (extractedRecord.message) {
             // Send the message to all connected websocket clients:
             const jsonMessage = JSON.stringify(extractedRecord.message);
-
-            await publishToEventBridge({ ...extractedRecord.message });
-
             const bufferData = Buffer.from(jsonMessage);
             await sendMessageToConnectedClients({ appGatewayClient, targetConnectionIds, bufferData, extractedRecordMessage });
           }
         }
+
+        if (extractedRecord.message) await publishToEventBridge(extractedRecord.message);
       })
     );
   } catch (error) {

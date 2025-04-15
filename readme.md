@@ -42,7 +42,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
 ## Architecture
 
 **API Gateway + Lambda**
-![Architecture diagram](https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/1ae158ff-1b13-469a-b126-f5fa8eb65880/image.jpeg)
 
 ### 1. **Backend**
 

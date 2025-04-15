@@ -188,8 +188,8 @@ class AppComponent extends React.Component<IAppProps> {
           </div>
 
           <p className='diagram'>API Gateway + Lambda</p>
-          <a href='https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg' target='_blank' rel='noopener noreferrer'>
-            <img src='https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg' alt='**API Gateway + Lambda**' />
+          <a href='https://lucid.app/publicSegments/view/1ae158ff-1b13-469a-b126-f5fa8eb65880/image.jpeg' target='_blank' rel='noopener noreferrer'>
+            <img src='https://lucid.app/publicSegments/view/1ae158ff-1b13-469a-b126-f5fa8eb65880/image.jpeg' alt='**API Gateway + Lambda**' />
           </a>
         </div>
       </div>
