@@ -1,12 +1,12 @@
 # Preface
 
-**RENTracker** is a property rent management system that streamlines rent agreement signing and payments collection (TBD).
+**RENTracker** is a property rent management app that streamlines rent agreements and payments (TBD).
 
 The app supports two user roles: Landlords who manage properties, rental agreements, and financials (TBD), and Tenants who complete their details in the rental agreement, and manage their payments (TBD).
 
 Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
 
-The application features an intuitive mobile-first design and monitoring capabilities through AWS CloudWatch. The app is developed using AWS, React, REST APIs, and WebSockets to provide real-time updates.
+The application features an intuitive mobile-friendly design and monitoring capabilities through AWS CloudWatch. The app is developed using AWS, React, REST APIs, and WebSockets to provide real-time updates.
 
 User authentication is securely handled through Google.
 
@@ -42,7 +42,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
 ## Architecture
 
 **API Gateway + Lambda**
-![Architecture diagram](https://lucid.app/publicSegments/view/2901ae11-c580-4a39-ae0d-a0613226d17e/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg)
 
 ### 1. **Backend**
 

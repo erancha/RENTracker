@@ -149,7 +149,7 @@ class AppComponent extends React.Component<IAppProps> {
       <div className={`app-overview-container${menuOpen ? ' menu-is-opened' : ''}`}>
         <hr />
         <div className='header2'>
-          <p>RENTracker is a property rent management system that streamlines rent agreement signing and payments collection.</p>
+          <p>RENTracker is a property rent management app that streamlines rent agreements and payments (TBD).</p>
           <p>
             The app provides <span className='secure-authentication'>secure authentication</span> through Google:{' '}
             <span className='text-link sign-in-from-overview' onClick={() => loginWithGoogleAction(auth)}>
@@ -174,8 +174,8 @@ class AppComponent extends React.Component<IAppProps> {
             </li>
             <li>The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront.</li>
             <li>
-              It offers an intuitive, mobile-first UI/UX, and robust monitoring via AWS CloudWatch, built with AWS services, React, and WebSockets for real-time
-              updates.
+              It offers an intuitive, mobile-friendly UI/UX, and robust monitoring via AWS CloudWatch, built with AWS services, React, and WebSockets for
+              real-time updates.
             </li>
           </ul>
           <div className='link-container'>
@@ -188,13 +188,8 @@ class AppComponent extends React.Component<IAppProps> {
           </div>
 
           <p className='diagram'>API Gateway + Lambda</p>
-          <a href='https://lucid.app/publicSegments/view/2901ae11-c580-4a39-ae0d-a0613226d17e/image.jpeg' target='_blank' rel='noopener noreferrer'>
-            <img src='https://lucid.app/publicSegments/view/2901ae11-c580-4a39-ae0d-a0613226d17e/image.jpeg' alt='**API Gateway + Lambda**' />
-          </a>
-
-          <p className='diagram'>ALB + ECS Fargate</p>
-          <a href='https://lucid.app/publicSegments/view/24426c68-7923-47e3-96fe-516ed235f132/image.jpeg' target='_blank' rel='noopener noreferrer'>
-            <img src='https://lucid.app/publicSegments/view/24426c68-7923-47e3-96fe-516ed235f132/image.jpeg' alt='**API Gateway + Lambda**' />
+          <a href='https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg' target='_blank' rel='noopener noreferrer'>
+            <img src='https://lucid.app/publicSegments/view/a0433b7b-2a91-47d0-9824-c8270776a44f/image.jpeg' alt='**API Gateway + Lambda**' />
           </a>
         </div>
       </div>
