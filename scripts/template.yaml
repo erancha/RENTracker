@@ -1,0 +1,1266 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RENTracker - AWS/React/WebSockets-based serverless rent tracking application
+
+Parameters:
+  AdminUserId:
+    Description: 'User id of the admin'
+    Type: String
+    Default: '53b408f2-d071-70e2-f4da-24618fa52c03'
+  SaaSTenantUserId:
+    Type: String
+    Description: 'User id of the SaaS tenant (acts as a landlord)'
+    Default: '23743842-4061-709b-44f8-4ef9a527509d' # erancha@gmail.com
+  ExistingVpcId:
+    Type: String
+    Description: 'ID of an existing VPC'
+  ExistingWebsocketsPrivateSubnetId:
+    Type: String
+    Description: 'ID of an existing private subnet for websockets (leave empty to create a new one)'
+    Default: ''
+  ExistingRDSEndpoint:
+    Type: String
+    Description: 'Address of an existing RDS instance (leave empty to create a new one)'
+    Default: ''
+  ExistingRDSSecurityGroupId:
+    Type: String
+    Description: 'RDS security group (leave empty to create a new one)'
+    Default: 'sg-d3289ca9'
+  ExistingWebSocketLambdaSG:
+    Type: String
+    Description: 'WebSocket Lambda functions security group (leave empty to create a new one)'
+    Default: 'sg-d3289ca9'
+
+  DeveloperIP:
+    Type: String
+    Description: 'Developer IP address for RDS access via DBeaver (CIDR format, e.g., 1.2.3.4/32)'
+    Default: ''
+
+  ExistingElasticacheRedisClusterAddress:
+    Type: String
+    Description: 'Address of an existing Redis cluster'
+
+  StageName:
+    Type: String
+    AllowedValues: ['dev', 'prod']
+    Default: 'dev'
+  CustomDomainName:
+    Description: 'The custom domain name (optional)'
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$'
+    ConstraintDescription: 'Must be a valid domain name or empty'
+  CertificateArn:
+    Description: 'Certificate ARN for the custom domain (optional)'
+    Type: String
+    Default: ''
+  ExistingUserPoolId:
+    Description: 'ID of an existing Cognito User Pool'
+    Type: String
+  ExistingCognitoDomain:
+    Description: 'Existing Cognito Domain'
+    Type: String
+  AllowS3PublicAccess:
+    Description: 'Allow public access to the S3 bucket'
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+
+  AllowOnlyCloudfrontOrigin:
+    Description: 'Allow only CloudFront origin'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+  ApiGatewayCorsAllowedMethods:
+    Type: String
+    Default: "'GET,POST,PUT,DELETE,OPTIONS'"
+    Description: 'Allowed HTTP methods for CORS'
+  ApiGatewayCorsAllowedHeaders:
+    Type: String
+    Default: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    Description: 'Allowed headers for CORS'
+  ApiGatewayCorsAllowedOrigins:
+    Type: String
+    Default: "'*'" # TODO
+    Description: 'Allowed origins for CORS'
+
+  CrudDatabaseName:
+    Type: String
+    Default: cruddb
+    Description: Name of a testing database name
+
+  DisableAppCache:
+    Description: 'Disable the redis cache by the backend'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+
+  TargetChattyLambdaArn:
+    Type: String
+    Description: 'ARN of the Lambda function to be invoked by EventBridge'
+
+Conditions:
+  CreateRDSInstance: !Equals [!Ref ExistingRDSEndpoint, '']
+  HasDeveloperIP: !Not [!Equals [!Ref DeveloperIP, '']]
+  # DeployForProductionCondition: !Equals [!Ref StageName, 'prod']
+  HasCustomDomainName: !Not [!Equals [!Ref CustomDomainName, '']]
+  HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
+  UseCustomDomain: !And
+    - !Condition HasCustomDomainName
+    - !Condition HasCertificateArn
+  AllowS3PublicAccessCondition: !Equals [!Ref AllowS3PublicAccess, 'true']
+  AllowOnlyCloudfrontOriginCondition: !Equals [!Ref AllowOnlyCloudfrontOrigin, 'true']
+
+Globals:
+  Function:
+    Timeout: 3 # seconds
+    MemorySize: 128
+    AssumeRolePolicyDocument: &lambdaTrustPolicy
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+
+Resources:
+  #==========================================================================================================================================================
+  # Networking resources:
+  #  - 1 private subnet for Websocket Lambda functions, allowing inbound traffic only from the API gateway, and outbound traffic only to the RDS service.
+  #  - 1 private subnet for RDS, allowing inbound traffic only from the Websocket Lambda functions, and outbound traffic only to the RDS service.
+  #==========================================================================================================================================================
+  # Traffic Flow Overview
+  #   Client to API gateway: The client sends a request to the API gateway on port 443.
+  #   The API gateway forwards the requests to the Lambda functions.
+  #==========================================================================================================================================================
+
+  # Private subnets for Lambda functions and RDS
+  MyWebsocketsPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      VpcId: !Ref ExistingVpcId
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-WebsocketsPrivateSubnet1'
+
+  MyRDSPrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      VpcId: !Ref ExistingVpcId
+      CidrBlock: 10.0.9.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-RDSPrivateSubnet1'
+  MyRDSPrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      VpcId: !Ref ExistingVpcId
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-RDSPrivateSubnet2'
+
+  MyWebSocketLambdaSG:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupDescription: Allow WebSocket Lambda functions to access required AWS services
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-WebSocketLambda-SG'
+      VpcId: !Ref ExistingVpcId
+      SecurityGroupIngress: []
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 6379 # redis
+          ToPort: 6379
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443 # SQS, DDB, ...
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  MyRDSBasedFunctionSG:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupDescription: Security group for Lambda Functions inside RDS private subnets
+      VpcId: !Ref ExistingVpcId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-RDSBasedFunction-SG'
+
+  MyRDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupDescription: RDS Security Group
+      VpcId: !Ref ExistingVpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref MyWebSocketLambdaSG
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref MyRDSBasedFunctionSG
+        - !If
+          - HasDeveloperIP
+          - IpProtocol: tcp
+            FromPort: 5432
+            ToPort: 5432
+            CidrIp: !Ref DeveloperIP
+          - !Ref AWS::NoValue
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-RDS-SG'
+
+  MyWebSocketLambdaSGEgressRule:
+    Type: AWS::EC2::SecurityGroupEgress # MyWebSocketLambdaSG --> MyRDSSG
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupId: !Ref MyWebSocketLambdaSG
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      DestinationSecurityGroupId: !Ref MyRDSSG
+
+  MyRDSBasedFunctionEgressRule:
+    Type: AWS::EC2::SecurityGroupEgress # MyRDSBasedFunctionSG --> MyRDSSG.
+    Condition: CreateRDSInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupId: !Ref MyRDSBasedFunctionSG
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      DestinationSecurityGroupId: !Ref MyRDSSG
+
+  # ------------------------------------------------------------------------------
+  # Lambda layers.
+  # ------------------------------------------------------------------------------
+  AwsSdkV3Layer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: AWS SDK v3 Layer
+      ContentUri: ../backend/layers/awssdkv3-layer.zip
+      CompatibleRuntimes: ['nodejs20.x']
+
+  RedisClientLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Redis Layer
+      ContentUri: ../backend/RenTracker-service/ecs/layers/redisClient
+      CompatibleRuntimes: ['nodejs20.x']
+
+  ConnectionsUsernamesLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Layer for collecting an array [{connection, username}].
+      ContentUri: ../backend/websockets/layers/connections
+      CompatibleRuntimes: ['nodejs20.x']
+
+  CommandsHandlersLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Layer for processing commands from the frontend.
+      ContentUri: ../backend/RenTracker-service/ecs/layers/commandsHandlers
+      CompatibleRuntimes: ['nodejs20.x']
+
+  DbDataLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Layer for accessing the database.
+      ContentUri: ../backend/RenTracker-service/ecs/layers/dbData
+      CompatibleRuntimes: ['nodejs20.x']
+
+  DocumentUtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      Description: Document utilities layer (markdown, uuid, puppeteer)
+      ContentUri: ../backend/layers/document-utils/
+      CompatibleRuntimes: ['nodejs20.x']
+
+  #==========================================================================================================================================================
+  # API Gateway
+  #==========================================================================================================================================================
+
+  # ------------------------------------------------------------------------------
+  # Websockets API
+  # ------------------------------------------------------------------------------
+  # CORS in AWS::ApiGatewayV2::Api (WebSocket APIs)
+  # WebSocket APIs (defined with AWS::ApiGatewayV2::Api) do not directly utilize CORS in the same manner as REST APIs.
+  # Here are some key points regarding WebSocket APIs and CORS:
+  #   CORS Not Applicable: WebSocket connections are initiated through an HTTP handshake (the initial connection is made using an HTTP request).
+  #     However, once the WebSocket connection is established, there's no concept of CORS since data is transmitted over a single long-lived connection.
+  #   Authorization and Security: Instead of CORS, you need to manage authorization through the WebSocket API's route-level authorization settings.
+  #     For instance, your ConnectRoute and DisconnectRoute can have defined AuthorizationType.
+  #   Preflight Requests: WebSocket connections do not typically require preflight OPTIONS requests like REST calls do.
+
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-WebSocketAPI'
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: '$request.body.action'
+
+  WebsocketConnect:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/websockets/connections/
+      Handler: connect.handler
+      Runtime: nodejs20.x
+      Timeout: 10 # seconds
+      Layers:
+        - !Ref RedisClientLayer
+        # - !Ref AwsSdkV3Layer
+        - !Ref ConnectionsUsernamesLayer
+        - !Ref CommandsHandlersLayer
+        - !Ref DbDataLayer
+      Environment:
+        Variables:
+          APP_AWS_REGION: !Ref AWS::Region
+          STACK_NAME: !Ref AWS::StackName
+          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ADMIN_USER_ID: !Ref AdminUserId
+          # LANDLORDS_TABLE_NAME: !Ref LandlordsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
+          # TENANTS_TABLE_NAME: !Ref TenantsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
+          APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
+          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+          DB_NAME: !Ref CrudDatabaseName
+          DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+          DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+      VpcConfig:
+        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+      Role: !GetAtt WebSocketConnectLambdaRole.Arn
+
+  WebsocketDisconnect:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/websockets/connections/
+      Handler: disconnect.handler
+      Runtime: nodejs20.x
+      Layers:
+        - !Ref RedisClientLayer
+        - !Ref ConnectionsUsernamesLayer
+      Environment:
+        Variables:
+          APP_AWS_REGION: !Ref AWS::Region
+          STACK_NAME: !Ref AWS::StackName
+          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
+      VpcConfig:
+        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+      Role: !GetAtt WebSocketLambdaElasticacheSQSRole.Arn
+
+  # Commands handler of all incoming messages from clients:
+  WebsocketCommandsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/websockets/connections/
+      Handler: websocketCommandsHandler.handler
+      Runtime: nodejs20.x
+      Timeout: 5 # seconds
+      Layers:
+        - !Ref RedisClientLayer
+        - !Ref AwsSdkV3Layer
+        - !Ref ConnectionsUsernamesLayer
+        - !Ref CommandsHandlersLayer
+        - !Ref DbDataLayer
+      Environment:
+        Variables:
+          APP_AWS_REGION: !Ref AWS::Region
+          STACK_NAME: !Ref AWS::StackName
+          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ADMIN_USER_ID: !Ref AdminUserId
+          APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
+          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+          DB_NAME: !Ref CrudDatabaseName
+          DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+          DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+          ENABLE_ENHANCED_LOGGING: false
+          DISABLE_APP_CACHE: !Ref DisableAppCache
+      VpcConfig:
+        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+      Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
+
+  WebsocketCommandsHandlerIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: WebsocketCommandsHandler Function Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebsocketCommandsHandler.Arn}/invocations
+
+  WebsocketCommandsHandlerRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: CommandsHandlerKey
+      OperationName: WebsocketCommandsHandlerRoute
+      Target: !Join
+        - '/'
+        - ['integrations', !Ref WebsocketCommandsHandlerIntegration]
+
+  WebSocketLambdaElasticacheSQSPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - elasticache:Connect
+              - elasticache:DescribeCacheClusters
+              - sqs:SendMessage
+            Resource: '*'
+
+  WebSocketLambdaElasticacheSQSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - !Ref WebSocketLambdaElasticacheSQSPolicy
+
+  WebSocketConnectLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - !Ref WebSocketLambdaElasticacheSQSPolicy
+      Policies:
+        - PolicyName: DDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # - Effect: Allow
+              #   Action:
+              #     - dynamodb:PutItem
+              #   Resource:
+              #     - !GetAtt LandlordsTable.Arn
+              #     - !GetAtt TenantsTable.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub '${ApartmentsTable.Arn}/index/SaaSTenantUpdatedIndex'
+              # - Effect: Allow
+              #   Action:
+              #     - dynamodb:BatchGetItem
+              #   Resource:
+              #     - !GetAtt MatchupsTable.Arn
+        # - PolicyName: LambdaRDSAccessPolicy
+        #   PolicyDocument:
+        #     Version: '2012-10-17'
+        #     Statement:
+        #       - Effect: Allow
+        #         Action:
+        #           - rds:DescribeDBInstances
+        #           - rds:Connect
+        #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
+
+  WebsocketCommandsHandlerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - !Ref WebSocketLambdaElasticacheSQSPolicy
+      Policies:
+        - PolicyName: DDBAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt ApartmentsTable.Arn
+      # - PolicyName: LambdaRDSAccessPolicy
+      #   PolicyDocument:
+      #     Version: '2012-10-17'
+      #     Statement:
+      #       - Effect: Allow
+      #         Action:
+      #           - rds:DescribeDBInstances
+      #           - rds:Connect
+      #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
+
+  ConnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: WebsocketConnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebsocketConnect.Arn}/invocations
+
+  DisconnectIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      Description: WebsocketDisconnect Integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebsocketDisconnect.Arn}/invocations
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $connect
+      OperationName: ConnectRoute
+      Target: !Join
+        - '/'
+        - ['integrations', !Ref ConnectIntegration]
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $disconnect
+      OperationName: DisconnectRoute
+      Target: !Join
+        - '/'
+        - ['integrations', !Ref DisconnectIntegration]
+
+  WebSocketDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+    Properties:
+      ApiId: !Ref WebSocketApi
+
+  WebSocketLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${AWS::StackName}-websocket-${WebSocketApi}/access-logs/'
+      RetentionInDays: 1
+
+  WebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref WebSocketApi
+      StageName: !Ref StageName
+      AutoDeploy: false
+      DeploymentId: !Ref WebSocketDeployment
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: true
+        LoggingLevel: ERROR
+      AccessLogSettings:
+        DestinationArn: !GetAtt WebSocketLogGroup.Arn
+        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user", "requestTime":"$context.requestTime", "eventType":"$context.eventType", "routeKey":"$context.routeKey", "status":"$context.status", "connectionId":"$context.connectionId" }'
+
+  # AWS::Lambda::Permission resources are specifically required to grant permissions to other AWS services (in this case, API Gateway) to invoke your Lambda functions.
+  # These permissions are necessary because, by default, Lambda functions are not accessible to other AWS services.
+  # You need to explicitly allow API Gateway to invoke your WebsocketConnect and WebsocketDisconnect.
+
+  ConnectPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebsocketConnect
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/$connect'
+
+  DisconnectPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebsocketDisconnect
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/$disconnect'
+
+  WebsocketCommandsHandlerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebsocketCommandsHandler
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/CommandsHandlerKey'
+
+  #==========================================================================================================================================================
+  # RESTful API
+  #==========================================================================================================================================================
+  RestApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${AWS::StackName}-rest/${StageName}/access-logs/'
+      RetentionInDays: 1
+
+  RestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub '${AWS::StackName}-RestAPI'
+      StageName: !Ref StageName
+      Cors:
+        AllowMethods: !Ref ApiGatewayCorsAllowedMethods
+        AllowHeaders: !Ref ApiGatewayCorsAllowedHeaders
+        AllowOrigin: !Ref ApiGatewayCorsAllowedOrigins
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${ExistingUserPoolId}'
+        AddDefaultAuthorizerToCorsPreflight: false
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Methods: !Ref ApiGatewayCorsAllowedMethods
+              Access-Control-Allow-Headers: !Ref ApiGatewayCorsAllowedHeaders
+              Access-Control-Allow-Origin: !Ref ApiGatewayCorsAllowedOrigins
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Methods: !Ref ApiGatewayCorsAllowedMethods
+              Access-Control-Allow-Headers: !Ref ApiGatewayCorsAllowedHeaders
+              Access-Control-Allow-Origin: !Ref ApiGatewayCorsAllowedOrigins
+      AccessLogSetting:
+        DestinationArn: !GetAtt RestApiLogGroup.Arn
+        Format: '{ "requestId":"$context.requestId", "ip":"$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod", "resourcePath":"$context.resourcePath", "status":"$context.status", "protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+
+  # API Deployment
+  RestApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref RestApi
+
+  # UsersRestFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: ../backend/rest/
+  #     Handler: users.handler
+  #     Runtime: nodejs20.x
+  #     Layers:
+  #       - 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
+  #       - !Ref DbDataLayer
+  #       - !Ref RedisClientLayer
+  #     Environment:
+  #       Variables:
+  #         SAAS_TENANT_ID: !Ref SaaSTenantUserId
+  #         ALLOWED_ORIGIN: !If
+  #           - AllowOnlyCloudfrontOriginCondition
+  #           - !Sub 'https://${FrontendDistribution.DomainName}'
+  #           - !Ref ApiGatewayCorsAllowedOrigins
+  #         # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+  #         # DB_NAME: !Ref CrudDatabaseName
+  #         # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+  #         # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+  #     Events:
+  #       GetUsers:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref RestApi
+  #           Path: /users
+  #           Method: GET
+  #           Auth:
+  #             Authorizer: CognitoAuthorizer
+  #     VpcConfig:
+  #       SubnetIds: [!Ref ExistingWebsocketsPrivateSubnetId]
+  #       SecurityGroupIds: [!Ref ExistingWebSocketLambdaSG]
+
+  DocumentsRestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/documents/
+      Handler: documents.handler
+      Runtime: nodejs20.x
+      Timeout: 300 # seconds
+      MemorySize: 2048
+      Layers:
+        - 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
+        - !Ref DbDataLayer
+        - !Ref RedisClientLayer
+        - !Ref DocumentUtilsLayer
+      Environment:
+        Variables:
+          NODE_ENV: production
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ALLOWED_ORIGIN: !If
+            - AllowOnlyCloudfrontOriginCondition
+            - !Sub 'https://${FrontendDistribution.DomainName}'
+            - !Ref ApiGatewayCorsAllowedOrigins
+          APP_AWS_REGION: !Ref AWS::Region
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
+          FRONTEND_BUCKET_NAME: !Ref FrontendBucket
+          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+          # DB_NAME: !Ref CrudDatabaseName
+          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+      Role: !GetAtt DocumentsRestFunctionExecutionRole.Arn
+      Events:
+        CreateDocument:
+          Type: Api
+          Properties:
+            Path: /documents
+            Method: POST
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetDocument:
+          Type: Api
+          Properties:
+            Path: /documents/{documentId}
+            Method: GET
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetDocumentPdf:
+          Type: Api
+          Properties:
+            Path: /documents/{documentId}/pdf
+            Method: GET
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        ListDocuments:
+          Type: Api
+          Properties:
+            Path: /documents
+            Method: GET
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdateDocument:
+          Type: Api
+          Properties:
+            Path: /documents/{documentId}
+            Method: PUT
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+        DeleteDocument:
+          Type: Api
+          Properties:
+            Path: /documents/{documentId}
+            Method: DELETE
+            RestApiId: !Ref RestApi
+            Auth:
+              Authorizer: CognitoAuthorizer
+      VpcConfig:
+        SubnetIds: [!Ref ExistingWebsocketsPrivateSubnetId]
+        SecurityGroupIds: [!Ref ExistingWebSocketLambdaSG]
+
+  DocumentsRestFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      Policies:
+        - PolicyName: DocumentsTableAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub '${DocumentsTable.Arn}/index/SaaSTenantUpdatedIndex'
+                  - !Sub '${DocumentsTable.Arn}/index/TenantUpdatedIndex'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt DocumentsTable.Arn
+        - PolicyName: S3DocumentsWriteAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::${FrontendBucket}/documents/${SaaSTenantUserId}/*'
+      # - PolicyName: LambdaRDSAccessPolicy
+      #   PolicyDocument:
+      #     Version: '2012-10-17'
+      #     Statement:
+      #       - Effect: Allow
+      #         Action:
+      #           - rds:DescribeDBInstances
+      #           - rds:Connect
+      #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
+
+  #==========================================================================================================================================================
+  # Cognito
+  #==========================================================================================================================================================
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref ExistingUserPoolId
+      ClientName: !Sub '${AWS::StackName}-UserPoolClient'
+      GenerateSecret: false
+      AllowedOAuthFlows: ['code']
+      AllowedOAuthScopes: ['phone', 'email', 'openid', 'profile']
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - !If
+          - UseCustomDomain
+          - !Sub 'https://${CustomDomainName}'
+          - !Sub 'https://${FrontendDistribution.DomainName}'
+        - 'http://localhost:3000'
+      LogoutURLs:
+        - !If
+          - UseCustomDomain
+          - !Sub 'https://${CustomDomainName}'
+          - !Sub 'https://${FrontendDistribution.DomainName}'
+        - 'http://localhost:3000'
+      SupportedIdentityProviders: ['Google']
+
+  # ------------------------------------------------------------------------------
+  # DynamoDB Tables.
+  # ------------------------------------------------------------------------------
+
+  ApartmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-Apartments
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: apartment_id
+          AttributeType: S
+        - AttributeName: updated_at
+          AttributeType: S
+        - AttributeName: saas_tenant_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: apartment_id
+          KeyType: HASH # Partition key
+      GlobalSecondaryIndexes:
+        - IndexName: SaaSTenantUpdatedIndex
+          KeySchema:
+            - AttributeName: saas_tenant_id
+              KeyType: HASH # Partition key
+            - AttributeName: updated_at
+              KeyType: RANGE # Sort key
+          Projection:
+            ProjectionType: ALL
+
+  # LandlordsTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     TableName: !Sub ${AWS::StackName}-Landlords
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: landlord_id
+  #         AttributeType: S
+  #       - AttributeName: saas_tenant_id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: landlord_id
+  #         KeyType: HASH # Partition key
+  #     GlobalSecondaryIndexes:
+  #       - IndexName: SaaSTenantIndex
+  #         KeySchema:
+  #           - AttributeName: saas_tenant_id
+  #             KeyType: HASH # Partition key
+  #         Projection:
+  #           ProjectionType: ALL
+
+  # TenantsTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     TableName: !Sub ${AWS::StackName}-Tenants
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: tenant_id
+  #         AttributeType: S
+  #       - AttributeName: saas_tenant_id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: tenant_id
+  #         KeyType: HASH # Partition key
+  #     GlobalSecondaryIndexes:
+  #       - IndexName: SaaSTenantIndex
+  #         KeySchema:
+  #           - AttributeName: saas_tenant_id
+  #             KeyType: HASH # Partition key
+  #         Projection:
+  #           ProjectionType: ALL
+
+  DocumentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-Documents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: document_id
+          AttributeType: S
+        - AttributeName: saas_tenant_id
+          AttributeType: S
+        - AttributeName: updated_at
+          AttributeType: S
+        - AttributeName: tenant_user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: document_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: SaaSTenantUpdatedIndex
+          KeySchema:
+            - AttributeName: saas_tenant_id
+              KeyType: HASH # Partition key
+            - AttributeName: updated_at
+              KeyType: RANGE # Sort key
+          Projection:
+            ProjectionType: ALL
+        - IndexName: TenantUpdatedIndex
+          KeySchema:
+            - AttributeName: tenant_user_id
+              KeyType: HASH # Partition key
+            - AttributeName: updated_at
+              KeyType: RANGE # Sort key
+          Projection:
+            ProjectionType: ALL
+
+  # PaymentsTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     TableName: !Sub ${AWS::StackName}-Payments
+  #     BillingMode: PAY_PER_REQUEST
+  #     AttributeDefinitions:
+  #       - AttributeName: payment_id
+  #         AttributeType: S
+  #       - AttributeName: saas_tenant_id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: payment_id
+  #         KeyType: HASH # Partition key
+  #     GlobalSecondaryIndexes:
+  #       - IndexName: SaaSTenantIndex
+  #         KeySchema:
+  #           - AttributeName: saas_tenant_id
+  #             KeyType: HASH # Partition key
+  #         Projection:
+  #           ProjectionType: ALL
+
+  #==========================================================================================================================================================
+  # RDS
+  #==========================================================================================================================================================
+  # MyRDSDBInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     DBInstanceIdentifier: !Sub '${AWS::StackName}-RDS'
+  #     AllocatedStorage: 20
+  #     DBInstanceClass: db.t3.micro
+  #     Engine: postgres
+  #     EngineVersion: '16.4'
+  #     MasterUsername: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+  #     MasterUserPassword: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+  #     DBSubnetGroupName: !Ref MyRDSSubnetGroup
+  #     VPCSecurityGroups: [!Ref MyRDSSG]
+  #     DBName: !Ref CrudDatabaseName
+  #     BackupRetentionPeriod: 0
+  #     PubliclyAccessible: !If [DeployForProductionCondition, false, true]
+  #     # MultiAZ: !If [DeployForProductionCondition, true, false]
+
+  # MyRDSSubnetGroup:
+  #   Type: AWS::RDS::DBSubnetGroup
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     DBSubnetGroupDescription: !Sub '${AWS::StackName}-RDSSubnetGroup'
+  #     SubnetIds:
+  #       - !Ref MyRDSPrivateSubnet1
+  #       - !Ref MyRDSPrivateSubnet2
+  #     DBSubnetGroupName: !Sub '${AWS::StackName}-RDSSubnetGroup'
+
+  # DbManagementFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: ../backend/dbManagement/
+  #     Handler: dbManagement.handler
+  #     Runtime: nodejs20.x
+  #     Layers:
+  #       - !Ref DbDataLayer
+  #     Timeout: 300 # seconds
+  #     Environment:
+  #       Variables:
+  #         RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+  #         DB_NAME: !Ref CrudDatabaseName
+  #         DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+  #         DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+  #         SAAS_TENANT_ID: !Ref SaaSTenantUserId
+  #     VpcConfig:
+  #       SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
+  #       SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+  #     Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
+
+  #==========================================================================================================================================================
+  # SQS
+  #==========================================================================================================================================================
+  MessagesToClientsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-messagesToClientsQ'
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt MessagesToClientsDLQ.Arn
+        maxReceiveCount: 5 # Adjust the max receive count as needed
+
+  MessagesToClientsDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${AWS::StackName}-messagesToClientsDLQ'
+
+  WebsocketEventsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: websocketEventsHandler.handler
+      Runtime: nodejs20.x
+      Timeout: 10 # seconds
+      CodeUri: ../backend/websockets/connections/
+      Layers:
+        - !Ref AwsSdkV3Layer
+      Environment:
+        Variables:
+          WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+          APP_AWS_REGION: !Ref AWS::Region
+          STACK_NAME: !Ref AWS::StackName
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ENABLE_ENHANCED_LOGGING: false
+      Role: !GetAtt WebsocketEventsHandlerExecutionRole.Arn
+      Events: # event source mapping
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt MessagesToClientsQueue.Arn
+            BatchSize: 10
+            Enabled: true
+
+  WebsocketEventsHandlerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole']
+      Policies:
+        - PolicyName: SQSReceiveMessagePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt MessagesToClientsQueue.Arn
+        - PolicyName: WebSocketManageConnections
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'execute-api:ManageConnections'
+                Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
+        - PolicyName: EventBridgePublishPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !GetAtt CommandsEventBus.Arn
+
+  #==========================================================================================================================================================
+  # EventBridge Resources
+  #==========================================================================================================================================================
+  CommandsEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub '${AWS::StackName}-commands-event-bus'
+
+  PaymentCommandsEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref CommandsEventBus
+      EventPattern:
+        source:
+          - 'RenTracker-service' # An identifier that needs to match exactly with the Source field we specify when publishing events
+        detail-type:
+          - 'command-executed'
+        detail: # This rule will now only trigger the target Lambda when:
+          # 1. The event source is 'RenTracker-service'
+          # 2. The detail-type is 'command-executed'
+          # 3. The event detail contains a nested structure where dataCreated.payments.aaaFunction equals 'transfer'
+          dataCreated:
+            payments:
+              aaaFunction:
+                - 'transfer'
+      State: ENABLED
+      Targets:
+        - Arn: !Ref TargetChattyLambdaArn
+          Id: 'TargetLambda'
+
+  TargetLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref TargetChattyLambdaArn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt PaymentCommandsEventRule.Arn
+
+  # ------------------------------------------------------------------------------
+  # S3 web site and cloudfront
+  # ------------------------------------------------------------------------------
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-frontend-static
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['GET']
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !If [AllowS3PublicAccessCondition, false, true]
+        BlockPublicPolicy: !If [AllowS3PublicAccessCondition, false, true]
+        IgnorePublicAcls: !If [AllowS3PublicAccessCondition, false, true]
+        RestrictPublicBuckets: !If [AllowS3PublicAccessCondition, false, true]
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !Select [1, !Split ['//', !GetAtt FrontendBucket.WebsiteURL]]
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ['GET', 'HEAD', 'OPTIONS']
+          CachedMethods: ['GET', 'HEAD']
+          ForwardedValues:
+            QueryString: false
+            Headers: ['Origin']
+          MinTTL: 0
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+        ViewerCertificate: !If
+          - UseCustomDomain
+          - AcmCertificateArn: !Ref CertificateArn
+            SslSupportMethod: sni-only
+          - CloudFrontDefaultCertificate: true
+        PriceClass: PriceClass_100
+        Enabled: true
+        Aliases: !If
+          - UseCustomDomain
+          - [!Ref CustomDomainName]
+          - !Ref AWS::NoValue
+
+Outputs:
+  WebSocketApiUrl:
+    Description: 'URL for the WebSocket API Gateway'
+    Value: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+  RestApiUrl:
+    Description: 'URL for the REST API Gateway'
+    Value: !Sub 'https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
+
+  UserPoolId:
+    Description: 'Cognito User Pool ID'
+    Value: !Ref ExistingUserPoolId
+  UserPoolClientId:
+    Description: 'Cognito User Pool Client ID'
+    Value: !Ref UserPoolClient
+  CognitoDomain:
+    Description: 'Cognito User Pool Domain'
+    Value: !Ref ExistingCognitoDomain
+
+  # MyRDSEndpoint:
+  #   Description: 'RDS instance endpoint'
+  #   Value: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
+  # MyRDSSecurityGroupId:
+  #   Description: 'RDS security group'
+  #   Value: !If [CreateRDSInstance, !Ref MyRDSSG, !Ref ExistingRDSSecurityGroupId]
+  MyWebSocketLambdaSG:
+    Description: 'Websockets Lambda functions security group'
+    Value: !If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]
+
+  S3BucketName:
+    Description: 'Name of the S3 bucket hosting the frontend'
+    Value: !Ref FrontendBucket
+  CloudFrontUrl:
+    Description: 'CloudFront distribution URL'
+    Value: !Sub 'https://${FrontendDistribution.DomainName}'
+  CloudFrontDistributionId:
+    Description: 'CloudFront distribution ID'
+    Value: !Ref FrontendDistribution
+
+  AllowOnlyCloudfrontOrigin:
+    Description: 'Allow HTTP access only through CloudFront'
+    Value: !If [AllowOnlyCloudfrontOriginCondition, 'true', 'false']

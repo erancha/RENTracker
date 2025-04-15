@@ -1,0 +1,16 @@
+backend/layers/awssdkv3/nodejs/node_modules/
+backend/layers/dbData/node_modules/*
+backend/layers/document-utils/nodejs/node_modules/
+backend/documents/node_modules/
+backend/documents/test-output.pdf
+backend/websockets/connections/node_modules/
+backend/RenTracker-service/node_modules/
+backend/RenTracker-service/ecs/node_modules/
+backend/RenTracker-service/ecs/layers/dbData/node_modules/
+backend/RenTracker-service/ecs/layers/redisClient/node_modules/
+backend/dbManagement/node_modules/
+frontend/node_modules/*
+scripts/.aws-sam/
+scripts/.aws-sam/*
+scripts/common/util/node_modules/
+scripts/common/.aws-sam/*
