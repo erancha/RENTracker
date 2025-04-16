@@ -196,7 +196,7 @@ crudRouter.get('/activity/:apartmentId', async (req, res) => {
   try {
     const activity = await dbData.cache.getApartmentActivity({ apartment_id: apartmentId, saas_tenant_id: process.env.SAAS_TENANT_ID });
     res.json({
-      message: 'Activity retrieved successfully',
+      message: 'Apartment activity retrieved successfully',
       payload: activity,
     });
   } catch (error) {

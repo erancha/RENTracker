@@ -7,9 +7,9 @@ import { IAuthState } from '../auth/types';
 import { IWebsocketsState } from '../websockets/types';
 import { ICrudState } from '../crud/types';
 import { IApartmentsState } from '../apartments/types';
-import { ActivityState as IActivityState } from '../activity/types';
-import { IUsersState } from '../users/types';
+import { IApartmentActivityState } from '../apartmentActivity/types';
 import { IDocumentsState } from '../documents/types';
+import { IUsersState } from '../users/types';
 
 /**
  * The root state type that combines all feature states.
@@ -21,14 +21,7 @@ export interface IAppState {
   websockets: IWebsocketsState;
   crud: ICrudState;
   apartments: IApartmentsState;
-  activity: IActivityState;
-  users: IUsersState;
+  apartmentActivity: IApartmentActivityState;
   documents: IDocumentsState;
-}
-
-/**
- * Interface for entities that can be marked as "on route" while being processed by the backend
- */
-export interface IOnRoute {
-  onroute: boolean;
+  users: IUsersState;
 }

@@ -77,7 +77,13 @@ async function handleCreate({ commandParams, connectedUserId }) {
   } else if (commandParams.activity) {
     const { activity_id, description, apartment_id, pending_confirmation } = commandParams.activity;
     response = {
-      activity: await dbData.createActivity({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id: process.env.SAAS_TENANT_ID }),
+      activity: await dbData.createApartmentActivity({
+        activity_id,
+        apartment_id,
+        description,
+        pending_confirmation,
+        saas_tenant_id: process.env.SAAS_TENANT_ID,
+      }),
     };
     await dbData.cache.invalidation.getApartmentActivity(apartment_id);
   }
@@ -136,6 +142,10 @@ async function handleDelete({ commandParams }) {
     const { apartment_id } = commandParams.apartments;
     response = { apartments: await dbData.deleteApartment({ apartment_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
     await dbData.cache.invalidation.getApartmentActivity(apartment_id);
+  } else if (commandParams.activity) {
+    const { activity_id } = commandParams.activity;
+    response = { activity: await dbData.deleteApartmentActivity({ activity_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
+    await dbData.cache.invalidation.getApartmentActivity(response.activity.apartment_id);
   }
 
   if (response) return { dataDeleted: response };
@@ -167,6 +177,9 @@ function determineTargetUsers({ commandType, commandParams, response, connectedU
           // }
           break;
         case 'read':
+          targetUserIds.push(connectedUserId);
+          break;
+        case 'delete':
           targetUserIds.push(connectedUserId);
           break;
         default:

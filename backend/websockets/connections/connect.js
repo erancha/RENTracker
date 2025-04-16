@@ -124,21 +124,25 @@ exports.handler = async (event) => {
       // await dbData.upsertUser({ user_id: currentUserId, user_name: currentUserName, email: currentUserEmail, phone_number: currentUserPhoneNumber, saas_tenant_id: SAAS_TENANT_ID });
 
       // Read and send data to the frontend:
-      const isLandlordUser = dbData.isLandlordUser({ user_id: currentUserId, saas_tenant_id: SAAS_TENANT_ID });
-      return JSON.stringify({
+      const userType =
+        currentUserId === ADMIN_USER_ID ? 'Admin' : dbData.isLandlordUser({ user_id: currentUserId, saas_tenant_id: SAAS_TENANT_ID }) ? 'Landlord' : 'Tenant';
+      let response = {
         targetConnectionIds: [currentConnectionId],
-        message: {
-          connectionsAndUsernames,
+        message: { userType, connectionsAndUsernames },
+      };
+      if (['Admin', 'Landlord'].includes(userType)) {
+        response.message = {
+          ...response.message,
           ...(await handleRead({
             commandParams: {
-              apartments: isLandlordUser,
+              apartments: true,
               activity: { fromFirstApartment: true },
             },
-            connectedUserId: currentUserId,
+            connectedUserId: SAAS_TENANT_ID,
           })),
-          userType: currentUserId === ADMIN_USER_ID ? 'Admin' : isLandlordUser ? 'Landlord' : 'Tenant',
-        },
-      });
+        };
+      }
+      return JSON.stringify(response);
     };
 
     let sqsMessageBody;

@@ -216,7 +216,7 @@ function Execute-Requests {
                     Method           = "GET"
                     Url              = "/api/crud/activity/$apartmentId"
                     ExpectedResponse = '{
-                                            "message": "Activity retrieved successfully",
+                                            "message": "Apartment activity retrieved successfully",
                                             "payload": [
                                                 {
                                                     "id": "regex:[0-9a-f-]+",

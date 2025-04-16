@@ -483,11 +483,11 @@ Resources:
                 Resource:
                   - !Sub '${ApartmentsTable.Arn}/index/SaaSTenantUpdatedIndex'
                   - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
-              # - Effect: Allow
-              #   Action:
-              #     - dynamodb:BatchGetItem
-              #   Resource:
-              #     - !GetAtt MatchupsTable.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt ActivityTable.Arn
         # - PolicyName: LambdaRDSAccessPolicy
         #   PolicyDocument:
         #     Version: '2012-10-17'
@@ -978,7 +978,7 @@ Resources:
   ActivityTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${AWS::StackName}-Activity
+      TableName: !Sub ${AWS::StackName}-ApartmentActivity
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: activity_id
@@ -992,8 +992,6 @@ Resources:
       KeySchema:
         - AttributeName: activity_id
           KeyType: HASH # Partition key
-        - AttributeName: created_at
-          KeyType: RANGE # Sort key
       GlobalSecondaryIndexes:
         - IndexName: ApartmentCreatedIndex
           KeySchema:

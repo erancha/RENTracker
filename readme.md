@@ -25,7 +25,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
         - ~~[2. Landlords Table](#2-landlords-table)~~
         - ~~[3. Tenants Table](#3-tenants-table)~~
         - [4. Documents Table](#4-documents-table)
-        - [5. Activity Table](#5-activity-table)
+        - [5. ApartmentActivity Table](#5-apartmentActivity-table)
         - [Example of Relationships](#example-of-relationships)
       - [**SQS**](#sqs)
     - [2. **Frontend**](#2-frontend)
@@ -95,7 +95,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - **created_at** - Timestamp when the document was created.
 - **updated_at** - Timestamp when the document was last modified.
 
-##### 5. Activity Table
+##### 5. Apartment Activity Table
 
 - **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.
 - **activity_id** (Partition Key) - Unique identifier for each activity (e.g., UUID).

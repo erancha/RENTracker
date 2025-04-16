@@ -636,7 +636,7 @@ Resources:
               Value: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
             - Name: APP_AWS_REGION
               Value: !Ref AWS::Region
-            - Name: EXECUTED_ACTIVITY_QUEUE_URL
+            - Name: EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL
               Value: !Ref RentTrackingSavedActivityQueue
             - Name: ELASTICACHE_REDIS_ADDRESS
               Value: !Ref ExistingElasticacheRedisClusterAddress

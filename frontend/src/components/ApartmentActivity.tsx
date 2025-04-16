@@ -2,29 +2,35 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { IAppState } from '../redux/store/types';
 import { IApartment } from '../redux/apartments/types';
-import { IActivity, INewActivity } from '../redux/activity/types';
+import { IApartmentActivity, INewApartmentActivity } from '../redux/apartmentActivity/types';
 import { timeShortDisplay, getApartment } from '../utils/utils';
 import { setWSConnectedAction } from 'redux/websockets/actions';
-import { prepareCreateActivityCommandAction, addActivityAction } from '../redux/activity/actions';
-import { Save, Undo2 } from 'lucide-react';
+import {
+  prepareCreateApartmentActivityCommandAction,
+  addApartmentActivityAction,
+  prepareDeleteApartmentActivityCommandAction,
+  deleteApartmentActivityAction,
+} from '../redux/apartmentActivity/actions';
+import { Save, Trash2, Undo2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { UserType } from 'redux/auth/types';
 
-// Type-safe field names for IActivity
-type ActivityField = keyof Pick<IActivity, 'description' | 'pending_confirmation'>;
+// Type-safe field names for IApartmentActivity
+type ActivityField = keyof Pick<IApartmentActivity, 'description' | 'pending_confirmation'>;
 
 /**
  * Component for managing and displaying apartment activity.
- * @class Activity
- * @extends React.Component<IApartmentActivityProps, { emptyActivity: IActivity }>
+ * @class ApartmentActivity
+ * @extends React.Component<IApartmentActivityProps, { emptyActivity: IApartmentActivity }>
  */
-class Activity extends React.Component<IApartmentActivityProps, { emptyActivity: INewActivity }> {
-  private newActivityAmountRef = React.createRef<HTMLInputElement>();
+class ApartmentActivity extends React.Component<IApartmentActivityProps, { emptyActivity: INewApartmentActivity }> {
+  private newActivityAmountRef = React.createRef<HTMLTextAreaElement>();
 
   /**
    * Creates an initial activity with default values
-   * @returns {IActivity} A new activity with default values
+   * @returns {IApartmentActivity} A new activity with default values
    */
-  private createInitialActivity = (): INewActivity => ({
+  private createInitialActivity = (): INewApartmentActivity => ({
     activity_id: uuidv4(),
     apartment_id: this.props.currentApartment?.apartment_id || '',
     description: '',
@@ -34,6 +40,12 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
   constructor(props: IApartmentActivityProps) {
     super(props);
     this.state = { emptyActivity: this.createInitialActivity() };
+  }
+
+  componentDidMount(): void {
+    if (this.newActivityAmountRef.current) {
+      this.newActivityAmountRef.current.focus();
+    }
   }
 
   /**
@@ -55,15 +67,9 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
       }));
     }
 
-    // Focus when activity are loaded
-    if (prevProps.activity.length === 0 && this.props.activity.length > 0) {
-      setTimeout(() => {
-        const inputElement = this.newActivityAmountRef.current;
-        if (inputElement) {
-          inputElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          inputElement.click();
-        }
-      }, 100);
+    // Focus the textarea when the component updates
+    if (this.newActivityAmountRef.current) {
+      this.newActivityAmountRef.current.focus();
     }
   }
 
@@ -72,7 +78,7 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
 
     return (
       <div className='page body-container'>
-        <div className='header activity-container-header'>Activity</div>
+        <div className='header activity-container-header'>Apartment Activity</div>
         <div className='activity-container'>
           {activity.length > 0 && (
             <div className='table-header activity'>
@@ -104,10 +110,10 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
 
   /**
    * Validates a activity before execution
-   * @param {IActivity} activity - Activity to validate
+   * @param {IApartmentActivity} activity - ApartmentActivity to validate
    * @returns {boolean} Whether the activity is valid
    */
-  isActivityValid = (activity: INewActivity) => {
+  isActivityValid = (activity: INewApartmentActivity) => {
     if (!activity.description) return false;
     return true;
   };
@@ -128,12 +134,19 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
 
   /**
    * Saves a activity and resets the form
-   * @param {IActivity} activity - Activity to save
+   * @param {IApartmentActivity} activity - ApartmentActivity to save
    */
-  handleSaveActivity = (activity: INewActivity) => {
-    this.props.addActivityAction({ ...activity, created_at: new Date().toISOString(), onroute: true });
-    this.props.prepareCreateActivityCommandAction(activity);
+  handleSaveActivity = (activity: INewApartmentActivity) => {
+    this.props.addApartmentActivityAction({ ...activity, created_at: new Date().toISOString(), onroute: true });
+    this.props.prepareCreateApartmentActivityCommandAction(activity);
     this.setState({ emptyActivity: this.createInitialActivity() });
+  };
+
+  handleDeleteActivity = (activity_id: string, activity_description: string) => {
+    if (window.confirm(`Are you sure you want to delete activity '${activity_description}'?`)) {
+      this.props.prepareDeleteApartmentActivityCommandAction(activity_id);
+      this.props.deleteApartmentActivityAction(activity_id);
+    }
   };
 
   /**
@@ -145,12 +158,12 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
 
   /**
    * Renders a single activity row
-   * @param {Partial<IActivity>} activity - Activity to render
+   * @param {Partial<IApartmentActivity>} activity - ApartmentActivity to render
    * @returns {JSX.Element} The rendered activity row
    */
-  renderActivity = (activity: Partial<IActivity>) => {
+  renderActivity = (activity: Partial<IApartmentActivity>) => {
     const isSaved = !!activity.created_at;
-    const isValid = !isSaved ? this.isActivityValid(activity as INewActivity) : true;
+    const isValid = !isSaved ? this.isActivityValid(activity as INewApartmentActivity) : true;
 
     return (
       <>
@@ -159,9 +172,9 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
           {isSaved ? (
             activity.description
           ) : (
-            <input
+            <textarea
               ref={this.newActivityAmountRef}
-              type='text'
+              rows={2}
               value={activity.description || ''}
               onChange={(e) => {
                 if (!isSaved) this.handleEmptyActivityChange('description' as ActivityField, e.target.value);
@@ -173,7 +186,7 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
         <div className='pending-confirmation'>
           {isSaved ? (
             activity.pending_confirmation ? (
-              'Waiting ...'
+              'Waiting'
             ) : (
               ''
             )
@@ -187,15 +200,26 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
             />
           )}
         </div>
-        {!isSaved && (
+        {!isSaved ? (
           <div className='actions'>
-            <button onClick={() => this.handleSaveActivity(activity as INewActivity)} className='action-button save' title='Save' disabled={!isValid}>
+            <button onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)} className='action-button save' title='Save' disabled={!isValid}>
               <Save />
             </button>
             <button onClick={() => this.handleCancelActivity()} className='action-button cancel' title='Cancel'>
               <Undo2 />
             </button>
           </div>
+        ) : (
+          this.props.userType === UserType.Admin && (
+            <div className='actions'>
+              <button
+                onClick={() => this.handleDeleteActivity(activity.activity_id as string, activity.description as string)}
+                className='action-button delete'
+                title='Delete'>
+                <Trash2 />
+              </button>
+            </div>
+          )
         )}
       </>
     );
@@ -213,16 +237,19 @@ class Activity extends React.Component<IApartmentActivityProps, { emptyActivity:
 }
 
 /**
- * Props interface for Activity component
+ * Props interface for ApartmentActivity component
  * @interface IApartmentActivityProps
  */
 interface IApartmentActivityProps {
-  activity: IActivity[]; // List of activity activity
+  userType: UserType;
+  activity: IApartmentActivity[]; // List of activity activity
   apartments: IApartment[]; // List of all apartments
   currentApartment: IApartment | undefined; // Currently selected apartment
   setWSConnectedAction: typeof setWSConnectedAction; // Action to set WebSocket connection status
-  prepareCreateActivityCommandAction: typeof prepareCreateActivityCommandAction; // Action to prepare a new activity
-  addActivityAction: typeof addActivityAction; // Action to add a new activity
+  prepareCreateApartmentActivityCommandAction: typeof prepareCreateApartmentActivityCommandAction; // Action to prepare a new activity
+  addApartmentActivityAction: typeof addApartmentActivityAction; // Action to add a new activity
+  prepareDeleteApartmentActivityCommandAction: typeof prepareDeleteApartmentActivityCommandAction; // Action to prepare a delete activity command
+  deleteApartmentActivityAction: typeof deleteApartmentActivityAction; // Action to delete a activity
 }
 
 /**
@@ -231,7 +258,8 @@ interface IApartmentActivityProps {
  * @returns {Partial<IApartmentActivityProps>} Props derived from state
  */
 const mapStateToProps = (state: IAppState) => ({
-  activity: state.activity.activity,
+  userType: state.auth.userType,
+  activity: state.apartmentActivity.activity,
   apartments: state.apartments.apartments,
   currentApartment: state.apartments.currentApartmentId
     ? state.apartments.apartments.find((acc) => acc.apartment_id === state.apartments.currentApartmentId)
@@ -241,8 +269,10 @@ const mapStateToProps = (state: IAppState) => ({
 // Map Redux actions to component props
 const mapDispatchToProps = {
   setWSConnectedAction,
-  prepareCreateActivityCommandAction,
-  addActivityAction,
+  prepareCreateApartmentActivityCommandAction,
+  addApartmentActivityAction,
+  prepareDeleteApartmentActivityCommandAction,
+  deleteApartmentActivityAction,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Activity);
+export default connect(mapStateToProps, mapDispatchToProps)(ApartmentActivity);

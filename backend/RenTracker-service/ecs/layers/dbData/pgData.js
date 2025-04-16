@@ -203,18 +203,18 @@ const getApartmentActivity = logMiddleware('getApartmentActivity')(async (apartm
 const sqsClient = new SQSClient({ region: process.env.APP_AWS_REGION });
 
 async function enqueueSavedActivity(messageBody) {
-  const EXECUTED_ACTIVITY_QUEUE_URL = process.env.EXECUTED_ACTIVITY_QUEUE_URL;
+  const EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL = process.env.EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL;
   try {
     const data = await sqsClient.send(
       new SendMessageCommand({
-        QueueUrl: EXECUTED_ACTIVITY_QUEUE_URL,
+        QueueUrl: EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL,
         MessageGroupId: 'Default',
         MessageBody: JSON.stringify({ ...messageBody, timeStamp: new Date().toISOString() }),
       })
     );
     return data;
   } catch (error) {
-    console.error(`Error sending message to SQS queue ${EXECUTED_ACTIVITY_QUEUE_URL}:`, error);
+    console.error(`Error sending message to SQS queue ${EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL}:`, error);
     throw error;
   }
 }

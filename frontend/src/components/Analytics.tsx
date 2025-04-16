@@ -33,8 +33,7 @@ const BarCustomLabel = (props: LabelProps) => {
         style={{
           fontSize: '11px',
           fontWeight: 'bold',
-        }}
-      >
+        }}>
         {typeof value === 'number' ? value.toLocaleString() : value}$
       </text>
     </g>
@@ -60,8 +59,7 @@ const LineCustomLabel = (props: LabelProps) => {
           fontSize: '12px',
           fontWeight: 'bold',
           background: '#fff',
-        }}
-      >
+        }}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </text>
     </g>
@@ -157,7 +155,7 @@ class Analytics extends Component<IAnalyticsProps> {
 }
 
 const mapStateToProps = (state: IAppState) => ({
-  analyticsData: state.activity.analyticsData,
+  analyticsData: [], // state.analyticsData,
 });
 
 export default connect(mapStateToProps)(Analytics);

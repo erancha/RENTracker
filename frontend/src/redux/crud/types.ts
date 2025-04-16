@@ -1,5 +1,5 @@
 // Generic CRUD command types
-export type CommandType = 'apartments' | 'activity' | 'analytics';
+export type CommandType = 'apartments' | 'apartmentActivity' | 'analytics';
 
 // Base command interface
 export interface IBaseCommand<T = any, P = any> {
@@ -52,4 +52,11 @@ export interface ICrudState<P = any> {
   readCommand: IReadCommand<P> | null;
   updateCommand: IUpdateCommand<P> | null;
   deleteCommand: IDeleteCommand<P> | null;
+}
+
+/**
+ * Interface for entities that can be marked as "on route" while being processed by the backend
+ */
+export interface IOnRoute {
+  onroute: boolean;
 }

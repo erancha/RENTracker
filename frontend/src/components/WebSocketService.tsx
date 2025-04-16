@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { IAppState } from '../redux/store/types';
 import { ICreateCommand, IReadCommand, IUpdateCommand, IDeleteCommand, CommandType } from '../redux/crud/types';
 import { IApartment, IUpdateApartmentParams } from '../redux/apartments/types';
-import { IReadActivityParams } from '../redux/activity/types';
+import { IReadApartmentActivityParams } from '../redux/apartmentActivity/types';
 import { IReadAnalyticsParams } from '../redux/analytics/types';
 import { setMenuSelectedPageAction, toggleMenuAction } from '../redux/menu/actions';
 import { setUserTypeAction, logoutUserAction, loginWithGoogleAction } from '../redux/auth/actions';
@@ -17,7 +17,7 @@ import {
   deleteApartmentAction,
   setApartmentConfirmedByBackendAction,
 } from '../redux/apartments/actions';
-import { setActivityAction, addActivityAction, setActivityConfirmedByBackendAction, prepareReadActivityCommandAction } from '../redux/activity/actions';
+import { setApartmentActivityAction, addApartmentActivityAction, setApartmentActivityConfirmedByBackendAction } from '../redux/apartmentActivity/actions';
 import appConfigData from '../appConfig.json';
 import { Network } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -103,7 +103,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
         case 'apartments' as CommandType:
           upload({ command: { type: 'create', params: { apartments: createCommand.params } } });
           break;
-        case 'activity' as CommandType:
+        case 'apartmentActivity' as CommandType:
           upload({ command: { type: 'create', params: { activity: createCommand.params } } });
           break;
       }
@@ -113,8 +113,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     //-----------------------------------------
     if (readCommand && readCommand !== prevProps.readCommand) {
       switch (readCommand.type) {
-        case 'activity' as CommandType:
-          const activityParams = readCommand.params as IReadActivityParams;
+        case 'apartmentActivity' as CommandType:
+          const activityParams = readCommand.params as IReadApartmentActivityParams;
           upload({ command: { type: 'read', params: { activity: { apartment_id: activityParams.apartment_id } } } });
           break;
         case 'analytics':
@@ -154,6 +154,15 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
             command: {
               type: 'delete',
               params: { apartments: { apartment_id: deleteCommand.params.apartment_id } },
+            },
+          });
+          break;
+        }
+        case 'apartmentActivity' as CommandType: {
+          upload({
+            command: {
+              type: 'delete',
+              params: { activity: { activity_id: deleteCommand.params.activity_id } },
             },
           });
           break;
@@ -305,15 +314,15 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     } else if (dataCreated.activity) {
       const newReceivedActivity = dataCreated.activity;
       const isNewActivity = !this.props.activity.find((activity) => activity.activity_id === newReceivedActivity.activity_id);
-      if (isNewActivity) this.props.addActivityAction({ ...newReceivedActivity });
-      else this.props.setActivityConfirmedByBackendAction(newReceivedActivity.activity_id);
+      if (isNewActivity) this.props.addApartmentActivityAction({ ...newReceivedActivity });
+      else this.props.setApartmentActivityConfirmedByBackendAction(newReceivedActivity.activity_id);
     }
   }
 
   // CRUD: event containing Read data
   private handleDataRead(dataRead: any) {
     if (dataRead.apartments) this.props.setApartmentsAction(dataRead.apartments);
-    if (dataRead.activity) this.props.setActivityAction(dataRead.activity);
+    if (dataRead.activity) this.props.setApartmentActivityAction(dataRead.activity);
   }
 
   // CRUD: event containing Updated data
@@ -369,10 +378,9 @@ interface IWebSocketProps {
   setApartmentStateAction: typeof setApartmentStateAction;
   deleteApartmentAction: typeof deleteApartmentAction;
   setApartmentConfirmedByBackendAction: typeof setApartmentConfirmedByBackendAction;
-  addActivityAction: typeof addActivityAction;
-  prepareReadActivityCommandAction: typeof prepareReadActivityCommandAction;
-  setActivityAction: typeof setActivityAction;
-  setActivityConfirmedByBackendAction: typeof setActivityConfirmedByBackendAction;
+  addApartmentActivityAction: typeof addApartmentActivityAction;
+  setApartmentActivityAction: typeof setApartmentActivityAction;
+  setApartmentActivityConfirmedByBackendAction: typeof setApartmentActivityConfirmedByBackendAction;
   activity: any[];
   menuSelectedPage: string | null;
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
@@ -401,7 +409,7 @@ const mapStateToProps = (state: IAppState) => ({
   deleteCommand: state.crud.deleteCommand,
   apartments: state.apartments.apartments,
   currentApartmentId: state.apartments.currentApartmentId,
-  activity: state.activity.activity,
+  activity: state.apartmentActivity.activity,
   menuSelectedPage: state.menu.menuSelectedPage, // TODO
 });
 
@@ -419,10 +427,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setApartmentStateAction,
       deleteApartmentAction,
       setApartmentConfirmedByBackendAction,
-      addActivityAction,
-      prepareReadActivityCommandAction,
-      setActivityAction,
-      setActivityConfirmedByBackendAction,
+      addApartmentActivityAction,
+      setApartmentActivityAction,
+      setApartmentActivityConfirmedByBackendAction,
       setUserTypeAction,
       logoutUserAction,
       loginWithGoogleAction,

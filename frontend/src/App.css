@@ -19,7 +19,7 @@ body {
 .actions {
   display: grid;
   grid-template-columns: repeat(2, 2rem);
-  gap: 8px;
+  gap: 4px;
 }
 
 .action-button {
@@ -700,7 +700,7 @@ body {
 .table-header.activity,
 .table-row.activity {
   display: grid;
-  grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 2fr);
+  grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);
   border-radius: 0.5rem;
 
   .pending-confirmation {
@@ -717,17 +717,13 @@ body {
     border-color: red;
   }
 
-  &:not(.input) > .actions {
-    display: none;
-  }
-
   > * {
     padding: 0;
     background-color: initial;
   }
 
   &.input {
-    grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(90px, 2fr);
+    grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);
 
     > .description {
       grid-column: span 2;
@@ -747,11 +743,11 @@ body {
 }
 
 .table-row.activity > div,
-.table-row.activity > div > input,
-.table-row.activity > div > select {
-  font-size: 0.8rem;
-  transition: background-color 0.2s ease;
+.table-row.activity > div > * {
   width: 100%; /* Make inputs take full width of their container */
+  font-size: 0.8rem;
+  align-content: center;
+  transition: background-color 0.2s ease;
   box-sizing: border-box; /* Include padding and border in the width calculation */
 }
 
@@ -796,53 +792,6 @@ body {
   100% {
     border-color: darkblue;
   }
-}
-
-/* Apartment Selector Component Styles */
-.apartment-selector {
-  position: relative;
-}
-
-.apartment-selector input {
-  width: 100%;
-  padding: 8px;
-  border-radius: 10px;
-  background-color: white;
-  font-size: 0.8rem;
-  transition: background-color 0.2s ease;
-  box-sizing: border-box;
-}
-
-.apartment-selector .dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-}
-
-.apartment-selector .user-item {
-  padding: 8px;
-}
-
-.apartment-selector .user-name {
-  margin-left: 2px;
-  font-weight: bold;
-}
-
-.apartment-selector .apartment-option {
-  margin-left: 8px;
-  padding: 4px;
-  cursor: pointer;
-}
-
-.apartment-selector .apartment-item.selected {
-  background-color: #f0f0f0;
 }
 
 .page {
@@ -1034,8 +983,14 @@ body {
     border-radius: 0.5rem;
   }
 
-  .table-row.activity > div {
-    position: relative;
+  .table-row.activity {
+    > div {
+      position: relative;
+    }
+
+    .actions {
+      gap: 1px;
+    }
   }
 
   .card.apartment > div:not(.details, .input-and-error-container)::before,
@@ -1104,6 +1059,10 @@ body {
 
   .table-row.document {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .table-row.activity:not(.input) {
+    grid-template-columns: minmax(80px, 2fr) 10fr 3fr minmax(60px, 1fr);
   }
 }
 

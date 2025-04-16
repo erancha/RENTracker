@@ -45,10 +45,10 @@ const initialState: IAppState = {
       errors: {},
     },
   },
-  activity: {
+  apartmentActivity: {
     activity: [],
-    analyticsData: [],
   },
+  // analyticsData: [],
   users: {
     list: [],
     loading: false,

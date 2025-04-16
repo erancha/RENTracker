@@ -114,7 +114,7 @@ class AppComponent extends React.Component<IAppProps> {
 
   // Renders the selected page based on the menuSelectedPage prop
   private renderMenuSelectedPage() {
-    const { menuSelectedPage, setMenuSelectedPageAction, userType } = this.props;
+    const { menuSelectedPage, setMenuSelectedPageAction } = this.props;
 
     const handleUndo = () => {
       setMenuSelectedPageAction(DOCUMENTS_VIEW);
@@ -134,10 +134,10 @@ class AppComponent extends React.Component<IAppProps> {
         </button>
         <Users />
       </div>
-    ) : userType === UserType.Tenant ? (
+    ) : this.props.userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (
-      userType === UserType.Landlord && <Apartments />
+      <Apartments />
     );
   }
 

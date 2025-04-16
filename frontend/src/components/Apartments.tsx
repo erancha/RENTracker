@@ -20,13 +20,12 @@ import {
   setApartmentFormErrorsAction,
   resetApartmentFormAction,
 } from '../redux/apartments/actions';
-import { clearActivityAction, prepareReadActivityCommandAction } from '../redux/activity/actions';
+import { clearApartmentActivityAction, prepareReadApartmentActivityCommandAction } from '../redux/apartmentActivity/actions';
 import { Trash2, Pencil, FileText, Copy, Plus } from 'lucide-react';
 import { filterAndSortApartments } from '../utils/utils';
-import { ANALYTICS_VIEW } from 'redux/menu/types';
 import { ApartmentForm } from './ApartmentForm';
 import ApartmentDocumentList from './ApartmentDocumentList';
-import Activity from './Activity';
+import ApartmentActivity from './ApartmentActivity';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -50,14 +49,10 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   componentDidMount() {
     setTimeout(() => {
       if (this.props.apartments.length === 0 && !this.props.noApartmentsNotified) {
-        const { userType } = this.props;
-
-        if (userType === UserType.Landlord) {
+        if (this.props.userType === UserType.Landlord) {
           this.props.setNoApartmentsNotifiedAction(true);
           this.props.toggleApartmentFormAction(true);
           setTimeout(() => this.newApartmentInputRef.current?.focus(), 1000);
-        } else if (userType === UserType.Admin) {
-          this.props.setMenuSelectedPageAction(ANALYTICS_VIEW);
         }
       }
     }, 3000);
@@ -149,7 +144,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     <div className='rent-amount' data-title='Rent Amount'>
                       {apartment.rent_amount.toLocaleString()}₪
                     </div>
-                    {userType === UserType.Landlord && (
+                    {[UserType.Landlord, UserType.Admin].includes(userType) && (
                       <div className='actions'>
                         <button onClick={() => this.handleEditApartment(apartment)} className='action-button' title='Edit'>
                           <Pencil />
@@ -177,7 +172,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
             {showDocuments ? (
               <div className='documents-container'>{currentApartmentId && <ApartmentDocumentList key={currentApartmentId} />}</div>
             ) : (
-              <Activity />
+              <ApartmentActivity />
             )}
           </>
         )}
@@ -201,7 +196,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     <button
       onClick={this.handleShowDocuments}
       className='action-button documents activity'
-      title={this.state.showDocuments ? 'Show Activity' : 'Show Rental Agreements'}>
+      title={this.state.showDocuments ? 'Show ApartmentActivity' : 'Show Rental Agreements'}>
       <FileText />
     </button>
   );
@@ -237,7 +232,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
       });
       this.props.resetApartmentFormAction();
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearActivityAction();
+      this.props.clearApartmentActivityAction();
     } else {
       this.props.setApartmentFormErrorsAction(errors);
     }
@@ -267,8 +262,8 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     // Only proceed if the apartment_id is different from current
     if (apartment_id !== this.props.currentApartmentId) {
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearActivityAction();
-      this.props.prepareReadActivityCommandAction(apartment_id);
+      this.props.clearApartmentActivityAction();
+      this.props.prepareReadApartmentActivityCommandAction(apartment_id);
     }
   };
 
@@ -370,8 +365,8 @@ interface IApartmentsProps {
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   setNoApartmentsNotifiedAction: typeof setNoApartmentsNotifiedAction;
   prepareCreateApartmentCommandAction: typeof prepareCreateApartmentCommandAction;
-  clearActivityAction: typeof clearActivityAction;
-  prepareReadActivityCommandAction: typeof prepareReadActivityCommandAction;
+  clearApartmentActivityAction: typeof clearApartmentActivityAction;
+  prepareReadApartmentActivityCommandAction: typeof prepareReadApartmentActivityCommandAction;
   addApartmentAction: typeof addApartmentAction;
   setCurrentApartmentAction: typeof setCurrentApartmentAction;
   setApartmentStateAction: typeof setApartmentStateAction;
@@ -403,8 +398,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       setMenuSelectedPageAction,
       prepareCreateApartmentCommandAction,
-      clearActivityAction,
-      prepareReadActivityCommandAction,
+      clearApartmentActivityAction,
+      prepareReadApartmentActivityCommandAction,
       setNoApartmentsNotifiedAction,
       addApartmentAction,
       setCurrentApartmentAction,

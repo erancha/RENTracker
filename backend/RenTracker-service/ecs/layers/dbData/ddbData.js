@@ -176,17 +176,12 @@ const deleteApartment = logMiddleware('ddb_deleteApartment')(async ({ apartment_
       TableName: APARTMENTS_TABLE_NAME,
       Key: { apartment_id },
       ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
-      ExpressionAttributeValues: {
-        ':saas_tenant_id': saas_tenant_id,
-      },
+      ExpressionAttributeValues: { ':saas_tenant_id': saas_tenant_id },
       ReturnValues: 'ALL_OLD',
     });
 
     const response = await ddbDocClient.send(command);
-
-    if (!response.Attributes) {
-      throw new Error('Failed to delete apartment');
-    }
+    if (!response.Attributes) throw new Error('Failed to delete apartment');
 
     return {
       apartment_id: response.Attributes.apartment_id,
@@ -357,9 +352,7 @@ const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id,
 const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id, saas_tenant_id }) => {
   const command = new DeleteCommand({
     TableName: DOCUMENTS_TABLE_NAME,
-    Key: {
-      document_id,
-    },
+    Key: { document_id },
     ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
     ExpressionAttributeValues: { ':saas_tenant_id': saas_tenant_id },
     ReturnValues: 'ALL_OLD',
@@ -367,9 +360,8 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
 
   try {
     const result = await ddbClient.send(command);
-    if (!result.Attributes) {
-      throw new Error('Document not found');
-    }
+    if (!result.Attributes) throw new Error('Document not found');
+
     return result.Attributes.document_id;
   } catch (error) {
     console.error('Error deleting document:', error);
@@ -378,7 +370,7 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
 });
 
 /**
- * Creates a new activity in DynamoDB
+ * Creates a new activity item of an apartment in DynamoDB
  * @param {Object} params
  * @param {string} params.activity_id - Unique identifier for the activity
  * @param {string} params.apartment_id - ID of the apartment associated with the activity
@@ -388,7 +380,7 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
  * @param {string} params.created_at - ISO timestamp of activity creation
  * @returns {Promise<Object>} Created activity data
  */
-const createActivity = logMiddleware('ddb_createActivity')(
+const createApartmentActivity = logMiddleware('ddb_createApartmentActivity')(
   async ({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id, created_at }) => {
     try {
       const item = {
@@ -409,18 +401,18 @@ const createActivity = logMiddleware('ddb_createActivity')(
 
       return item;
     } catch (error) {
-      console.error('Error in ddb_createActivity:', error);
+      console.error('Error in ddb_createApartmentActivity:', error);
       throw error;
     }
   }
 );
 
 /**
- * Retrieves activity data for a specific apartment from DynamoDB
+ * Retrieves all activity of an apartment from DynamoDB
  * @param {Object} params
  * @param {string} params.apartment_id - ID of the apartment
  * @param {string} params.saas_tenant_id - SaaS tenant ID
- * @returns {Promise<Object>} Activity data
+ * @returns {Promise<Object>} ApartmentActivity data
  */
 const getApartmentActivity = logMiddleware('ddb_getApartmentActivity')(async ({ apartment_id, saas_tenant_id }) => {
   try {
@@ -444,6 +436,33 @@ const getApartmentActivity = logMiddleware('ddb_getApartmentActivity')(async ({ 
   }
 });
 
+/**
+ * Deletes an activity item of an apartment from DynamoDB
+ * @param {Object} params
+ * @param {string} params.activity_id - ID of the activity
+ * @param {string} params.saas_tenant_id - SaaS tenant ID
+ * @returns {Promise<Object>} Deleted activity data
+ */
+const deleteApartmentActivity = logMiddleware('ddb_deleteApartmentActivity')(async ({ activity_id, saas_tenant_id }) => {
+  try {
+    const command = new DeleteCommand({
+      TableName: ACTIVITY_TABLE_NAME,
+      Key: { activity_id },
+      ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
+      ExpressionAttributeValues: { ':saas_tenant_id': saas_tenant_id },
+      ReturnValues: 'ALL_OLD',
+    });
+
+    const response = await ddbDocClient.send(command);
+    if (!response.Attributes) throw new Error('Failed to delete activity');
+
+    return response.Attributes;
+  } catch (error) {
+    console.error('Error in ddb_deleteApartmentActivity:', error);
+    throw error;
+  }
+});
+
 module.exports = {
   upsertUser,
   getApartmentsOfLandlord,
@@ -456,6 +475,7 @@ module.exports = {
   getTenantDocuments,
   updateDocument,
   deleteDocument,
-  createActivity,
+  createApartmentActivity,
   getApartmentActivity,
+  deleteApartmentActivity,
 };

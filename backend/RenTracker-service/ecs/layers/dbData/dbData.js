@@ -27,7 +27,7 @@ const upsertUser = logMiddleware('upsertUser')(async ({ user_id, user_name, emai
   validateNonEmptyString(user_name, 'user_name');
   validateEmail(email);
   validatePhoneNumber(phone_number);
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await gwData.upsertUser({ user_id, user_name, email, phone_number, saas_tenant_id });
 });
 
@@ -38,7 +38,7 @@ const upsertUser = logMiddleware('upsertUser')(async ({ user_id, user_name, emai
  * @returns {Promise<Array>} List of users
  */
 const getAllUsers = logMiddleware('getAllUsers')(async ({ saas_tenant_id }) => {
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await gwData.getAllUsers({ saas_tenant_id });
 });
 
@@ -60,7 +60,7 @@ const createApartment = logMiddleware('createApartment')(
     validatePositiveInteger(rent_amount);
     validateRoomsCount(rooms_count);
     validateUUID(landlord_id, 'user_id');
-    validateUUID(saas_tenant_id, 'tenant_id');
+    validateUUID(saas_tenant_id, 'saas_tenant_id');
     return await gwData.createApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id });
   }
 );
@@ -74,7 +74,7 @@ const createApartment = logMiddleware('createApartment')(
  */
 const getApartmentsOfLandlord = logMiddleware('getApartmentsOfLandlord')(async ({ user_id, saas_tenant_id }) => {
   validateUUID(user_id, 'user_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await gwData.getApartmentsOfLandlord({ user_id, saas_tenant_id });
 });
 
@@ -85,7 +85,7 @@ const getApartmentsOfLandlord = logMiddleware('getApartmentsOfLandlord')(async (
  * @returns {Promise<Array>} List of apartments
  */
 const getAllApartments = logMiddleware('getAllApartments')(async ({ saas_tenant_id }) => {
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await gwData.getAllApartments({ saas_tenant_id });
 });
 
@@ -107,7 +107,7 @@ const updateApartment = logMiddleware('updateApartment')(
     validateRoomsCount(rooms_count);
     validatePositiveInteger(rent_amount);
     validateBoolean(is_disabled, 'is_disabled');
-    validateUUID(saas_tenant_id, 'tenant_id');
+    validateUUID(saas_tenant_id, 'saas_tenant_id');
     return await gwData.updateApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id });
   }
 );
@@ -121,7 +121,7 @@ const updateApartment = logMiddleware('updateApartment')(
  */
 const deleteApartment = logMiddleware('deleteApartment')(async ({ apartment_id, saas_tenant_id }) => {
   validateUUID(apartment_id, 'apartment_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await gwData.deleteApartment({ apartment_id, saas_tenant_id });
 });
 
@@ -142,7 +142,7 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
   validateUUID(apartment_id, 'apartment_id');
   validateNonEmptyString(template_name, 'template name');
   validateTemplateFields(template_fields);
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
   return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, saas_tenant_id });
 };
@@ -156,7 +156,7 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
  */
 const getDocument = async ({ document_id, saas_tenant_id }) => {
   validateUUID(document_id, 'document_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
   return await gwData.getDocument({ document_id, saas_tenant_id });
 };
@@ -170,7 +170,7 @@ const getDocument = async ({ document_id, saas_tenant_id }) => {
  */
 const getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
   validateUUID(apartment_id, 'apartment_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
   return await gwData.getApartmentDocuments({ apartment_id, saas_tenant_id });
 };
@@ -184,7 +184,7 @@ const getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
  */
 const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
   validateUUID(tenant_user_id, 'user_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
   return await gwData.getTenantDocuments({ tenant_user_id, saas_tenant_id });
 };
@@ -201,7 +201,7 @@ const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
 const updateDocument = async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
   validateUUID(document_id, 'document_id');
   validateTemplateFields(template_fields);
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   if (tenant_user_id) validateUUID(tenant_user_id, 'user_id');
 
   return await gwData.updateDocument({ document_id, template_fields, saas_tenant_id, tenant_user_id });
@@ -216,7 +216,7 @@ const updateDocument = async ({ document_id, template_fields, saas_tenant_id, te
  */
 const deleteDocument = async ({ document_id, saas_tenant_id }) => {
   validateUUID(document_id, 'document_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
   return await gwData.deleteDocument({ document_id, saas_tenant_id });
 };
@@ -231,37 +231,53 @@ const deleteDocument = async ({ document_id, saas_tenant_id }) => {
  * @param {string} params.saas_tenant_id - SaaS tenant identifier
  * @returns {Promise<Object>} Created activity data
  */
-const createActivity = logMiddleware('createActivity')(async ({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id }) => {
-  validateUUID(activity_id, 'activity_id');
-  validateUUID(apartment_id, 'apartment_id');
-  validateNonEmptyString(description, 'description');
-  validateUUID(saas_tenant_id, 'tenant_id');
+const createApartmentActivity = logMiddleware('createApartmentActivity')(
+  async ({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id }) => {
+    validateUUID(activity_id, 'activity_id');
+    validateUUID(apartment_id, 'apartment_id');
+    validateNonEmptyString(description, 'description');
+    validateUUID(saas_tenant_id, 'saas_tenant_id');
 
-  return await gwData.createActivity({
-    activity_id,
-    apartment_id,
-    description,
-    pending_confirmation,
-    created_at: new Date().toISOString(),
-    saas_tenant_id,
-  });
+    return await gwData.createApartmentActivity({
+      activity_id,
+      apartment_id,
+      description,
+      pending_confirmation,
+      created_at: new Date().toISOString(),
+      saas_tenant_id,
+    });
+  }
+);
+
+/**
+ * Deletes an activity from the system
+ * @param {Object} params
+ * @param {string} params.activity_id - ID of the activity
+ * @param {string} params.saas_tenant_id - SaaS tenant ID
+ * @returns {Promise<Object>} Deleted activity data
+ */
+const deleteApartmentActivity = logMiddleware('deleteApartmentActivity')(async ({ activity_id, saas_tenant_id }) => {
+  validateUUID(activity_id, 'activity_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
+
+  return await gwData.deleteApartmentActivity({ activity_id, saas_tenant_id });
 });
 
 // Cache wrapper functions
 const cache_getAllUsers = async ({ saas_tenant_id }) => {
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await cache.get('getAllUsers()', () => getAllUsers({ saas_tenant_id }));
 };
 
 const cache_getApartmentsOfLandlord = async ({ user_id, saas_tenant_id }) => {
   validateUUID(user_id, 'user_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await cache.get(`getApartmentsOfLandlord(${user_id})`, () => getApartmentsOfLandlord({ user_id, saas_tenant_id }));
 };
 
 const cache_getApartmentActivity = async ({ apartment_id, saas_tenant_id }) => {
   validateUUID(apartment_id, 'apartment_id');
-  validateUUID(saas_tenant_id, 'tenant_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await cache.get(`getApartmentActivity(${apartment_id})`, () => gwData.getApartmentActivity({ apartment_id, saas_tenant_id }));
 };
 
@@ -281,7 +297,8 @@ module.exports = {
   getTenantDocuments,
   updateDocument,
   deleteDocument,
-  createActivity,
+  createApartmentActivity,
+  deleteApartmentActivity,
 
   // Cache interface
   cache: {

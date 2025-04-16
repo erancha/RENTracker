@@ -1,4 +1,4 @@
-import { IOnRoute } from '../store/types';
+import { IOnRoute } from '../crud/types';
 
 export interface IApartmentsState {
   apartments: IApartment[];

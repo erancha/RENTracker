@@ -14,13 +14,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/time",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "time"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "time"]
         }
       },
       "response": []
@@ -32,14 +27,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "health"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "health"]
         }
       },
       "response": []
@@ -60,14 +49,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/crud/user",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "user"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "user"]
         }
       },
       "response": []
@@ -79,14 +62,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/users",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "users"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "users"]
         }
       },
       "event": [
@@ -137,14 +114,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/crud/apartment",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "apartment"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "apartment"]
         }
       },
       "response": []
@@ -165,14 +136,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/crud/apartment",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "apartment"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "apartment"]
         }
       },
       "response": []
@@ -193,14 +158,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/crud/transfer",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "transfer"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "transfer"]
         }
       },
       "response": []
@@ -212,15 +171,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/balance/{{apartmentId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "balance",
-            "{{apartmentId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "balance", "{{apartmentId}}"]
         }
       },
       "response": []
@@ -232,14 +184,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/apartments",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "apartments"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "apartments"]
         }
       },
       "response": []
@@ -251,15 +197,8 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/apartments/user?userId={{userId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "apartments",
-            "user"
-          ],
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "apartments", "user"],
           "query": [
             {
               "key": "userId",
@@ -272,21 +211,14 @@
       "response": []
     },
     {
-      "name": "Get Activity for Apartment",
+      "name": "Get ApartmentActivity for Apartment",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/crud/activity/{{apartmentId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "rentTracking",
-            "activity",
-            "{{apartmentId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "rentTracking", "activity", "{{apartmentId}}"]
         }
       },
       "response": []
