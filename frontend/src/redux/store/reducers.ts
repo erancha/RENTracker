@@ -4,7 +4,7 @@ import { authReducer } from '../auth/reducer';
 import { websocketsReducer } from '../websockets/reducer';
 import { crudReducer } from '../crud/reducer';
 import { apartmentsReducer } from '../apartments/reducer';
-import { paymentsReducer } from '../payments/reducer';
+import { activityReducer } from '../activity/reducer';
 import { usersReducer } from '../users/reducer';
 import documentsReducer from '../documents/slice';
 
@@ -14,7 +14,7 @@ const rootReducer = combineReducers({
   websockets: websocketsReducer,
   crud: crudReducer,
   apartments: apartmentsReducer,
-  payments: paymentsReducer,
+  activity: activityReducer,
   users: usersReducer,
   documents: documentsReducer,
 });

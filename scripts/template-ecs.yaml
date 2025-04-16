@@ -583,14 +583,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonECS_FullAccess
       Policies:
-        - PolicyName: SQSExecutedPaymentsPolicy
+        - PolicyName: SQSSavedActivityPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
                   - sqs:SendMessage
-                Resource: !GetAtt RentTrackingExecutedPaymentsQueue.Arn
+                Resource: !GetAtt RentTrackingSavedActivityQueue.Arn
 
   # RentTracking service
   #----------------
@@ -636,8 +636,8 @@ Resources:
               Value: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
             - Name: APP_AWS_REGION
               Value: !Ref AWS::Region
-            - Name: EXECUTED_TRANSACTIONS_QUEUE_URL
-              Value: !Ref RentTrackingExecutedPaymentsQueue
+            - Name: EXECUTED_ACTIVITY_QUEUE_URL
+              Value: !Ref RentTrackingSavedActivityQueue
             - Name: ELASTICACHE_REDIS_ADDRESS
               Value: !Ref ExistingElasticacheRedisClusterAddress
             - Name: SAAS_TENANT_ID
@@ -679,10 +679,10 @@ Resources:
   # TODO: Alternate EKS (Kubernetes) with Fargate deployment: https://docs.aws.amazon.com/eks/latest/userguide/fargate.html.
   #==========================================================================================================================================================
 
-  RentTrackingExecutedPaymentsQueue:
+  RentTrackingSavedActivityQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub '${AWS::StackName}-executedPaymentsQueue.fifo'
+      QueueName: !Sub '${AWS::StackName}-savedActivityQueue.fifo'
       FifoQueue: true
       ContentBasedDeduplication: true
 

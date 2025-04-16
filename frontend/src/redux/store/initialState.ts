@@ -45,8 +45,8 @@ const initialState: IAppState = {
       errors: {},
     },
   },
-  payments: {
-    payments: [],
+  activity: {
+    activity: [],
     analyticsData: [],
   },
   users: {

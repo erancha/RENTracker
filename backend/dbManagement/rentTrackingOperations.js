@@ -19,12 +19,12 @@ const createRentTrackingTables = async (dbClient) => {
         PRIMARY KEY (tenant_id, apartment_id)
       );
 
-      CREATE TABLE IF NOT EXISTS apartmentPayments (
+      CREATE TABLE IF NOT EXISTS apartmentActivity (
         id UUID DEFAULT uuid_generate_v4(),
         apartment_id TEXT NOT NULL,
-        executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        transaction BYTEA NOT NULL,
-        encryptedTransaction BYTEA,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        activity BYTEA NOT NULL,
+        encryptedActivity BYTEA,
         tenant_id UUID NOT NULL,
         PRIMARY KEY (tenant_id, apartment_id, id)
       );
@@ -76,10 +76,10 @@ const getRentTrackingStats = async (dbClient) => {
     const apartmentsResult = await dbClient.query(apartmentsQuery);
     stats.apartmentsCount = parseInt(apartmentsResult.rows[0].count);
 
-    // Get payments count
-    const paymentsQuery = 'SELECT COUNT(*) FROM apartmentPayments;';
-    const paymentsResult = await dbClient.query(paymentsQuery);
-    stats.paymentsCount = parseInt(paymentsResult.rows[0].count);
+    // Get activity count
+    const activityQuery = 'SELECT COUNT(*) FROM apartmentActivity;';
+    const activityResult = await dbClient.query(activityQuery);
+    stats.activityCount = parseInt(activityResult.rows[0].count);
 
     return { success: true, stats };
   } catch (error) {

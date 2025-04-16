@@ -1,5 +1,5 @@
 // Generic CRUD command types
-export type CommandType = 'apartments' | 'payments' | 'analytics';
+export type CommandType = 'apartments' | 'activity' | 'analytics';
 
 // Base command interface
 export interface IBaseCommand<T = any, P = any> {

@@ -23,11 +23,11 @@ const healthCheck = logMiddleware('healthCheck')(async () => {
  * @returns {Promise<Object>} Created/updated user data
  */
 const upsertUser = logMiddleware('upsertUser')(async ({ user_id, user_name, email, phone_number, saas_tenant_id }) => {
-  validateUserId(user_id);
-  validateUserName(user_name);
+  validateUUID(user_id, 'user_id');
+  validateNonEmptyString(user_name, 'user_name');
   validateEmail(email);
   validatePhoneNumber(phone_number);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await gwData.upsertUser({ user_id, user_name, email, phone_number, saas_tenant_id });
 });
 
@@ -38,7 +38,7 @@ const upsertUser = logMiddleware('upsertUser')(async ({ user_id, user_name, emai
  * @returns {Promise<Array>} List of users
  */
 const getAllUsers = logMiddleware('getAllUsers')(async ({ saas_tenant_id }) => {
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await gwData.getAllUsers({ saas_tenant_id });
 });
 
@@ -56,11 +56,11 @@ const getAllUsers = logMiddleware('getAllUsers')(async ({ saas_tenant_id }) => {
  */
 const createApartment = logMiddleware('createApartment')(
   async ({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id }) => {
-    validateApartmentId(apartment_id);
-    validateAmount(rent_amount);
+    validateUUID(apartment_id, 'apartment_id');
+    validatePositiveInteger(rent_amount);
     validateRoomsCount(rooms_count);
-    validateUserId(landlord_id);
-    validateSaaSTenantId(saas_tenant_id);
+    validateUUID(landlord_id, 'user_id');
+    validateUUID(saas_tenant_id, 'tenant_id');
     return await gwData.createApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id });
   }
 );
@@ -73,8 +73,8 @@ const createApartment = logMiddleware('createApartment')(
  * @returns {Promise<Array>} List of apartments
  */
 const getApartmentsOfLandlord = logMiddleware('getApartmentsOfLandlord')(async ({ user_id, saas_tenant_id }) => {
-  validateUserId(user_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(user_id, 'user_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await gwData.getApartmentsOfLandlord({ user_id, saas_tenant_id });
 });
 
@@ -85,7 +85,7 @@ const getApartmentsOfLandlord = logMiddleware('getApartmentsOfLandlord')(async (
  * @returns {Promise<Array>} List of apartments
  */
 const getAllApartments = logMiddleware('getAllApartments')(async ({ saas_tenant_id }) => {
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await gwData.getAllApartments({ saas_tenant_id });
 });
 
@@ -103,11 +103,11 @@ const getAllApartments = logMiddleware('getAllApartments')(async ({ saas_tenant_
  */
 const updateApartment = logMiddleware('updateApartment')(
   async ({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id }) => {
-    validateApartmentId(apartment_id);
+    validateUUID(apartment_id, 'apartment_id');
     validateRoomsCount(rooms_count);
-    validateAmount(rent_amount);
-    validateIsDisabled(is_disabled);
-    validateSaaSTenantId(saas_tenant_id);
+    validatePositiveInteger(rent_amount);
+    validateBoolean(is_disabled, 'is_disabled');
+    validateUUID(saas_tenant_id, 'tenant_id');
     return await gwData.updateApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id });
   }
 );
@@ -120,8 +120,8 @@ const updateApartment = logMiddleware('updateApartment')(
  * @returns {Promise<Object>} Deleted apartment data
  */
 const deleteApartment = logMiddleware('deleteApartment')(async ({ apartment_id, saas_tenant_id }) => {
-  validateApartmentId(apartment_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(apartment_id, 'apartment_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await gwData.deleteApartment({ apartment_id, saas_tenant_id });
 });
 
@@ -138,11 +138,11 @@ const deleteApartment = logMiddleware('deleteApartment')(async ({ apartment_id, 
  * @returns {Promise<Object>} Created document
  */
 const createDocument = async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id }) => {
-  validateDocumentId(document_id);
-  validateApartmentId(apartment_id);
-  validateTemplateName(template_name);
+  validateUUID(document_id, 'document_id');
+  validateUUID(apartment_id, 'apartment_id');
+  validateNonEmptyString(template_name, 'template name');
   validateTemplateFields(template_fields);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
 
   return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, saas_tenant_id });
 };
@@ -155,8 +155,8 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
  * @returns {Promise<Object>} Document data
  */
 const getDocument = async ({ document_id, saas_tenant_id }) => {
-  validateDocumentId(document_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(document_id, 'document_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
 
   return await gwData.getDocument({ document_id, saas_tenant_id });
 };
@@ -169,8 +169,8 @@ const getDocument = async ({ document_id, saas_tenant_id }) => {
  * @returns {Promise<Array>} List of documents
  */
 const getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
-  validateApartmentId(apartment_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(apartment_id, 'apartment_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
 
   return await gwData.getApartmentDocuments({ apartment_id, saas_tenant_id });
 };
@@ -183,8 +183,8 @@ const getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
  * @returns {Promise<Array>} List of documents
  */
 const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
-  validateUserId(tenant_user_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(tenant_user_id, 'user_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
 
   return await gwData.getTenantDocuments({ tenant_user_id, saas_tenant_id });
 };
@@ -199,10 +199,10 @@ const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
  * @returns {Promise<Object>} Updated document
  */
 const updateDocument = async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
-  validateDocumentId(document_id);
+  validateUUID(document_id, 'document_id');
   validateTemplateFields(template_fields);
-  validateSaaSTenantId(saas_tenant_id);
-  if (tenant_user_id) validateUserId(tenant_user_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
+  if (tenant_user_id) validateUUID(tenant_user_id, 'user_id');
 
   return await gwData.updateDocument({ document_id, template_fields, saas_tenant_id, tenant_user_id });
 };
@@ -215,28 +215,54 @@ const updateDocument = async ({ document_id, template_fields, saas_tenant_id, te
  * @returns {Promise<string>} ID of the deleted document
  */
 const deleteDocument = async ({ document_id, saas_tenant_id }) => {
-  validateDocumentId(document_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(document_id, 'document_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
 
   return await gwData.deleteDocument({ document_id, saas_tenant_id });
 };
 
+/**
+ * Creates a new activity in the system
+ * @param {Object} params
+ * @param {string} params.activity_id - Unique identifier for the activity
+ * @param {string} params.apartment_id - ID of the apartment associated with the activity
+ * @param {string} params.description - Description of the activity
+ * @param {boolean} [params.pending_confirmation] - Whether the activity requires confirmation
+ * @param {string} params.saas_tenant_id - SaaS tenant identifier
+ * @returns {Promise<Object>} Created activity data
+ */
+const createActivity = logMiddleware('createActivity')(async ({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id }) => {
+  validateUUID(activity_id, 'activity_id');
+  validateUUID(apartment_id, 'apartment_id');
+  validateNonEmptyString(description, 'description');
+  validateUUID(saas_tenant_id, 'tenant_id');
+
+  return await gwData.createActivity({
+    activity_id,
+    apartment_id,
+    description,
+    pending_confirmation,
+    created_at: new Date().toISOString(),
+    saas_tenant_id,
+  });
+});
+
 // Cache wrapper functions
 const cache_getAllUsers = async ({ saas_tenant_id }) => {
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await cache.get('getAllUsers()', () => getAllUsers({ saas_tenant_id }));
 };
 
 const cache_getApartmentsOfLandlord = async ({ user_id, saas_tenant_id }) => {
-  validateUserId(user_id);
-  validateSaaSTenantId(saas_tenant_id);
+  validateUUID(user_id, 'user_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
   return await cache.get(`getApartmentsOfLandlord(${user_id})`, () => getApartmentsOfLandlord({ user_id, saas_tenant_id }));
 };
 
-const cache_getPayments = async ({ apartment_id, saas_tenant_id }) => {
-  validateApartmentId(apartment_id);
-  validateSaaSTenantId(saas_tenant_id);
-  return await cache.get(`getPayments(${apartment_id})`, () => gwData.getPayments({ apartment_id, saas_tenant_id }));
+const cache_getApartmentActivity = async ({ apartment_id, saas_tenant_id }) => {
+  validateUUID(apartment_id, 'apartment_id');
+  validateUUID(saas_tenant_id, 'tenant_id');
+  return await cache.get(`getApartmentActivity(${apartment_id})`, () => gwData.getApartmentActivity({ apartment_id, saas_tenant_id }));
 };
 
 module.exports = {
@@ -255,78 +281,73 @@ module.exports = {
   getTenantDocuments,
   updateDocument,
   deleteDocument,
+  createActivity,
 
   // Cache interface
   cache: {
     getAllUsers: cache_getAllUsers,
     getApartmentsOfLandlord: cache_getApartmentsOfLandlord,
-    getPayments: cache_getPayments,
+    getApartmentActivity: cache_getApartmentActivity,
     invalidation: {
       getAllUsers: () => cache.invalidateGet('getAllUsers()'),
       getApartmentsOfLandlord: (user_id) => cache.invalidateGet(`getApartmentsOfLandlord(${user_id})`),
-      getPayments: (apartment_id) => cache.invalidateGet(`getPayments(${apartment_id})`),
+      getApartmentActivity: (apartment_id) => cache.invalidateGet(`getApartmentActivity(${apartment_id})`),
     },
   },
 };
 
-// Validation functions
-function validateUserId(user_id) {
-  if (!user_id || typeof user_id !== 'string' || user_id.trim().length === 0) {
-    throw new Error('Invalid user_id: Must be a non-empty string');
+// Generic validation functions
+
+/**
+ * Validates if the given ID is a valid UUID.
+ * @param {string} id - The ID to validate.
+ * @param {string} fieldName - The name of the field being validated.
+ * @throws {Error} If the ID is not a valid UUID.
+ */
+function validateUUID(id, fieldName) {
+  if (!id || typeof id !== 'string' || !id.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
+    throw new Error(`Invalid ${fieldName}: Must be a valid UUID`);
   }
 }
 
-function validateUserName(user_name) {
-  if (!user_name || typeof user_name !== 'string' || user_name.trim().length === 0) {
-    throw new Error('Invalid user_name: Must be a non-empty string');
+/**
+ * Validates if the given value is a non-empty string.
+ * @param {string} value - The value to validate.
+ * @param {string} fieldName - The name of the field being validated.
+ * @throws {Error} If the value is not a non-empty string.
+ */
+function validateNonEmptyString(value, fieldName) {
+  if (!value || typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`Invalid ${fieldName}: Must be a non-empty string`);
   }
 }
 
+/**
+ * Validates if the given email is in a valid format.
+ * @param {string} email - The email to validate.
+ * @throws {Error} If the email is not in a valid format.
+ */
 function validateEmail(email) {
-  if (!email || typeof email !== 'string' || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-    throw new Error('Invalid email_address: Must be a valid email format');
+  if (!email || typeof email !== 'string' || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    throw new Error('Invalid email: Must be a valid email address');
   }
 }
 
-function validateSaaSTenantId(saas_tenant_id) {
-  if (!saas_tenant_id || typeof saas_tenant_id !== 'string' || saas_tenant_id.trim().length === 0) {
-    throw new Error('Invalid tenant_id: Must be a non-empty string');
-  }
-}
-
-function validateApartmentId(apartment_id) {
-  if (!apartment_id || typeof apartment_id !== 'string' || apartment_id.trim().length === 0) {
-    throw new Error('Invalid apartment_id: Must be a non-empty string');
-  }
-}
-
-function validateAmount(amount) {
+function validatePositiveInteger(amount) {
   if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
     throw new Error('Invalid amount: Must be a positive number');
   }
 }
 
 function validateRoomsCount(rooms_count) {
-  if (typeof rooms_count !== 'number' || isNaN(rooms_count) || rooms_count <= 0 || (rooms_count % 0.5 !== 0)) {
+  if (typeof rooms_count !== 'number' || isNaN(rooms_count) || rooms_count <= 0 || rooms_count % 0.5 !== 0) {
     throw new Error('Invalid rooms_count: Must be a positive number in increments of 0.5');
   }
 }
 
-function validateIsDisabled(is_disabled) {
-  if (typeof is_disabled !== 'boolean') {
-    throw new Error('Invalid is_disabled: Must be a boolean');
-  }
-}
-
-function validateDocumentId(document_id) {
-  if (!document_id || typeof document_id !== 'string') {
-    throw new Error('Invalid document ID');
-  }
-}
-
-function validateTemplateName(name) {
-  if (!name || typeof name !== 'string') {
-    throw new Error(`Invalid template name: ${name}`);
+function validateBoolean(value, fieldName) {
+  if (typeof value !== 'boolean') {
+    throw new Error(`Invalid ${fieldName}: Must be a boolean`);
   }
 }
 
@@ -448,19 +469,5 @@ function validateTemplateFields(fields) {
   // Validate based on template type
   if (fields.template_name === 'rental_agreement') {
     validateRentalAgreementFields(fields);
-  }
-}
-
-/**
- * Validates a phone number
- * @param {string} phone_number - Phone number to validate
- * @throws {Error} If phone number is invalid
- */
-function validatePhoneNumber(phone_number) {
-  if (phone_number && typeof phone_number !== 'string') {
-    throw new Error('Phone number must be a string');
-  }
-  if (phone_number && !phone_number.match(/^\+?[1-9]\d{1,14}$/)) {
-    throw new Error('Invalid phone number format. Must follow E.164 format (e.g., +972501234567)');
   }
 }

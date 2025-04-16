@@ -4,7 +4,7 @@ import { bindActionCreators, Dispatch } from 'redux';
 import { IAppState } from '../redux/store/types';
 import { ICreateCommand, IReadCommand, IUpdateCommand, IDeleteCommand, CommandType } from '../redux/crud/types';
 import { IApartment, IUpdateApartmentParams } from '../redux/apartments/types';
-import { IReadTransactionParams } from '../redux/payments/types';
+import { IReadActivityParams } from '../redux/activity/types';
 import { IReadAnalyticsParams } from '../redux/analytics/types';
 import { setMenuSelectedPageAction, toggleMenuAction } from '../redux/menu/actions';
 import { setUserTypeAction, logoutUserAction, loginWithGoogleAction } from '../redux/auth/actions';
@@ -17,7 +17,7 @@ import {
   deleteApartmentAction,
   setApartmentConfirmedByBackendAction,
 } from '../redux/apartments/actions';
-import { setPaymentsAction, addTransactionAction, setTransactionConfirmedByBackendAction, prepareReadPaymentsCommandAction } from '../redux/payments/actions';
+import { setActivityAction, addActivityAction, setActivityConfirmedByBackendAction, prepareReadActivityCommandAction } from '../redux/activity/actions';
 import appConfigData from '../appConfig.json';
 import { Network } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -103,8 +103,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
         case 'apartments' as CommandType:
           upload({ command: { type: 'create', params: { apartments: createCommand.params } } });
           break;
-        case 'payments' as CommandType:
-          upload({ command: { type: 'create', params: { payments: createCommand.params } } });
+        case 'activity' as CommandType:
+          upload({ command: { type: 'create', params: { activity: createCommand.params } } });
           break;
       }
     }
@@ -113,9 +113,9 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     //-----------------------------------------
     if (readCommand && readCommand !== prevProps.readCommand) {
       switch (readCommand.type) {
-        case 'payments' as CommandType:
-          const transactionParams = readCommand.params as IReadTransactionParams;
-          upload({ command: { type: 'read', params: { payments: { apartment_id: transactionParams.apartment_id } } } });
+        case 'activity' as CommandType:
+          const activityParams = readCommand.params as IReadActivityParams;
+          upload({ command: { type: 'read', params: { activity: { apartment_id: activityParams.apartment_id } } } });
           break;
         case 'analytics':
           const analyticsParams = readCommand.params as IReadAnalyticsParams;
@@ -178,8 +178,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       <div
         className='network-container'
         title={isWsConnected ? `Connected, last connections update on ${lastConnectionsTimestamp}` : 'Disconnected'}
-        onClick={() => this.props.toggleConnectionsAction(!showConnections)}
-      >
+        onClick={() => this.props.toggleConnectionsAction(!showConnections)}>
         <div className='left-column'>
           <Network size={20} className={`network-icon ${isWsConnected ? 'connected' : 'disconnected'}`} />
           <span className='last-connections-timestamp'>{lastConnectionsTimestamp}</span>
@@ -303,37 +302,18 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       if (isNewApartment) this.props.addApartmentAction({ ...newReceivedApartment });
       else this.props.setApartmentConfirmedByBackendAction(newReceivedApartment.apartment_id, newReceivedApartment.updated_at as string);
       // toast(`New apartment ${dataCreated.apartments.apartment_id} is pending confirmation`, { autoClose: this.props.isLandlord ? 10000 : 5000 });
-    } else if (dataCreated.payments) {
-      const newReceivedTransaction = dataCreated.payments;
-      const isNewTransaction = !this.props.payments.find((transaction) => transaction.id === newReceivedTransaction.id);
-      if (isNewTransaction) this.props.addTransactionAction({ ...newReceivedTransaction });
-      else this.props.setTransactionConfirmedByBackendAction(newReceivedTransaction.id);
-
-      // // Balance updates:
-      // const apartment = dataCreated.payments.apartment;
-      // if (apartment) {
-      //   // 'single-apartment' aaa function (deposit, withdraw):
-      //   this.props.setApartmentStateAction({ ...apartment });
-      //   this.props.setCurrentApartmentAction(apartment.apartment_id);
-      //   this.props.prepareReadPaymentsCommandAction(apartment.apartment_id);
-      // } else {
-      //   // 'transfer' aaa function, between two apartments:
-      //   const { withdrawResult, depositResult } = dataCreated.payments.apartments;
-      //   this.props.setApartmentStateAction({ ...withdrawResult });
-      //   this.props.setApartmentStateAction({ ...depositResult });
-
-      //   const apartmentIdToFocus =
-      //     this.props.apartments.find((apartment) => apartment.apartment_id === withdrawResult.apartment_id)?.apartment_id ?? depositResult.apartment_id;
-      //   this.props.setCurrentApartmentAction(apartmentIdToFocus);
-      //   this.props.prepareReadPaymentsCommandAction(apartmentIdToFocus);
-      // }
+    } else if (dataCreated.activity) {
+      const newReceivedActivity = dataCreated.activity;
+      const isNewActivity = !this.props.activity.find((activity) => activity.activity_id === newReceivedActivity.activity_id);
+      if (isNewActivity) this.props.addActivityAction({ ...newReceivedActivity });
+      else this.props.setActivityConfirmedByBackendAction(newReceivedActivity.activity_id);
     }
   }
 
   // CRUD: event containing Read data
   private handleDataRead(dataRead: any) {
     if (dataRead.apartments) this.props.setApartmentsAction(dataRead.apartments);
-    if (dataRead.payments) this.props.setPaymentsAction(dataRead.payments);
+    if (dataRead.activity) this.props.setActivityAction(dataRead.activity);
   }
 
   // CRUD: event containing Updated data
@@ -389,11 +369,11 @@ interface IWebSocketProps {
   setApartmentStateAction: typeof setApartmentStateAction;
   deleteApartmentAction: typeof deleteApartmentAction;
   setApartmentConfirmedByBackendAction: typeof setApartmentConfirmedByBackendAction;
-  addTransactionAction: typeof addTransactionAction;
-  prepareReadPaymentsCommandAction: typeof prepareReadPaymentsCommandAction;
-  setPaymentsAction: typeof setPaymentsAction;
-  setTransactionConfirmedByBackendAction: typeof setTransactionConfirmedByBackendAction;
-  payments: any[];
+  addActivityAction: typeof addActivityAction;
+  prepareReadActivityCommandAction: typeof prepareReadActivityCommandAction;
+  setActivityAction: typeof setActivityAction;
+  setActivityConfirmedByBackendAction: typeof setActivityConfirmedByBackendAction;
+  activity: any[];
   menuSelectedPage: string | null;
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   currentApartmentId: string | null;
@@ -421,7 +401,7 @@ const mapStateToProps = (state: IAppState) => ({
   deleteCommand: state.crud.deleteCommand,
   apartments: state.apartments.apartments,
   currentApartmentId: state.apartments.currentApartmentId,
-  payments: state.payments.payments,
+  activity: state.activity.activity,
   menuSelectedPage: state.menu.menuSelectedPage, // TODO
 });
 
@@ -439,10 +419,10 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setApartmentStateAction,
       deleteApartmentAction,
       setApartmentConfirmedByBackendAction,
-      addTransactionAction,
-      prepareReadPaymentsCommandAction,
-      setPaymentsAction,
-      setTransactionConfirmedByBackendAction,
+      addActivityAction,
+      prepareReadActivityCommandAction,
+      setActivityAction,
+      setActivityConfirmedByBackendAction,
       setUserTypeAction,
       logoutUserAction,
       loginWithGoogleAction,

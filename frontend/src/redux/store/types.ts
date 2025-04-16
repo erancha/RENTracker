@@ -7,7 +7,7 @@ import { IAuthState } from '../auth/types';
 import { IWebsocketsState } from '../websockets/types';
 import { ICrudState } from '../crud/types';
 import { IApartmentsState } from '../apartments/types';
-import { PaymentsState as IPaymentsState } from '../payments/types';
+import { ActivityState as IActivityState } from '../activity/types';
 import { IUsersState } from '../users/types';
 import { IDocumentsState } from '../documents/types';
 
@@ -21,7 +21,7 @@ export interface IAppState {
   websockets: IWebsocketsState;
   crud: ICrudState;
   apartments: IApartmentsState;
-  payments: IPaymentsState;
+  activity: IActivityState;
   users: IUsersState;
   documents: IDocumentsState;
 }

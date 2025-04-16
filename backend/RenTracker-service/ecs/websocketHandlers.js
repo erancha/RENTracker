@@ -54,7 +54,7 @@ const onWebsocketConnect = async (socket, request) => {
       ...(await handleRead({
         commandParams: {
           apartments: { all: isLandlord },
-          payments: { fromFirstApartment: true },
+          activity: { fromFirstApartment: true },
         },
         connectedUserId: currentUserId,
       })),

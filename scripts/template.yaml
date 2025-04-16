@@ -355,10 +355,11 @@ Resources:
           # LANDLORDS_TABLE_NAME: !Ref LandlordsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
           # TENANTS_TABLE_NAME: !Ref TenantsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
+          ACTIVITY_TABLE_NAME: !Ref ActivityTable
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-          DB_NAME: !Ref CrudDatabaseName
-          DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-          DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+          # DB_NAME: !Ref CrudDatabaseName
+          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
       VpcConfig:
         SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
         SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
@@ -407,10 +408,11 @@ Resources:
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ADMIN_USER_ID: !Ref AdminUserId
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
+          ACTIVITY_TABLE_NAME: !Ref ActivityTable
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-          DB_NAME: !Ref CrudDatabaseName
-          DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-          DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+          # DB_NAME: !Ref CrudDatabaseName
+          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
+          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
           ENABLE_ENHANCED_LOGGING: false
           DISABLE_APP_CACHE: !Ref DisableAppCache
       VpcConfig:
@@ -480,6 +482,7 @@ Resources:
                   - dynamodb:Query
                 Resource:
                   - !Sub '${ApartmentsTable.Arn}/index/SaaSTenantUpdatedIndex'
+                  - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
               # - Effect: Allow
               #   Action:
               #     - dynamodb:BatchGetItem
@@ -514,6 +517,12 @@ Resources:
                   - dynamodb:DeleteItem
                 Resource:
                   - !GetAtt ApartmentsTable.Arn
+                  - !GetAtt ActivityTable.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
       # - PolicyName: LambdaRDSAccessPolicy
       #   PolicyDocument:
       #     Version: '2012-10-17'
@@ -794,7 +803,7 @@ Resources:
                 Action:
                   - dynamodb:Query
                 Resource:
-                  - !Sub '${DocumentsTable.Arn}/index/SaaSTenantUpdatedIndex'
+                  - !Sub '${DocumentsTable.Arn}/index/ApartmentUpdatedIndex'
                   - !Sub '${DocumentsTable.Arn}/index/TenantUpdatedIndex'
               - Effect: Allow
                 Action:
@@ -929,19 +938,21 @@ Resources:
       AttributeDefinitions:
         - AttributeName: document_id
           AttributeType: S
-        - AttributeName: saas_tenant_id
+        - AttributeName: apartment_id
           AttributeType: S
         - AttributeName: updated_at
           AttributeType: S
         - AttributeName: tenant_user_id
           AttributeType: S
+        # - AttributeName: saas_tenant_id
+        #   AttributeType: S
       KeySchema:
         - AttributeName: document_id
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: SaaSTenantUpdatedIndex
+        - IndexName: ApartmentUpdatedIndex
           KeySchema:
-            - AttributeName: saas_tenant_id
+            - AttributeName: apartment_id
               KeyType: HASH # Partition key
             - AttributeName: updated_at
               KeyType: RANGE # Sort key
@@ -955,27 +966,51 @@ Resources:
               KeyType: RANGE # Sort key
           Projection:
             ProjectionType: ALL
+        # - IndexName: SaaSTenantUpdatedIndex
+        #   KeySchema:
+        #     - AttributeName: saas_tenant_id
+        #       KeyType: HASH # Partition key
+        #     - AttributeName: updated_at
+        #       KeyType: RANGE # Sort key
+        #   Projection:
+        #     ProjectionType: ALL
 
-  # PaymentsTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     TableName: !Sub ${AWS::StackName}-Payments
-  #     BillingMode: PAY_PER_REQUEST
-  #     AttributeDefinitions:
-  #       - AttributeName: payment_id
-  #         AttributeType: S
-  #       - AttributeName: saas_tenant_id
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: payment_id
-  #         KeyType: HASH # Partition key
-  #     GlobalSecondaryIndexes:
-  #       - IndexName: SaaSTenantIndex
-  #         KeySchema:
-  #           - AttributeName: saas_tenant_id
-  #             KeyType: HASH # Partition key
-  #         Projection:
-  #           ProjectionType: ALL
+  ActivityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-Activity
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: activity_id
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: S
+        - AttributeName: apartment_id
+          AttributeType: S
+        # - AttributeName: saas_tenant_id
+        #   AttributeType: S
+      KeySchema:
+        - AttributeName: activity_id
+          KeyType: HASH # Partition key
+        - AttributeName: created_at
+          KeyType: RANGE # Sort key
+      GlobalSecondaryIndexes:
+        - IndexName: ApartmentCreatedIndex
+          KeySchema:
+            - AttributeName: apartment_id
+              KeyType: HASH # Partition key
+            - AttributeName: created_at
+              KeyType: RANGE # Sort key
+          Projection:
+            ProjectionType: ALL
+        # - IndexName: SaaSTenantCreatedIndex
+        #   KeySchema:
+        #     - AttributeName: saas_tenant_id
+        #       KeyType: HASH # Partition key
+        #     - AttributeName: created_at
+        #       KeyType: RANGE # Sort key
+        #   Projection:
+        #     ProjectionType: ALL
 
   #==========================================================================================================================================================
   # RDS

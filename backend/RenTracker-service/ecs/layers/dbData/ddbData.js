@@ -9,6 +9,7 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 // const TENANTS_TABLE_NAME = process.env.TENANTS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
 const APARTMENTS_TABLE_NAME = process.env.APARTMENTS_TABLE_NAME;
 const DOCUMENTS_TABLE_NAME = process.env.DOCUMENTS_TABLE_NAME;
+const ACTIVITY_TABLE_NAME = process.env.ACTIVITY_TABLE_NAME;
 
 /**
  * Creates or updates a user in DynamoDB
@@ -106,10 +107,10 @@ const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(asy
         KeyConditionExpression: 'saas_tenant_id = :saas_tenant_id',
         FilterExpression: 'landlord_id = :user_id',
         ExpressionAttributeValues: {
-          ':saas_tenant_id': saas_tenant_id,
           ':user_id': user_id,
+          ':saas_tenant_id': saas_tenant_id,
         },
-        ScanIndexForward: false, // This will sort in descending order by updated_at
+        ScanIndexForward: false, // Sort in descending order by updated_at
       })
     );
     return Items || [];
@@ -268,14 +269,14 @@ const getApartmentDocuments = logMiddleware('ddb_getApartmentDocuments')(async (
     const { Items } = await ddbDocClient.send(
       new QueryCommand({
         TableName: DOCUMENTS_TABLE_NAME,
-        IndexName: 'SaaSTenantUpdatedIndex',
-        KeyConditionExpression: 'saas_tenant_id = :saas_tenant_id',
-        FilterExpression: 'apartment_id = :apartment_id',
+        IndexName: 'ApartmentUpdatedIndex',
+        KeyConditionExpression: 'apartment_id = :apartment_id',
         ExpressionAttributeValues: {
-          ':saas_tenant_id': saas_tenant_id,
           ':apartment_id': apartment_id,
+          ':saas_tenant_id': saas_tenant_id,
         },
-        ScanIndexForward: false, // This will sort in descending order by updated_at
+        FilterExpression: 'saas_tenant_id = :saas_tenant_id',
+        ScanIndexForward: false, // Sort in descending order by updated_at
       })
     );
     return Items || [];
@@ -334,8 +335,8 @@ const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id,
         ExpressionAttributeValues: {
           ':fields': template_fields,
           ':now': new Date().toISOString(),
-          ':saas_tenant_id': saas_tenant_id,
           ...(tenant_user_id && { ':tenant_user_id': tenant_user_id }),
+          ':saas_tenant_id': saas_tenant_id,
         },
         ReturnValues: 'ALL_NEW',
       })
@@ -360,9 +361,7 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
       document_id,
     },
     ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
-    ExpressionAttributeValues: {
-      ':saas_tenant_id': saas_tenant_id,
-    },
+    ExpressionAttributeValues: { ':saas_tenant_id': saas_tenant_id },
     ReturnValues: 'ALL_OLD',
   });
 
@@ -374,6 +373,73 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
     return result.Attributes.document_id;
   } catch (error) {
     console.error('Error deleting document:', error);
+    throw error;
+  }
+});
+
+/**
+ * Creates a new activity in DynamoDB
+ * @param {Object} params
+ * @param {string} params.activity_id - Unique identifier for the activity
+ * @param {string} params.apartment_id - ID of the apartment associated with the activity
+ * @param {string} params.description - Description of the activity
+ * @param {boolean} [params.pending_confirmation] - Whether the activity requires confirmation
+ * @param {string} params.saas_tenant_id - SaaS tenant identifier
+ * @param {string} params.created_at - ISO timestamp of activity creation
+ * @returns {Promise<Object>} Created activity data
+ */
+const createActivity = logMiddleware('ddb_createActivity')(
+  async ({ activity_id, apartment_id, description, pending_confirmation, saas_tenant_id, created_at }) => {
+    try {
+      const item = {
+        activity_id,
+        apartment_id,
+        description,
+        pending_confirmation,
+        created_at,
+        saas_tenant_id,
+      };
+
+      await ddbDocClient.send(
+        new PutCommand({
+          TableName: ACTIVITY_TABLE_NAME,
+          Item: item,
+        })
+      );
+
+      return item;
+    } catch (error) {
+      console.error('Error in ddb_createActivity:', error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Retrieves activity data for a specific apartment from DynamoDB
+ * @param {Object} params
+ * @param {string} params.apartment_id - ID of the apartment
+ * @param {string} params.saas_tenant_id - SaaS tenant ID
+ * @returns {Promise<Object>} Activity data
+ */
+const getApartmentActivity = logMiddleware('ddb_getApartmentActivity')(async ({ apartment_id, saas_tenant_id }) => {
+  try {
+    const { Items } = await ddbDocClient.send(
+      new QueryCommand({
+        TableName: ACTIVITY_TABLE_NAME,
+        IndexName: 'ApartmentCreatedIndex',
+        KeyConditionExpression: 'apartment_id = :apartment_id',
+        ExpressionAttributeValues: {
+          ':apartment_id': apartment_id,
+          ':saas_tenant_id': saas_tenant_id,
+        },
+        FilterExpression: 'saas_tenant_id = :saas_tenant_id',
+        ScanIndexForward: false, // Sort in descending order by created_at
+      })
+    );
+    return Items || [];
+  } catch (error) {
+    console.error('Error in ddb_getApartmentActivity:', error);
     throw error;
   }
 });
@@ -390,4 +456,6 @@ module.exports = {
   getTenantDocuments,
   updateDocument,
   deleteDocument,
+  createActivity,
+  getApartmentActivity,
 };

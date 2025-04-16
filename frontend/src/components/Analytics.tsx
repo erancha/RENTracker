@@ -116,7 +116,7 @@ class Analytics extends Component<IAnalyticsProps> {
             <YAxis tick={CustomYAxisTick} />
             <Tooltip />
             <Legend />
-            <Bar dataKey='totalAmount' name='Total payments amount' barSize={barSize} label={renderBarLabel} isAnimationActive={false}>
+            <Bar dataKey='totalAmount' name='Total activity amount' barSize={barSize} label={renderBarLabel} isAnimationActive={false}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               ))}
@@ -143,7 +143,7 @@ class Analytics extends Component<IAnalyticsProps> {
             <Line
               type='monotone'
               dataKey='count'
-              name='Total payments count'
+              name='Total activity count'
               stroke={colors[0]}
               strokeWidth={2}
               label={renderLineLabel}
@@ -157,7 +157,7 @@ class Analytics extends Component<IAnalyticsProps> {
 }
 
 const mapStateToProps = (state: IAppState) => ({
-  analyticsData: state.payments.analyticsData,
+  analyticsData: state.activity.analyticsData,
 });
 
 export default connect(mapStateToProps)(Analytics);

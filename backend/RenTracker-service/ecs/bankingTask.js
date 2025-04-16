@@ -187,79 +187,21 @@ crudRouter.get('/balance/:apartmentId', async (req, res) => {
   }
 });
 
-// Deposit
-crudRouter.post('/deposit', async (req, res) => {
-  const { amount, apartmentId } = req.body;
-  if (!apartmentId || amount === undefined) return res.status(400).json({ message: 'Apartment ID and Amount are required' });
-
-  try {
-    const result = await dbData.deposit(undefined, amount, apartmentId, process.env.SAAS_TENANT_ID);
-    if (!result) return res.status(404).json({ message: 'Apartment not found' });
-    res.json({
-      message: 'Deposit successful',
-      payload: result,
-    });
-  } catch (error) {
-    req.error = error;
-    res.status(500).json({ message: 'Error processing deposit' });
-  }
-});
-
-// Withdraw
-crudRouter.post('/withdraw', async (req, res) => {
-  const { amount, apartmentId } = req.body;
-  if (!apartmentId || amount === undefined) return res.status(400).json({ message: 'Apartment ID and Amount are required' });
-
-  try {
-    const result = await dbData.withdraw(undefined, amount, apartmentId, process.env.SAAS_TENANT_ID);
-    if (!result) return res.status(404).json({ message: 'Apartment not found' });
-    res.json({
-      message: 'Withdraw successful',
-      payload: result,
-    });
-  } catch (error) {
-    req.error = error;
-    res.status(500).json({ message: 'Error processing withdrawal' });
-  }
-});
-
-// Transfer (between two apartments)
-crudRouter.post('/transfer', async (req, res) => {
-  const { amount, fromApartmentId, toApartmentId } = req.body;
-  if (!fromApartmentId || !toApartmentId || amount === undefined)
-    return res.status(400).json({ message: 'From Apartment ID, To Apartment ID, and Amount are required' });
-
-  try {
-    const transferResult = await dbData.transfer(undefined, amount, fromApartmentId, toApartmentId, process.env.SAAS_TENANT_ID);
-    if (!transferResult.apartments.withdrawResult) return res.status(404).json({ message: 'From Apartment not found' });
-    else if (!transferResult.apartments.depositResult) return res.status(404).json({ message: 'To Apartment not found' });
-    else {
-      res.json({
-        message: 'Transfer successful',
-        payload: transferResult,
-      });
-    }
-  } catch (error) {
-    req.error = error;
-    res.status(500).json({ message: 'Error processing transfer' });
-  }
-});
-
-// Get all payments for an apartment
-crudRouter.get('/payments/:apartmentId', async (req, res) => {
+// Get all activity for an apartment
+crudRouter.get('/activity/:apartmentId', async (req, res) => {
   const { apartmentId } = req.params;
 
   if (!apartmentId) return res.status(400).json({ message: 'Apartment ID is required' });
 
   try {
-    const payments = await dbData.getPayments(apartmentId, process.env.SAAS_TENANT_ID);
+    const activity = await dbData.cache.getApartmentActivity({ apartment_id: apartmentId, saas_tenant_id: process.env.SAAS_TENANT_ID });
     res.json({
-      message: 'Payments retrieved successfully',
-      payload: payments,
+      message: 'Activity retrieved successfully',
+      payload: activity,
     });
   } catch (error) {
     req.error = error;
-    res.status(500).json({ message: 'Error retrieving payments' });
+    res.status(500).json({ message: 'Error retrieving activity' });
   }
 });
 

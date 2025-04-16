@@ -20,13 +20,13 @@ import {
   setApartmentFormErrorsAction,
   resetApartmentFormAction,
 } from '../redux/apartments/actions';
-import { clearPaymentsAction, prepareReadPaymentsCommandAction } from '../redux/payments/actions';
+import { clearActivityAction, prepareReadActivityCommandAction } from '../redux/activity/actions';
 import { Trash2, Pencil, FileText, Copy, Plus } from 'lucide-react';
 import { filterAndSortApartments } from '../utils/utils';
 import { ANALYTICS_VIEW } from 'redux/menu/types';
 import { ApartmentForm } from './ApartmentForm';
 import ApartmentDocumentList from './ApartmentDocumentList';
-import Payments from './Payments';
+import Activity from './Activity';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -85,39 +85,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   }
 
   /**
-   * Filters and sorts apartments based on current criteria
-   * @returns {IApartment[]} Filtered and sorted list of apartments
-   */
-  getFilteredApartments = (): IApartment[] => {
-    return filterAndSortApartments(this.props.apartments);
-  };
-
-  /**
-   * Renders the documents/payments toggle button
-   * @returns {JSX.Element} Button with appropriate styling based on state
-   */
-  renderDocumentsToggleButton = () => (
-    <button
-      onClick={this.handleShowDocuments}
-      className={`action-button ${this.state.showDocuments ? 'documents' : 'payments'}`}
-      title={this.state.showDocuments ? 'Show Payments' : 'Show Rental Agreements'}
-    >
-      <FileText />
-    </button>
-  );
-
-  /**
-   * Toggles between documents and payments view
-   */
-  handleShowDocuments = () => {
-    this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
-  };
-
-  handleShowPayments = () => {
-    this.setState({ showDocuments: false });
-  };
-
-  /**
    * Renders the component
    * @returns {JSX.Element} The rendered component
    */
@@ -162,8 +129,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     userType === UserType.Landlord ? ' isLandlord' : ''
                   }${apartment.apartment_id === currentApartmentId ? ' current' : ''}`}
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
-                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
-                >
+                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}>
                   <div className='apartment-id' title='apartment-id'>
                     {apartment.apartment_id}
                   </div>
@@ -211,13 +177,45 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
             {showDocuments ? (
               <div className='documents-container'>{currentApartmentId && <ApartmentDocumentList key={currentApartmentId} />}</div>
             ) : (
-              <Payments />
+              <Activity />
             )}
           </>
         )}
       </div>
     );
   }
+
+  /**
+   * Filters and sorts apartments based on current criteria
+   * @returns {IApartment[]} Filtered and sorted list of apartments
+   */
+  getFilteredApartments = (): IApartment[] => {
+    return filterAndSortApartments(this.props.apartments);
+  };
+
+  /**
+   * Renders the documents/activity toggle button
+   * @returns {JSX.Element} Button with appropriate styling based on state
+   */
+  renderDocumentsToggleButton = () => (
+    <button
+      onClick={this.handleShowDocuments}
+      className='action-button documents activity'
+      title={this.state.showDocuments ? 'Show Activity' : 'Show Rental Agreements'}>
+      <FileText />
+    </button>
+  );
+
+  /**
+   * Toggles between documents and activity view
+   */
+  handleShowDocuments = () => {
+    this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
+  };
+
+  handleShowActivity = () => {
+    this.setState({ showDocuments: false });
+  };
 
   /**
    * Creates a new apartment if form validation passes
@@ -239,7 +237,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
       });
       this.props.resetApartmentFormAction();
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearPaymentsAction();
+      this.props.clearActivityAction();
     } else {
       this.props.setApartmentFormErrorsAction(errors);
     }
@@ -254,22 +252,23 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     const errors: Record<string, string> = {};
 
     if (!values.address) errors.address = 'Address is required.';
-    if (!values.rooms_count || values.rooms_count <= 0 || values.rooms_count > 20 || (values.rooms_count % 0.5 !== 0)) errors.rooms_count = 'Valid rooms count is required (in increments of 0.5).';
+    if (!values.rooms_count || values.rooms_count <= 0 || values.rooms_count > 20 || values.rooms_count % 0.5 !== 0)
+      errors.rooms_count = 'Valid rooms count is required (in increments of 0.5).';
     if (!values.rent_amount || values.rent_amount <= 0) errors.rent_amount = 'Valid rent amount is required.';
 
     return errors;
   };
 
   /**
-   * Handles apartment selection and loads its payments
+   * Handles apartment selection and loads its activity
    * @param {string} apartment_id - ID of the selected apartment
    */
   handleApartmentClick = (apartment_id: string) => {
     // Only proceed if the apartment_id is different from current
     if (apartment_id !== this.props.currentApartmentId) {
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearPaymentsAction();
-      this.props.prepareReadPaymentsCommandAction(apartment_id);
+      this.props.clearActivityAction();
+      this.props.prepareReadActivityCommandAction(apartment_id);
     }
   };
 
@@ -371,8 +370,8 @@ interface IApartmentsProps {
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   setNoApartmentsNotifiedAction: typeof setNoApartmentsNotifiedAction;
   prepareCreateApartmentCommandAction: typeof prepareCreateApartmentCommandAction;
-  clearPaymentsAction: typeof clearPaymentsAction;
-  prepareReadPaymentsCommandAction: typeof prepareReadPaymentsCommandAction;
+  clearActivityAction: typeof clearActivityAction;
+  prepareReadActivityCommandAction: typeof prepareReadActivityCommandAction;
   addApartmentAction: typeof addApartmentAction;
   setCurrentApartmentAction: typeof setCurrentApartmentAction;
   setApartmentStateAction: typeof setApartmentStateAction;
@@ -404,8 +403,8 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     {
       setMenuSelectedPageAction,
       prepareCreateApartmentCommandAction,
-      clearPaymentsAction,
-      prepareReadPaymentsCommandAction,
+      clearActivityAction,
+      prepareReadActivityCommandAction,
       setNoApartmentsNotifiedAction,
       addApartmentAction,
       setCurrentApartmentAction,

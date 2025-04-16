@@ -200,27 +200,6 @@ function Execute-Requests {
                     ExpectedResponse = "{`"message`":`"Apartments retrieved successfully`",`"payload`":[{`"apartment_id`":`"$toApartmentId`",`"balance`":`"0.00`",`"is_disabled`":false},{`"apartment_id`":`"$apartmentId`",`"balance`":`"0.00`",`"is_disabled`":false}]}"
                 },
                 @{
-                    Name             = "Deposit"
-                    Method           = "POST"
-                    Url              = "/api/crud/deposit"
-                    Body             = @{ "amount" = 1000; "apartmentId" = $apartmentId } | ConvertTo-Json
-                    ExpectedResponse = "{`"message`":`"Deposit successful`",`"payload`":{`"aaaFunction`":`"deposit`",`"amount`":1000,`"apartment`":{`"apartment_id`":`"$apartmentId`",`"balance`":`"1000.00`"}}}"
-                },
-                @{
-                    Name             = "Withdraw"
-                    Method           = "POST"
-                    Url              = "/api/crud/withdraw"
-                    Body             = @{ "amount" = 500; "apartmentId" = $apartmentId } | ConvertTo-Json
-                    ExpectedResponse = "{`"message`":`"Withdraw successful`",`"payload`":{`"aaaFunction`":`"withdraw`",`"amount`":500,`"apartment`":{`"apartment_id`":`"$apartmentId`",`"balance`":`"500.00`"}}}"
-                },
-                @{
-                    Name             = "Transfer"
-                    Method           = "POST"
-                    Url              = "/api/crud/transfer"
-                    Body             = @{ "amount" = 200; "fromApartmentId" = $apartmentId; "toApartmentId" = $toApartmentId } | ConvertTo-Json
-                    ExpectedResponse = "{`"message`":`"Transfer successful`",`"payload`":{`"aaaFunction`":`"transfer`",`"amount`":200}}"
-                },
-                @{
                     Name             = "Get Balance for From Apartment"
                     Method           = "GET"
                     Url              = "/api/crud/balance/$apartmentId"
@@ -233,19 +212,18 @@ function Execute-Requests {
                     ExpectedResponse = "{`"message`":`"Balance retrieved successfully`",`"payload`":{`"apartmentId`":`"$toApartmentId`",`"balance`":`"200.00`"}}"
                 },
                 @{
-                    Name             = "Get Payments for Apartment"
+                    Name             = "Get Activity for Apartment"
                     Method           = "GET"
-                    Url              = "/api/crud/payments/$apartmentId"
+                    Url              = "/api/crud/activity/$apartmentId"
                     ExpectedResponse = '{
-                                            "message": "Payments retrieved successfully",
+                                            "message": "Activity retrieved successfully",
                                             "payload": [
                                                 {
                                                     "id": "regex:[0-9a-f-]+",
-                                                    "executed_at": "regex:\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z",
-                                                    "aaaFunction": "regex:deposit|withdraw|transfer",
-                                                    "amount": "regex:\\d+",
-                                                    "apartment_id": "regex:[0-9a-f-]+",
-                                                    "to_apartment_id": "regex:[0-9a-f-]+"
+                                                    "created_at": "regex:\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z",
+                                                    "status": "regex:deposit|withdraw|transfer",
+                                                    "descriptionAAA": "regex:\\.+",
+                                                    "apartment_id": "regex:[0-9a-f-]+"
                                                 }
                                             ]
                                         }'
@@ -335,7 +313,7 @@ else {
     Get-Job | Remove-Job
 }
 
-# Execute the initial requests again at the end, to get the number of created tables and apartments ("Database checked/created, table created, record added, and deleted successfully. Current records counts: 2 apartments, 4 payments.")
+# Execute the initial requests again at the end, to get the number of created tables and apartments ("Database checked/created, table created, record added, and deleted successfully. Current records counts: 2 apartments, 4 activity.")
 Execute-Requests -loadBalancerURL $loadBalancerURL -requests $initRequests
 
 $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime

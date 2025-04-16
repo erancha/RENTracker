@@ -70,7 +70,7 @@ exports.handler = async (event = {}) => {
     }
     console.log('Test user created successfully');
 
-    // Create rentTracking tables (apartments and payments)
+    // Create rentTracking tables (apartments and activity)
     const rentTrackingTablesResult = await createRentTrackingTables(dbClient);
     if (!rentTrackingTablesResult.success) {
       throw rentTrackingTablesResult.error;

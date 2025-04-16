@@ -172,49 +172,49 @@ const getAllApartments = logMiddleware('getAllApartments')(async (tenant_id) => 
   }
 });
 
-// Get all payments for an apartment
-const getPayments = logMiddleware('getPayments')(async (apartment_id, tenant_id) => {
+// Get all activity for an apartment
+const getApartmentActivity = logMiddleware('getApartmentActivity')(async (apartment_id, tenant_id) => {
   let pgClient;
   try {
     pgClient = await pgPool.connect();
     const result = await pgClient.query(
-      'SELECT id,executed_at,transaction FROM apartmentPayments WHERE apartment_id = $1 AND tenant_id = $2 ORDER BY executed_at DESC',
+      'SELECT id,created_at,activity FROM apartmentActivity WHERE apartment_id = $1 AND tenant_id = $2 ORDER BY created_at DESC',
       [apartment_id, tenant_id]
     );
 
     return result.rows.map((row) => {
-      const decryptedTransaction = row.transaction;
-      const transactionObject = JSON.parse(decryptedTransaction);
+      const decryptedActivity = row.activity;
+      const activityObject = JSON.parse(decryptedActivity);
       return {
         id: row.id,
-        executed_at: row.executed_at,
-        ...transactionObject,
+        created_at: row.created_at,
+        ...activityObject,
       };
     });
   } catch (error) {
-    console.error('Error getting payments', error);
+    console.error('Error getting activity', error);
     throw error;
   } finally {
     if (pgClient) pgClient.release();
   }
 });
 
-// SQS - queueing executed payments data
+// SQS - queueing saved activity data
 const sqsClient = new SQSClient({ region: process.env.APP_AWS_REGION });
 
-async function enqueueExecutedTransaction(messageBody) {
-  const EXECUTED_TRANSACTIONS_QUEUE_URL = process.env.EXECUTED_TRANSACTIONS_QUEUE_URL;
+async function enqueueSavedActivity(messageBody) {
+  const EXECUTED_ACTIVITY_QUEUE_URL = process.env.EXECUTED_ACTIVITY_QUEUE_URL;
   try {
     const data = await sqsClient.send(
       new SendMessageCommand({
-        QueueUrl: EXECUTED_TRANSACTIONS_QUEUE_URL,
+        QueueUrl: EXECUTED_ACTIVITY_QUEUE_URL,
         MessageGroupId: 'Default',
         MessageBody: JSON.stringify({ ...messageBody, timeStamp: new Date().toISOString() }),
       })
     );
     return data;
   } catch (error) {
-    console.error(`Error sending message to SQS queue ${EXECUTED_TRANSACTIONS_QUEUE_URL}:`, error);
+    console.error(`Error sending message to SQS queue ${EXECUTED_ACTIVITY_QUEUE_URL}:`, error);
     throw error;
   }
 }
@@ -229,6 +229,6 @@ module.exports = {
   getAllApartments,
   disposeClient,
   cache: {
-    getPayments,
+    getApartmentActivity,
   },
 };

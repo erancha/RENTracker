@@ -132,7 +132,7 @@ exports.handler = async (event) => {
           ...(await handleRead({
             commandParams: {
               apartments: isLandlordUser,
-              // payments: { fromFirstApartment: true },
+              activity: { fromFirstApartment: true },
             },
             connectedUserId: currentUserId,
           })),

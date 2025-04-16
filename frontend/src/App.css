@@ -439,7 +439,7 @@ body {
   background-color: #f0f0f0;
 }
 
-.payments-list {
+.activity-list {
   display: flex;
   flex-direction: column;
 }
@@ -531,6 +531,10 @@ body {
     }
   }
 
+  & .actions > .documents.activity {
+    animation: spin 1s ease-in 1; /* Spinning animation */
+  }
+
   > .details > div:not(.actions)::before,
   &.input > div:not(.actions)::before {
     content: attr(data-title);
@@ -545,7 +549,7 @@ body {
 }
 
 .card.apartment.onroute,
-.table-row.transaction.onroute {
+.table-row.activity.onroute {
   color: darkred;
   > div,
   > div > p,
@@ -595,15 +599,10 @@ body {
   color: gray;
 }
 
-.payments-container-header {
-  margin: 1rem 0 0 0.5rem;
-}
-
-.payments-container {
+.activity-container {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 10px;
   border-radius: 0.5rem;
 }
 
@@ -642,9 +641,8 @@ body {
   }
 }
 
-.payments-list {
+.activity-list {
   gap: 10px;
-  margin-top: 5px;
 }
 
 .table-header.documents,
@@ -653,10 +651,6 @@ body {
   grid-template-columns: 3fr 5fr 5fr minmax(12rem, 2fr);
   border-radius: 0.5rem;
   column-gap: 0.5rem;
-
-  &.no-actions {
-    grid-template-columns: 3fr 3fr 3fr;
-  }
 
   > .updated,
   > .period {
@@ -673,7 +667,7 @@ body {
 
 .card.apartment > div:not(.details, .input-and-error-container)::before,
 .table-row.document > div::before,
-.table-row.transaction > div::before {
+.table-row.activity > div::before {
   position: absolute;
   left: 5px;
   top: 2px;
@@ -684,17 +678,6 @@ body {
 
 .table-row.document #pdf {
   margin-left: 1rem;
-}
-
-.table-header.payments,
-.table-row.payment {
-  display: grid;
-  grid-template-columns: 3fr 3fr 4fr 6fr minmax(60px, 2fr);
-  border-radius: 0.5rem;
-
-  &.no-actions {
-    grid-template-columns: 3fr 3fr 4fr 6fr;
-  }
 }
 
 .table-row {
@@ -714,14 +697,21 @@ body {
   }
 }
 
-.table-row.transaction {
-  gap: 5px;
-  padding: 5px;
+.table-header.activity,
+.table-row.activity {
+  display: grid;
+  grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 2fr);
+  border-radius: 0.5rem;
+
+  .pending-confirmation {
+    text-align: center;
+  }
+}
+
+.table-row.activity {
   color: darkblue;
   font-weight: 500;
-
-  border: 2px solid white;
-  border-radius: 0.5rem;
+  padding: 0 0 0 5px;
 
   &.closed {
     border-color: red;
@@ -730,21 +720,42 @@ body {
   &:not(.input) > .actions {
     display: none;
   }
+
+  > * {
+    padding: 0;
+    background-color: initial;
+  }
+
+  &.input {
+    grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(90px, 2fr);
+
+    > .description {
+      grid-column: span 2;
+
+      > * {
+        height: 100%;
+        padding: 2px 0 2px 5px;
+        border: 1px solid darkblue;
+        border-radius: 5px;
+        animation: pulsate-and-rotate-border 2s ease-in-out 1;
+      }
+    }
+    > .saved-at {
+      display: none;
+    }
+  }
 }
 
-.table-row.transaction > div,
-.table-row.transaction > div > input,
-.table-row.transaction > div > select {
-  padding: 5px;
-  border-radius: 10px;
-  background-color: white;
+.table-row.activity > div,
+.table-row.activity > div > input,
+.table-row.activity > div > select {
   font-size: 0.8rem;
   transition: background-color 0.2s ease;
   width: 100%; /* Make inputs take full width of their container */
   box-sizing: border-box; /* Include padding and border in the width calculation */
 }
 
-.table-row.transaction > div > p {
+.table-row.activity > div > p {
   margin: 2px;
   background-color: white;
   font-size: 0.8rem;
@@ -784,18 +795,6 @@ body {
   }
   100% {
     border-color: darkblue;
-  }
-}
-
-.table-row.transaction.input {
-  grid-template-columns: 3fr 4fr 6fr minmax(90px, 2fr);
-
-  > .amount > * {
-    border: 3px solid darkblue;
-    animation: pulsate-and-rotate-border 2s ease-in-out 1;
-  }
-  > .executedAt {
-    display: none;
   }
 }
 
@@ -1033,17 +1032,15 @@ body {
   .table-row {
     border: 1px solid #d3d3d3;
     border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
   }
 
-  .table-row.transaction > div {
+  .table-row.activity > div {
     position: relative;
-    padding-top: 20px;
   }
 
   .card.apartment > div:not(.details, .input-and-error-container)::before,
   .table-row.document > div::before,
-  .table-row.transaction > div::before {
+  .table-row.activity > div::before {
     /* position: absolute; */
     left: 5px;
     top: 2px;
@@ -1061,7 +1058,7 @@ body {
   }
 
   .apartments-list,
-  .payments-list {
+  .activity-list {
     gap: 10px;
   }
 
@@ -1074,14 +1071,6 @@ body {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
     }
-  }
-
-  .table-row.transaction.input {
-    grid-template-columns: 3fr 4fr 6fr minmax(90px, 2fr);
-  }
-
-  .table-row.transaction.executed {
-    grid-template-columns: minmax(90px, 3fr) 4fr 3fr minmax(80px, 6fr);
   }
 
   .apartment-selector .apartment-option {

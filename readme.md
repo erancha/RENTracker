@@ -1,8 +1,8 @@
 # Preface
 
-**RENTracker** is a property rent management app that streamlines rent agreements and payments (TBD).
+**RENTracker** is a property rent management app that streamlines rent agreements and activity (TBD).
 
-The app supports two user roles: Landlords who manage properties, rental agreements, and financials (TBD), and Tenants who complete their details in the rental agreement, and manage their payments (TBD).
+The app supports two user roles: Landlords who manage properties, rental agreements, and activity (TBD), and Tenants who complete their details in the rental agreement, and manage their activity (TBD).
 
 Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
 
@@ -25,7 +25,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
         - ~~[2. Landlords Table](#2-landlords-table)~~
         - ~~[3. Tenants Table](#3-tenants-table)~~
         - [4. Documents Table](#4-documents-table)
-        - ~~[5. Payments Table](#5-payments-table)~~
+        - [5. Activity Table](#5-activity-table)
         - [Example of Relationships](#example-of-relationships)
       - [**SQS**](#sqs)
     - [2. **Frontend**](#2-frontend)
@@ -95,20 +95,20 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - **created_at** - Timestamp when the document was created.
 - **updated_at** - Timestamp when the document was last modified.
 
-~~##### 5. Payments Table~~
+##### 5. Activity Table
 
-~~- **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.~~
-~~- **payment_id** (Partition Key) - Unique identifier for each payment (e.g., UUID).~~
-~~- **tenant_id** - Identifier for the tenant making the payment.~~
-~~- **apartment_id** - Identifier for the apartment associated with the payment.~~
-~~- **payment_date** - Date when the payment was made.~~
-~~- **amount** - Amount paid.~~
-~~- **payment_status** - Status of the payment (e.g., Paid, Pending, Overdue).~~
+- **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.
+- **activity_id** (Partition Key) - Unique identifier for each activity (e.g., UUID).
+- **apartment_id** - Identifier for the apartment associated with the activity.
+- **created_at** - Date when the activity was made.
+- **description** - String. Activity description, e.g. 'Payment sent for 05/2025', or 'Payment accepted for 05/2025'.
+- **pending_confirmation** - Boolean. Optional. If exists and true, either the landlord or tenant (depending on initiating_user_id) must confirm.
+- **confirmed_at**: - Date of confirmation.
 
 ##### Example of Relationships
 
 - A landlord can have multiple apartments.
-- A tenant can make multiple payments for their rented apartment.
+- A tenant can make multiple activity for their rented apartment.
 
 #### **SQS**
 

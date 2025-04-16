@@ -1,351 +1,295 @@
 {
-	"info": {
-		"_postman_id": "9844769b-ae93-44e5-88ff-3526169cda02",
-		"name": "RentTracking API",
-		"description": "API for rentTracking operations",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "9394726"
-	},
-	"item": [
-		{
-			"name": "time",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/time",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"time"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Health Check",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/health",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"health"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create User",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"userId\": \"{{userId}}\", \"userName\": \"Betty User\", \"email\": \"bettyuser100@gmail.com\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/user",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"user"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get All Users",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/users",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"users"
-					]
-				}
-			},
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response has correct structure\", function () {",
-							"    const response = pm.response.json();",
-							"    pm.expect(response).to.be.an('object');",
-							"    pm.expect(response.status).to.equal('OK');",
-							"    pm.expect(response.users).to.be.an('array');",
-							"});",
-							"",
-							"pm.test(\"Users array contains required fields\", function () {",
-							"    const response = pm.response.json();",
-							"    if (response.users.length > 0) {",
-							"        const user = response.users[0];",
-							"        pm.expect(user).to.have.property('user_id');",
-							"        pm.expect(user).to.have.property('user_name');",
-							"        pm.expect(user).to.have.property('email_address');",
-							"    }",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"response": []
-		},
-		{
-			"name": "Create Apartment #1",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"apartmentId\": \"{{apartmentId}}\", \"initialBalance\": 0, \"userId\": \"{{userId}}\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/apartment",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"apartment"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Deposit",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"amount\": 1000, \"apartmentId\": \"{{apartmentId}}\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/deposit",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"deposit"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Withdraw",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"amount\": 500, \"apartmentId\": \"{{apartmentId}}\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/withdraw",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"withdraw"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Apartment #2",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"apartmentId\": \"{{toApartmentId}}\", \"initialBalance\": 0, \"userId\": \"{{userId}}\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/apartment",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"apartment"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Transfer",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"amount\": 200, \"fromApartmentId\": \"{{apartmentId}}\", \"toApartmentId\": \"4d42a3ea-1d57-4a00-983d-c88ec4de1930\"}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/transfer",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"transfer"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Balance",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/balance/{{apartmentId}}",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"balance",
-						"{{apartmentId}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get All Apartments",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/apartments",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"apartments"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get User Apartments",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/apartments/user?userId={{userId}}",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"apartments",
-						"user"
-					],
-					"query": [
-						{
-							"key": "userId",
-							"value": "{{userId}}",
-							"description": "ID of the user to get apartments for"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Payments for Apartment",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseUrl}}/api/crud/payments/{{apartmentId}}",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"rentTracking",
-						"payments",
-						"{{apartmentId}}"
-					]
-				}
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "_postman_id": "9844769b-ae93-44e5-88ff-3526169cda02",
+    "name": "RentTracking API",
+    "description": "API for rentTracking operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "9394726"
+  },
+  "item": [
+    {
+      "name": "time",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/time",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "time"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"userId\": \"{{userId}}\", \"userName\": \"Betty User\", \"email\": \"bettyuser100@gmail.com\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/user",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "user"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "users"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has correct structure\", function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('object');",
+              "    pm.expect(response.status).to.equal('OK');",
+              "    pm.expect(response.users).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Users array contains required fields\", function () {",
+              "    const response = pm.response.json();",
+              "    if (response.users.length > 0) {",
+              "        const user = response.users[0];",
+              "        pm.expect(user).to.have.property('user_id');",
+              "        pm.expect(user).to.have.property('user_name');",
+              "        pm.expect(user).to.have.property('email_address');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Create Apartment #1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"apartmentId\": \"{{apartmentId}}\", \"initialBalance\": 0, \"userId\": \"{{userId}}\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/apartment",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "apartment"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Apartment #2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"apartmentId\": \"{{toApartmentId}}\", \"initialBalance\": 0, \"userId\": \"{{userId}}\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/apartment",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "apartment"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Transfer",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"amount\": 200, \"fromApartmentId\": \"{{apartmentId}}\", \"toApartmentId\": \"4d42a3ea-1d57-4a00-983d-c88ec4de1930\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/transfer",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "transfer"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/balance/{{apartmentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "balance",
+            "{{apartmentId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Apartments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/apartments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "apartments"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Apartments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/apartments/user?userId={{userId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "apartments",
+            "user"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "{{userId}}",
+              "description": "ID of the user to get apartments for"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Activity for Apartment",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/crud/activity/{{apartmentId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "rentTracking",
+            "activity",
+            "{{apartmentId}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
 }
