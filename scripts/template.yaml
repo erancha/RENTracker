@@ -599,7 +599,7 @@ Resources:
 
   # AWS::Lambda::Permission resources are specifically required to grant permissions to other AWS services (in this case, API Gateway) to invoke your Lambda functions.
   # These permissions are necessary because, by default, Lambda functions are not accessible to other AWS services.
-  # You need to explicitly allow API Gateway to invoke your WebsocketConnect and WebsocketDisconnect.
+  # We need to explicitly allow API Gateway to invoke WebsocketConnect and WebsocketDisconnect.
 
   ConnectPermission:
     Type: AWS::Lambda::Permission
@@ -833,6 +833,66 @@ Resources:
       #           - rds:Connect
       #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
 
+  DocumentsStreamProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/documents/
+      Handler: documentsStreamProcessor.handler
+      Runtime: nodejs20.x
+      Timeout: 10 # seconds
+      MemorySize: 128
+      Layers:
+        - !Ref AwsSdkV3Layer
+      Environment:
+        Variables:
+          FRONTEND_BUCKET_NAME: !Ref FrontendBucket
+          CLOUDFRONT_DISTRIBUTION_ID: !Ref FrontendDistribution
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+      Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
+      Events:
+        DocumentsTableStream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt DocumentsTable.StreamArn
+            BatchSize: 10
+            StartingPosition: LATEST
+            Enabled: true
+
+  DocumentsStreamProcessorExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument: *lambdaTrustPolicy
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+      Policies:
+        - PolicyName: S3InvalidateAndRefreshPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${FrontendBucket}/documents/*'
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}'
+        - PolicyName: DynamoDBStreamAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:ListStreams
+                Resource: !GetAtt DocumentsTable.StreamArn
+
   #==========================================================================================================================================================
   # Cognito
   #==========================================================================================================================================================
@@ -935,6 +995,8 @@ Resources:
     Properties:
       TableName: !Sub ${AWS::StackName}-Documents
       BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
       AttributeDefinitions:
         - AttributeName: document_id
           AttributeType: S
@@ -1203,6 +1265,14 @@ Resources:
       OwnershipControls:
         Rules:
           - ObjectOwnership: ObjectWriter
+      LifecycleConfiguration:
+        Rules:
+          - Id: MoveDocumentsToIA
+            Prefix: documents/
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
