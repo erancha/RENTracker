@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { bindActionCreators, Dispatch } from 'redux';
-import { Provider, connect, useDispatch, useSelector } from 'react-redux';
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
-import store, { AppDispatch, RootState } from './redux/store/store';
+import { Provider, connect } from 'react-redux';
+import store from './redux/store/store';
 import { IAppState } from './redux/store/types';
 import { loginWithGoogleAction, checkAuthStatusAction } from './redux/auth/actions';
 import { AuthContextProps, useAuth } from 'react-oidc-context';
@@ -21,34 +20,8 @@ import { DOCUMENTS_VIEW, ANALYTICS_VIEW, USERS_VIEW } from './redux/menu/types';
 import { UserType } from './redux/auth/types';
 import './App.css';
 import { IApartment } from 'redux/apartments/types';
-import DocumentForm from './components/DocumentForm';
 import TenantDocumentList from './components/TenantDocumentList';
 import { IDocument } from 'redux/documents/types';
-
-// DocumentFormWrapper component to handle document fetching
-const DocumentFormWrapper: React.FC<{ documentId?: string }> = ({ documentId }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-  const currentApartmentId = useSelector((state: RootState) => state.apartments.currentApartmentId);
-
-  useEffect(() => {
-    if (documentId) {
-      dispatch(getDocumentThunk(documentId));
-    }
-  }, [documentId, dispatch]);
-
-  return (
-    <DocumentForm
-      documentId={documentId}
-      apartmentId={currentApartmentId || ''}
-      initialTemplateFields={null}
-      onClose={() => {
-        dispatch(setMenuSelectedPageAction(DOCUMENTS_VIEW));
-        navigate('/'); // Navigate back to root when closing
-      }}
-    />
-  );
-};
 
 // Create the base component
 class AppComponent extends React.Component<IAppProps> {
@@ -100,14 +73,7 @@ class AppComponent extends React.Component<IAppProps> {
           </div>
         </div>
 
-        {auth.isAuthenticated ? (
-          <Routes>
-            <Route path='/document/:documentId' element={<DocumentFormWrapper documentId={window.location.pathname.split('/')[2]} />} />
-            <Route path='/' element={this.renderMenuSelectedPage()} />{' '}
-          </Routes>
-        ) : (
-          this.renderOverview()
-        )}
+        {auth.isAuthenticated ? this.renderMenuSelectedPage() : this.renderOverview()}
       </div>
     );
   }
@@ -137,7 +103,7 @@ class AppComponent extends React.Component<IAppProps> {
     ) : this.props.userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (
-      <Apartments />
+      this.props.userType !== UserType.Unknown && <Apartments />
     );
   }
 
@@ -257,9 +223,7 @@ export const App = () => {
     <Spinner />
   ) : (
     <Provider store={store}>
-      <Router>
-        <ConnectedApp auth={auth} />
-      </Router>
+      <ConnectedApp auth={auth} />
     </Provider>
   );
 };
