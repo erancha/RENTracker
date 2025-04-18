@@ -66,9 +66,7 @@ class AppComponent extends React.Component<IAppProps> {
             {auth.isAuthenticated && showConnections && <WebSocketService />}
 
             <div className={`menu-container${auth.isAuthenticated ? ' authenticated' : ''}`}>
-              <div className='menu-container-item'>
-                <Menu />
-              </div>
+              <Menu />
             </div>
           </div>
         </div>

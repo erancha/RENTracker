@@ -91,7 +91,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - **tenant_user_id** - User Id of the tenant associated with the document.
 - **template_name** - Name of the template used for the document (e.g., 'rental_agreement').
 - **template_fields** - JSON object containing dynamic fields for the template.
-- **pdf_url** - URL of the pdf in cloudfront.
+- **pdf_url** - URL of the pdf in S3.
 - ~~**status** - Status of the document (e.g., draft, pending, signed, archived).~~
 - **created_at** - Timestamp when the document was created.
 - **updated_at** - Timestamp when the document was last modified.

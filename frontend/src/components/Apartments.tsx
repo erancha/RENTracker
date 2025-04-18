@@ -93,7 +93,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
         <div className={`page apartments-container${!isWsConnected ? ' disconnected' : ''}`}>
           <div className='header'>
             Apartments
-            <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='menu-container-item action-button add'>
+            <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
               {!showApartmentForm && <Plus />}
             </button>
           </div>

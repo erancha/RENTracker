@@ -78,7 +78,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { empty
 
     return (
       <div className='page body-container'>
-        <div className='header activity-container-header'>Apartment Activity</div>
+        <div className='header'>Apartment Activity</div>
         <div className='activity-container'>
           {activity.length > 0 && (
             <div className='table-header activity'>
