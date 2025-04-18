@@ -185,7 +185,7 @@ const deleteApartment = logMiddleware('ddb_deleteApartment')(async ({ apartment_
 
     return {
       apartment_id: response.Attributes.apartment_id,
-      user_id: response.Attributes.landlord_id,
+      landlord_id: response.Attributes.landlord_id,
     };
   } catch (error) {
     console.error('Error in ddb_deleteApartment:', error);

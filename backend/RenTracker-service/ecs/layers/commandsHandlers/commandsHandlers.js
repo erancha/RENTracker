@@ -61,6 +61,7 @@ async function handleCreate({ commandParams, connectedUserId }) {
 
   if (commandParams.apartments) {
     const { apartment_id, address, unit_number, rooms_count, rent_amount } = commandParams.apartments;
+    const landlord_id = connectedUserId;
     response = {
       apartments: (
         await dbData.createApartment({
@@ -69,11 +70,12 @@ async function handleCreate({ commandParams, connectedUserId }) {
           unit_number,
           rooms_count,
           rent_amount,
-          landlord_id: connectedUserId,
+          landlord_id,
           saas_tenant_id: process.env.SAAS_TENANT_ID,
         })
       ).data,
     };
+    await dbData.cache.invalidation.getApartmentsOfLandlord(landlord_id);
   } else if (commandParams.activity) {
     const { activity_id, description, apartment_id, pending_confirmation } = commandParams.activity;
     response = {
@@ -129,6 +131,7 @@ async function handleUpdate({ commandParams }) {
         saas_tenant_id: process.env.SAAS_TENANT_ID,
       }),
     };
+    await dbData.cache.invalidation.getApartmentsOfLandlord(response.apartments.landlord_id);
   }
 
   if (response) return { dataUpdated: response };
@@ -141,6 +144,7 @@ async function handleDelete({ commandParams }) {
   if (commandParams.apartments) {
     const { apartment_id } = commandParams.apartments;
     response = { apartments: await dbData.deleteApartment({ apartment_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
+    await dbData.cache.invalidation.getApartmentsOfLandlord(response.landlord_id);
     await dbData.cache.invalidation.getApartmentActivity(apartment_id);
   } else if (commandParams.activity) {
     const { activity_id } = commandParams.activity;
