@@ -98,7 +98,10 @@ const handleRead = logMiddleware('handleRead')(async function ({ commandParams, 
   let response; // to the client socket
 
   if (commandParams.apartments) {
-    const dbResult = await dbData.getApartmentsOfLandlord({ user_id: connectedUserId, saas_tenant_id: process.env.SAAS_TENANT_ID }); /* handle pagination */
+    const dbResult = await dbData.cache.getApartmentsOfLandlord({
+      user_id: connectedUserId,
+      saas_tenant_id: process.env.SAAS_TENANT_ID,
+    }); /* handle pagination */
     response = { apartments: dbResult || [] };
   }
   if (commandParams.activity) {
@@ -144,8 +147,8 @@ async function handleDelete({ commandParams }) {
   if (commandParams.apartments) {
     const { apartment_id } = commandParams.apartments;
     response = { apartments: await dbData.deleteApartment({ apartment_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
-    await dbData.cache.invalidation.getApartmentsOfLandlord(response.landlord_id);
-    await dbData.cache.invalidation.getApartmentActivity(apartment_id);
+    await dbData.cache.invalidation.getApartmentsOfLandlord(response.apartments.landlord_id);
+    await dbData.cache.invalidation.getApartmentActivity(response.apartments.apartment_id);
   } else if (commandParams.activity) {
     const { activity_id } = commandParams.activity;
     response = { activity: await dbData.deleteApartmentActivity({ activity_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };

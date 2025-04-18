@@ -71,7 +71,7 @@ const get = async (cacheKey, dbFunction) => {
     const data = await dbFunction();
 
     if (!disableAppCache) {
-      await redisClient.set(fullCacheKey, JSON.stringify(data));
+      await redisClient.set(fullCacheKey, JSON.stringify(data), 'EX', 24 * 60 * 60); // Set expiration time to 24 hours
     }
     return data;
   } catch (error) {

@@ -315,8 +315,18 @@ module.exports = {
     getApartmentActivity: cache_getApartmentActivity,
     invalidation: {
       getAllUsers: () => cache.invalidateGet('getAllUsers()'),
-      getApartmentsOfLandlord: (user_id) => cache.invalidateGet(`getApartmentsOfLandlord(${user_id})`),
-      getApartmentActivity: (apartment_id) => cache.invalidateGet(`getApartmentActivity(${apartment_id})`),
+      getApartmentsOfLandlord: (user_id) =>
+        user_id
+          ? cache.invalidateGet(`getApartmentsOfLandlord(${user_id})`)
+          : console.warn('user_id is undefined, cannot invalidate cache for getApartmentsOfLandlord()'),
+      getApartmentDocuments: (apartment_id) =>
+        apartment_id
+          ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
+          : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentDocuments()'),
+      getApartmentActivity: (apartment_id) =>
+        apartment_id
+          ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
+          : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
     },
   },
 };
