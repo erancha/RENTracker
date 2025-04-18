@@ -814,15 +814,6 @@ Resources:
                   - dynamodb:GetItem
                 Resource:
                   - !GetAtt DocumentsTable.Arn
-        - PolicyName: S3DocumentsWriteAccessPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:DeleteObject
-                Resource: !Sub 'arn:aws:s3:::${FrontendBucket}/documents/${SaaSTenantUserId}/*'
       # - PolicyName: LambdaRDSAccessPolicy
       #   PolicyDocument:
       #     Version: '2012-10-17'
@@ -839,8 +830,8 @@ Resources:
       CodeUri: ../backend/documents/
       Handler: documentsStreamProcessor.handler
       Runtime: nodejs20.x
-      Timeout: 10 # seconds
-      MemorySize: 128
+      Timeout: 60 # seconds
+      MemorySize: 2048
       Layers:
         - !Ref AwsSdkV3Layer
       Environment:

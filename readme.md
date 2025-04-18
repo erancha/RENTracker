@@ -42,7 +42,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
 ## Architecture
 
 **API Gateway + Lambda**
-![Architecture diagram](https://lucid.app/publicSegments/view/4618232f-e622-4835-8e99-57048b76465d/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/11403d3e-caa3-4885-be91-b94764ebab83/image.jpeg)
 
 ### 1. **Backend**
 
@@ -91,6 +91,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - **tenant_user_id** - User Id of the tenant associated with the document.
 - **template_name** - Name of the template used for the document (e.g., 'rental_agreement').
 - **template_fields** - JSON object containing dynamic fields for the template.
+- **pdf_url** - URL of the pdf in cloudfront.
 - ~~**status** - Status of the document (e.g., draft, pending, signed, archived).~~
 - **created_at** - Timestamp when the document was created.
 - **updated_at** - Timestamp when the document was last modified.

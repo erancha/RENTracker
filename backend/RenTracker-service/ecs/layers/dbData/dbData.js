@@ -135,16 +135,18 @@ const deleteApartment = logMiddleware('deleteApartment')(async ({ apartment_id, 
  * @param {string} params.template_name - Name of the template to use
  * @param {Object} params.template_fields - Fields to populate in the template
  * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
+ * @param {string} params.pdf_url - URL of the PDF document
  * @returns {Promise<Object>} Created document
  */
-const createDocument = async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id }) => {
+const createDocument = async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id, pdf_url }) => {
   validateUUID(document_id, 'document_id');
   validateUUID(apartment_id, 'apartment_id');
   validateNonEmptyString(template_name, 'template name');
   validateTemplateFields(template_fields);
   validateUUID(saas_tenant_id, 'saas_tenant_id');
+  validateHttpUrl(pdf_url, 'pdf_url');
 
-  return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, saas_tenant_id });
+  return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, saas_tenant_id, pdf_url });
 };
 
 /**
@@ -196,15 +198,21 @@ const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
  * @param {Object} params.template_fields - Updated template fields
  * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
  * @param {string} [params.tenant_user_id] - ID of the tenant that resides in the property (not related to saasTenantId)
+ * @param {string} [params.pdf_url] - URL of the PDF document
  * @returns {Promise<Object>} Updated document
  */
-const updateDocument = async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
+const updateDocument = async ({ document_id, template_fields, saas_tenant_id, tenant_user_id, pdf_url }) => {
   validateUUID(document_id, 'document_id');
   validateTemplateFields(template_fields);
   validateUUID(saas_tenant_id, 'saas_tenant_id');
   if (tenant_user_id) validateUUID(tenant_user_id, 'user_id');
+  if (pdf_url) validateHttpUrl(pdf_url, 'pdf_url');
 
-  return await gwData.updateDocument({ document_id, template_fields, saas_tenant_id, tenant_user_id });
+  // Pass pdf_url if defined
+  const updateParams = { document_id, template_fields, saas_tenant_id };
+  if (tenant_user_id) updateParams.tenant_user_id = tenant_user_id;
+  if (pdf_url) updateParams.pdf_url = pdf_url;
+  return await gwData.updateDocument(updateParams);
 };
 
 /**
@@ -365,6 +373,18 @@ function validateRoomsCount(rooms_count) {
 function validateBoolean(value, fieldName) {
   if (typeof value !== 'boolean') {
     throw new Error(`Invalid ${fieldName}: Must be a boolean`);
+  }
+}
+
+/**
+ * Validates if the given value is a valid HTTP(S) URL.
+ * @param {string} url - The URL to validate.
+ * @param {string} fieldName - The name of the field being validated.
+ * @throws {Error} If the value is not a valid HTTP(S) URL.
+ */
+function validateHttpUrl(url, fieldName) {
+  if (!url || typeof url !== 'string' || !url.match(/^https?:\/\/.+/)) {
+    throw new Error(`Invalid ${fieldName}: Must be a valid HTTP(S) URL`);
   }
 }
 
