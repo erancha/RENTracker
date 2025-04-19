@@ -98,7 +98,7 @@ const handleCreateDocument = async (event, corsHeaders) => {
       template_name: 'rental-agreement',
       template_fields: templateFields,
       saas_tenant_id: SAAS_TENANT_ID,
-      pdf_url: preparePdfUrl(SAAS_TENANT_ID, documentId),
+      pdf_url: preparePdfUrl(documentId),
     });
 
     return {
@@ -138,7 +138,7 @@ const handleUpdateDocument = async (documentId, event, corsHeaders) => {
       template_fields: templateFields,
       saas_tenant_id: SAAS_TENANT_ID,
       tenant_user_id: tenantUserId,
-      pdf_url: preparePdfUrl(SAAS_TENANT_ID, documentId), // for backwards compatibility - existing documents do not have this field.
+      pdf_url: preparePdfUrl(documentId), // for backwards compatibility - existing documents do not have this field.
     });
 
     return {
