@@ -5,8 +5,8 @@ const { prepareS3Key } = require('/opt/prepareS3Key');
 
 const APP_AWS_REGION = process.env.APP_AWS_REGION;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
-const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
-const FRONTEND_BUCKET_NAME = process.env.FRONTEND_BUCKET_NAME;
+const DOCUMENTS_CLOUDFRONT_DOMAIN = process.env.DOCUMENTS_CLOUDFRONT_DOMAIN;
+const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
 
 //=============================================================================================================================================
 // Main REST handler
@@ -352,7 +352,7 @@ const s3Client = new S3Client({ region: APP_AWS_REGION });
  */
 async function preparePresignedPdfUrl(documentId) {
   const command = new GetObjectCommand({
-    Bucket: FRONTEND_BUCKET_NAME,
+    Bucket: DOCUMENTS_BUCKET_NAME,
     Key: prepareS3Key(documentId, SAAS_TENANT_ID),
   });
 
@@ -362,11 +362,8 @@ async function preparePresignedPdfUrl(documentId) {
   });
 
   // Replace S3 domain with CloudFront domain
-  const cloudfrontDomain = CLOUDFRONT_DOMAIN;
-  const s3Domain = `${FRONTEND_BUCKET_NAME}.s3.${APP_AWS_REGION}.amazonaws.com`;
-  const cloudfrontPresignedUrl = s3PresignedUrl.replace(s3Domain, cloudfrontDomain);
+  const cloudfrontPresignedUrl = s3PresignedUrl.replace(`${DOCUMENTS_BUCKET_NAME}.s3.${APP_AWS_REGION}.amazonaws.com`, DOCUMENTS_CLOUDFRONT_DOMAIN);
   // console.log({ s3PresignedUrl, cloudfrontPresignedUrl });
 
-  return s3PresignedUrl;
-  // return cloudfrontPresignedUrl;
+  return cloudfrontPresignedUrl;
 }

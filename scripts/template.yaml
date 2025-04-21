@@ -60,11 +60,6 @@ Parameters:
   ExistingCognitoDomain:
     Description: 'Existing Cognito Domain'
     Type: String
-  AllowS3PublicAccess:
-    Description: 'Allow public access to the S3 bucket'
-    Type: String
-    AllowedValues: ['true', 'false']
-    Default: 'false'
 
   AllowOnlyCloudfrontOrigin:
     Description: 'Allow only CloudFront origin'
@@ -112,7 +107,6 @@ Conditions:
   UseCustomDomain: !And
     - !Condition HasCustomDomainName
     - !Condition HasCertificateArn
-  AllowS3PublicAccessCondition: !Equals [!Ref AllowS3PublicAccess, 'true']
   AllowOnlyCloudfrontOriginCondition: !Equals [!Ref AllowOnlyCloudfrontOrigin, 'true']
 
 Globals:
@@ -729,8 +723,8 @@ Resources:
             - !Ref ApiGatewayCorsAllowedOrigins
           APP_AWS_REGION: !Ref AWS::Region
           DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
-          FRONTEND_BUCKET_NAME: !Ref FrontendBucket
-          CLOUDFRONT_DOMAIN: !GetAtt FrontendDistribution.DomainName
+          DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
+          DOCUMENTS_CLOUDFRONT_DOMAIN: !GetAtt DocumentsDistribution.DomainName
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
           # DB_NAME: !Ref CrudDatabaseName
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
@@ -815,6 +809,15 @@ Resources:
                   - dynamodb:GetItem
                 Resource:
                   - !GetAtt DocumentsTable.Arn
+        - PolicyName: S3PresigningUrlsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${DocumentsBucket}/*'
       # - PolicyName: LambdaRDSAccessPolicy
       #   PolicyDocument:
       #     Version: '2012-10-17'
@@ -838,8 +841,8 @@ Resources:
         - !Ref DocumentUtilsLayer
       Environment:
         Variables:
-          FRONTEND_BUCKET_NAME: !Ref FrontendBucket
-          CLOUDFRONT_DISTRIBUTION_ID: !Ref FrontendDistribution
+          DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
+          DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
       Events:
@@ -869,11 +872,11 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource:
-                  - !Sub 'arn:aws:s3:::${FrontendBucket}/documents/*'
+                  - !Sub 'arn:aws:s3:::${DocumentsBucket}/*'
               - Effect: Allow
                 Action:
                   - cloudfront:CreateInvalidation
-                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}'
+                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${DocumentsDistribution}'
         - PolicyName: DynamoDBStreamAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -1251,21 +1254,13 @@ Resources:
             AllowedOrigins: ['*']
             MaxAge: 3000
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: !If [AllowS3PublicAccessCondition, false, true]
-        BlockPublicPolicy: !If [AllowS3PublicAccessCondition, false, true]
-        IgnorePublicAcls: !If [AllowS3PublicAccessCondition, false, true]
-        RestrictPublicBuckets: !If [AllowS3PublicAccessCondition, false, true]
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
       OwnershipControls:
         Rules:
           - ObjectOwnership: ObjectWriter
-      LifecycleConfiguration:
-        Rules:
-          - Id: MoveDocumentsToIA
-            Prefix: documents/
-            Status: Enabled
-            Transitions:
-              - StorageClass: STANDARD_IA
-                TransitionInDays: 30
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -1279,19 +1274,6 @@ Resources:
             Principal: '*'
             Action: 's3:GetObject'
             Resource: !Sub '${FrontendBucket.Arn}/*'
-          - Sid: PublicListBucket # TODO: Reseach why this is required for accessing a presigned url!
-            Effect: Allow
-            Principal: '*'
-            Action: 's3:ListBucket'
-            Resource: !Sub '${FrontendBucket.Arn}'
-          - Sid: DenyAccessToDocuments
-            Effect: Deny
-            Principal: '*'
-            Action: 's3:GetObject'
-            Resource: !Sub '${FrontendBucket.Arn}/documents/*'
-            Condition:
-              StringNotEqualsIfExists:
-                s3:signatureversion: 'AWS4-HMAC-SHA256'
 
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
@@ -1300,10 +1282,6 @@ Resources:
         Origins:
           - Id: S3Origin
             DomainName: !Select [1, !Split ['//', !GetAtt FrontendBucket.WebsiteURL]]
-            # DomainName: !Sub '${FrontendBucket.RegionalDomainName}'
-            # OriginPath: ''
-            # S3OriginConfig:
-            #   OriginAccessIdentity: ''
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
@@ -1315,15 +1293,6 @@ Resources:
           CachedMethods: ['GET', 'HEAD']
           ForwardedValues:
             QueryString: false
-            # QueryString: true
-            # QueryStringCacheKeys:
-            #   - 'X-Amz-Algorithm'
-            #   - 'X-Amz-Credential'
-            #   - 'X-Amz-Date'
-            #   - 'X-Amz-Expires'
-            #   - 'X-Amz-SignedHeaders'
-            #   - 'X-Amz-Signature'
-            #   - 'X-Amz-Security-Token'
             Headers: ['Origin']
           MinTTL: 0
           DefaultTTL: 86400
@@ -1344,6 +1313,79 @@ Resources:
           - UseCustomDomain
           - [!Ref CustomDomainName]
           - !Ref AWS::NoValue
+
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-documents
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: ['GET']
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      LifecycleConfiguration:
+        Rules:
+          - Id: MoveDocumentsToIA
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+
+  DocumentsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DocumentsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudfrontPresignedUrlsAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: 's3:GetObject'
+            Resource: !Sub '${DocumentsBucket.Arn}/*'
+            Condition:
+              StringEqualsIfExists:
+                s3:signatureversion: 'AWS4-HMAC-SHA256'
+
+  DocumentsDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: DocumentsS3Origin
+            DomainName: !GetAtt DocumentsBucket.RegionalDomainName
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: DocumentsS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: ['GET', 'HEAD']
+          CachedMethods: ['GET', 'HEAD']
+          ForwardedValues:
+            QueryString: true
+            QueryStringCacheKeys:
+              - 'X-Amz-Algorithm'
+              - 'X-Amz-Credential'
+              - 'X-Amz-Date'
+              - 'X-Amz-Expires'
+              - 'X-Amz-SignedHeaders'
+              - 'X-Amz-Signature'
+              - 'X-Amz-Security-Token'
+            Headers: ['Origin']
+          MinTTL: 0
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        PriceClass: PriceClass_100
+        Enabled: true
 
 Outputs:
   WebSocketApiUrl:

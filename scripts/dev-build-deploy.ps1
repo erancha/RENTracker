@@ -69,7 +69,6 @@ try {
                 "ExistingRDSSecurityGroupId='sg-0280f7af5f31cb24d'", # crud-RDSSG
                 # "DisableAppCache='true'",
                 "DeveloperIP='149.106.249.221/32'",
-                "AllowS3PublicAccess=true",
                 "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'"
             )
 

@@ -8,7 +8,8 @@ const path = require('path');
 const { prepareS3Key } = require('/opt/prepareS3Key');
 
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
-const FRONTEND_BUCKET_NAME = process.env.FRONTEND_BUCKET_NAME;
+const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
+const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
 
 const s3Client = new S3Client();
 const cloudfront = new CloudFrontClient();
@@ -77,16 +78,20 @@ async function handleCreate(record) {
   const pdfBuffer = await convertToPdf(styledHtml);
 
   const s3Key = prepareS3Key(newImage.document_id.S, SAAS_TENANT_ID);
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: FRONTEND_BUCKET_NAME,
-      Key: s3Key,
-      Body: pdfBuffer,
-      ContentType: 'application/pdf',
-    })
-  );
+  try {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: DOCUMENTS_BUCKET_NAME,
+        Key: s3Key,
+        Body: pdfBuffer,
+        ContentType: 'application/pdf',
+      })
+    );
 
-  console.log(`PDF created and uploaded to S3: ${s3Key}`);
+    console.log(`PDF created and uploaded to S3: ${s3Key}`);
+  } catch (error) {
+    console.error(`Error processing S3 key: ${s3Key}`, error);
+  }
 }
 
 /**
@@ -111,7 +116,7 @@ async function handleDelete(record) {
   const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   await s3Client.send(
     new DeleteObjectCommand({
-      Bucket: FRONTEND_BUCKET_NAME,
+      Bucket: DOCUMENTS_BUCKET_NAME,
       Key: s3Key,
     })
   );
@@ -128,7 +133,7 @@ async function handleDelete(record) {
 async function handleInvalidate(record) {
   const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   const command = new CreateInvalidationCommand({
-    DistributionId: process.env.CLOUDFRONT_DISTRIBUTION_ID,
+    DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
     InvalidationBatch: {
       CallerReference: `${Date.now()}`,
       Paths: { Quantity: 1, Items: [`/${s3Key}`] },
