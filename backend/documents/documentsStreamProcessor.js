@@ -5,6 +5,10 @@ const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
+const { prepareS3Key } = require('/opt/prepareS3Key');
+
+const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
+const FRONTEND_BUCKET_NAME = process.env.FRONTEND_BUCKET_NAME;
 
 const s3Client = new S3Client();
 const cloudfront = new CloudFrontClient();
@@ -61,7 +65,6 @@ marked.use({
  */
 async function handleCreate(record) {
   const newImage = record.dynamodb.NewImage;
-  const pdfUrl = newImage.pdf_url.S;
 
   const templateName = newImage.template_name.S;
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
@@ -73,17 +76,17 @@ async function handleCreate(record) {
   const styledHtml = createStyledHtml(html);
   const pdfBuffer = await convertToPdf(styledHtml);
 
-  const s3Key = extractS3KeyFromPdfUrl(pdfUrl);
+  const s3Key = prepareS3Key(newImage.document_id.S, SAAS_TENANT_ID);
   await s3Client.send(
     new PutObjectCommand({
-      Bucket: process.env.FRONTEND_BUCKET_NAME,
+      Bucket: FRONTEND_BUCKET_NAME,
       Key: s3Key,
       Body: pdfBuffer,
       ContentType: 'application/pdf',
     })
   );
 
-  console.log(`PDF created and uploaded to S3: ${pdfUrl}`);
+  console.log(`PDF created and uploaded to S3: ${s3Key}`);
 }
 
 /**
@@ -105,15 +108,16 @@ async function handleUpdate(record) {
  * @returns {Promise<void>}
  */
 async function handleDelete(record) {
-  const s3Key = extractS3KeyFromPdfUrl(record.dynamodb.OldImage.pdf_url.S);
+  const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   await s3Client.send(
     new DeleteObjectCommand({
-      Bucket: process.env.FRONTEND_BUCKET_NAME,
+      Bucket: FRONTEND_BUCKET_NAME,
       Key: s3Key,
     })
   );
 
   await handleInvalidate(record);
+  console.log(`PDF deleted and invalidated from S3: ${s3Key}`);
 }
 
 /**
@@ -122,7 +126,7 @@ async function handleDelete(record) {
  * @returns {Promise<void>}
  */
 async function handleInvalidate(record) {
-  const s3Key = extractS3KeyFromPdfUrl(record.dynamodb.NewImage.pdf_url.S);
+  const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   const command = new CreateInvalidationCommand({
     DistributionId: process.env.CLOUDFRONT_DISTRIBUTION_ID,
     InvalidationBatch: {
@@ -159,15 +163,6 @@ function convertDynamoMapToObject(dynamoMap) {
     }
   }
   return result;
-}
-
-/**
- * Extract the S3 key from a given PDF URL.
- * @param {string} pdfUrl - The full URL of the PDF.
- * @returns {string} The S3 key for the PDF.
- */
-function extractS3KeyFromPdfUrl(pdfUrl) {
-  return pdfUrl.split('.com/')[1];
 }
 
 /**

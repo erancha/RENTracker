@@ -305,7 +305,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       Description: Document utilities layer (markdown, uuid, puppeteer)
-      ContentUri: ../backend/layers/document-utils/
+      ContentUri: ../backend/layers/document-utils
       CompatibleRuntimes: ['nodejs20.x']
 
   #==========================================================================================================================================================
@@ -340,7 +340,6 @@ Resources:
       Timeout: 10 # seconds
       Layers:
         - !Ref RedisClientLayer
-        # - !Ref AwsSdkV3Layer
         - !Ref ConnectionsUsernamesLayer
         - !Ref CommandsHandlersLayer
         - !Ref DbDataLayer
@@ -719,6 +718,7 @@ Resources:
         - !Ref DbDataLayer
         - !Ref RedisClientLayer
         - !Ref DocumentUtilsLayer
+        - !Ref AwsSdkV3Layer
       Environment:
         Variables:
           NODE_ENV: production
@@ -730,6 +730,7 @@ Resources:
           APP_AWS_REGION: !Ref AWS::Region
           DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
           FRONTEND_BUCKET_NAME: !Ref FrontendBucket
+          CLOUDFRONT_DOMAIN: !GetAtt FrontendDistribution.DomainName
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
           # DB_NAME: !Ref CrudDatabaseName
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
@@ -834,6 +835,7 @@ Resources:
       MemorySize: 2048
       Layers:
         - !Ref AwsSdkV3Layer
+        - !Ref DocumentUtilsLayer
       Environment:
         Variables:
           FRONTEND_BUCKET_NAME: !Ref FrontendBucket
@@ -1238,7 +1240,7 @@ Resources:
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-frontend-static
+      BucketName: !Sub ${AWS::StackName}-frontend
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
@@ -1277,6 +1279,19 @@ Resources:
             Principal: '*'
             Action: 's3:GetObject'
             Resource: !Sub '${FrontendBucket.Arn}/*'
+          - Sid: PublicListBucket # TODO: Reseach why this is required for accessing a presigned url!
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:ListBucket'
+            Resource: !Sub '${FrontendBucket.Arn}'
+          - Sid: DenyAccessToDocuments
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${FrontendBucket.Arn}/documents/*'
+            Condition:
+              StringNotEqualsIfExists:
+                s3:signatureversion: 'AWS4-HMAC-SHA256'
 
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
@@ -1285,6 +1300,10 @@ Resources:
         Origins:
           - Id: S3Origin
             DomainName: !Select [1, !Split ['//', !GetAtt FrontendBucket.WebsiteURL]]
+            # DomainName: !Sub '${FrontendBucket.RegionalDomainName}'
+            # OriginPath: ''
+            # S3OriginConfig:
+            #   OriginAccessIdentity: ''
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
@@ -1296,6 +1315,15 @@ Resources:
           CachedMethods: ['GET', 'HEAD']
           ForwardedValues:
             QueryString: false
+            # QueryString: true
+            # QueryStringCacheKeys:
+            #   - 'X-Amz-Algorithm'
+            #   - 'X-Amz-Credential'
+            #   - 'X-Amz-Date'
+            #   - 'X-Amz-Expires'
+            #   - 'X-Amz-SignedHeaders'
+            #   - 'X-Amz-Signature'
+            #   - 'X-Amz-Security-Token'
             Headers: ['Origin']
           MinTTL: 0
           DefaultTTL: 86400

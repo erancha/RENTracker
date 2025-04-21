@@ -19,11 +19,11 @@ export const handlePdfGeneration = async (documentId: string, JWT: string | null
     });
 
     if (!response.ok) throw new Error('Failed to get PDF URL');
-    const { url: pdfUrl } = await response.json();
-    if (!pdfUrl) throw new Error('No PDF URL in response');
+    const { pdf_url } = await response.json();
+    if (!pdf_url) throw new Error('No PDF URL in response');
 
     // The PDF will be opened in new tab (S3 object has Content-Disposition: inline)
-    return pdfUrl;
+    return pdf_url;
   } catch (error) {
     console.error('Error opening PDF:', error);
     return null;

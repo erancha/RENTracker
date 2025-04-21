@@ -1,10 +1,10 @@
 {
-  "name": "document-utils",
+  "name": "document-utils-layer",
   "version": "1.0.0",
-  "description": "Document utilities layer for Lambda functions",
   "dependencies": {
-    "@sparticuz/chromium": "^109.0.0",
-    "puppeteer-core": "^19.6.3",
-    "marked": "^5.0.2"
+    "puppeteer-core": "^21.5.0",
+    "@sparticuz/chromium": "^119.0.0",
+    "marked": "^11.1.0",
+    "uuid": "^9.0.1"
   }
 }

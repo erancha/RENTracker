@@ -1,8 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
-const dbData = require('/opt/dbData');
 const { prepareCorsHeaders } = require('/opt/corsHeaders');
+const dbData = require('/opt/dbData');
+const { prepareS3Key } = require('/opt/prepareS3Key');
 
+const APP_AWS_REGION = process.env.APP_AWS_REGION;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
+const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
+const FRONTEND_BUCKET_NAME = process.env.FRONTEND_BUCKET_NAME;
 
 //=============================================================================================================================================
 // Main REST handler
@@ -98,7 +102,6 @@ const handleCreateDocument = async (event, corsHeaders) => {
       template_name: 'rental-agreement',
       template_fields: templateFields,
       saas_tenant_id: SAAS_TENANT_ID,
-      pdf_url: preparePdfUrl(documentId),
     });
 
     return {
@@ -138,7 +141,6 @@ const handleUpdateDocument = async (documentId, event, corsHeaders) => {
       template_fields: templateFields,
       saas_tenant_id: SAAS_TENANT_ID,
       tenant_user_id: tenantUserId,
-      pdf_url: preparePdfUrl(documentId), // for backwards compatibility - existing documents do not have this field.
     });
 
     return {
@@ -282,7 +284,7 @@ const handleGetTenantDocuments = async (event, corsHeaders) => {
 const handleGetDocumentPdf = async (documentId, corsHeaders) => {
   try {
     const document = await dbData.getDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
-    if (!document || !document.pdf_url) {
+    if (!document) {
       return {
         statusCode: 404,
         headers: corsHeaders,
@@ -295,7 +297,7 @@ const handleGetDocumentPdf = async (documentId, corsHeaders) => {
       headers: corsHeaders,
       body: JSON.stringify({
         message: 'PDF URL retrieved successfully',
-        url: document.pdf_url,
+        pdf_url: await preparePresignedPdfUrl(documentId),
       }),
     };
   } catch (error) {
@@ -337,11 +339,34 @@ const handleDeleteDocument = async (documentId, corsHeaders) => {
 // Utilities
 //=============================================================================================================================================
 
+const { S3Client } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
+
+const s3Client = new S3Client({ region: APP_AWS_REGION });
+
 /**
- * Prepare the PDF URL for a document.
- * @param {string} documentId - Document ID.
- * @returns {string} The generated PDF URL.
+ * Prepare a document URL presigned through CloudFront.
+ * @param {string} documentId - The unique identifier for the document.
+ * @returns {Promise<string>} The generated presigned URL.
  */
-function preparePdfUrl(documentId) {
-  return `https://${process.env.FRONTEND_BUCKET_NAME}.s3.${process.env.APP_AWS_REGION}.amazonaws.com/documents/${SAAS_TENANT_ID}/${documentId}-rental-agreement.pdf`;
+async function preparePresignedPdfUrl(documentId) {
+  const command = new GetObjectCommand({
+    Bucket: FRONTEND_BUCKET_NAME,
+    Key: prepareS3Key(documentId, SAAS_TENANT_ID),
+  });
+
+  // Get S3 presigned URL
+  const s3PresignedUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: 60 * 60 * 24, // 24 hours
+  });
+
+  // Replace S3 domain with CloudFront domain
+  const cloudfrontDomain = CLOUDFRONT_DOMAIN;
+  const s3Domain = `${FRONTEND_BUCKET_NAME}.s3.${APP_AWS_REGION}.amazonaws.com`;
+  const cloudfrontPresignedUrl = s3PresignedUrl.replace(s3Domain, cloudfrontDomain);
+  // console.log({ s3PresignedUrl, cloudfrontPresignedUrl });
+
+  return s3PresignedUrl;
+  // return cloudfrontPresignedUrl;
 }

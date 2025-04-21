@@ -34,10 +34,8 @@ try {
             Compress-Archive -Update -Path nodejs/* -DestinationPath ../awssdkv3-layer.zip
             Pop-Location
 
-            Push-Location "${appFolder}/backend/layers/document-utils/nodejs/"
+            Push-Location "${appFolder}/backend/layers/document-utils/"
             npm install
-            Set-Location ..
-            Compress-Archive -Update -Path nodejs/* -DestinationPath ../document-utils-layer.zip
             Pop-Location
 
             Push-Location "${appFolder}/backend/RenTracker-service/ecs/layers/dbData/"

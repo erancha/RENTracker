@@ -128,6 +128,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - User authentication via AWS Cognito with **Google** integration
 - Lambda functions and Elasticache Redis are in a **private subnet**
 - IAM roles follow the least privilege principle
+- Sensitive documents in S3 are shared via presigned URLs, which are configured with an expiration time (e.g., 2 days) to limit exposure.
 
 ### 4. **Scalability**, **Performance** and **Resiliency**
 

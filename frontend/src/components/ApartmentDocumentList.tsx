@@ -147,8 +147,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                         className='action-button pdf'
                         title='Share via WhatsApp'
                         onClick={async () => {
-                          const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
-                          if (pdfUrl) this.handleShareWhatsApp(document.document_id, pdfUrl);
+                          const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                          if (pdf_url) this.handleShareWhatsApp(document.document_id, pdf_url);
                           else toast.error('Failed to generate PDF');
                         }}
                       >
@@ -170,12 +170,15 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
   /**
    * Shares document link via WhatsApp
    * @param {string} documentId - ID of document to share
+   * @param {string} pdf_url - URL in CloudFront of the document to share
    */
-  handleShareWhatsApp = (documentId: string, pdfUrl: string) => {
+  handleShareWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
-    const message = `PFA *'${getDocumentTitle(document?.template_fields?.tenantName)}'* :\n\t${
-      window.location.origin === 'http://localhost:3000' ? pdfUrl : `${window.location.origin}/${pdfUrl.substring(pdfUrl.indexOf('documents'))}`
-    }.\n\nTo complete tenant information, visit: ${window.location.origin} and copy/paste the current message.`;
+    const message = `\nPlease find below a link to your rental agreement: *'${getDocumentTitle(
+      document?.template_fields?.tenantName
+    )}'*.\n\n*To complete tenant information*, copy this message and sign into the application at ${
+      window.location.origin
+    }\n\nPlease note that the link will remain valid for 1 day. After this period, the document can be accessed through the application.\n\n${pdf_url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

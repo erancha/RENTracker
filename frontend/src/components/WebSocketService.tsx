@@ -216,9 +216,9 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Open the new connection:
-    const url = `${appConfigData.WEBSOCKET_API_URL}?token=${JWT}`;
-    // console.log(`Creating WebSocket connection with URL: ${url}`);
-    this.webSocket = new WebSocket(url);
+    const wsUrl = `${appConfigData.WEBSOCKET_API_URL}?token=${JWT}`;
+    // console.log(`Creating WebSocket connection with URL: ${wsUrl}`);
+    this.webSocket = new WebSocket(wsUrl);
 
     this.webSocket.onopen = () => {
       console.log('** WebSocket connection opened **');

@@ -200,17 +200,15 @@ const deleteApartment = logMiddleware('ddb_deleteApartment')(async ({ apartment_
  * @param {string} params.template_name - Name of the template to use
  * @param {Object} params.template_fields - Fields to populate in the template
  * @param {string} params.saas_tenant_id - SaaS tenant ID
- * @param {string} params.pdf_url - URL of the PDF document
  * @returns {Promise<Object>} Created document
  */
-const createDocument = logMiddleware('ddb_createDocument')(async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id, pdf_url }) => {
+const createDocument = logMiddleware('ddb_createDocument')(async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id }) => {
   try {
     const item = {
       document_id,
       apartment_id,
       template_name,
       template_fields,
-      pdf_url,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       saas_tenant_id,
@@ -312,15 +310,14 @@ const getTenantDocuments = logMiddleware('ddb_getTenantDocuments')(async ({ tena
 });
 
 /**
- * Updates a document with new template fields and optionally assigns a tenant and pdf_url
+ * Updates a document with new template fields and optionally assigns a tenant user id
  * @param {string} params.document_id - Document ID to update
  * @param {Object} params.template_fields - Updated template fields
  * @param {string} params.saas_tenant_id - SaaS tenant ID
  * @param {string} [params.tenant_user_id] - ID of the tenant that resides in the property
- * @param {string} [params.pdf_url] - URL of the PDF document
  * @returns {Promise<Object>} Updated document
  */
-const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, saas_tenant_id, tenant_user_id, pdf_url }) => {
+const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
   try {
     // Dynamically build UpdateExpression and ExpressionAttributeValues
     let updateExpr = 'SET template_fields = :fields, updated_at = :now';
@@ -332,10 +329,6 @@ const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id,
     if (tenant_user_id) {
       updateExpr += ', tenant_user_id = :tenant_user_id';
       exprAttrValues[':tenant_user_id'] = tenant_user_id;
-    }
-    if (pdf_url) {
-      updateExpr += ', pdf_url = :pdf_url';
-      exprAttrValues[':pdf_url'] = pdf_url;
     }
     const { Attributes } = await ddbDocClient.send(
       new UpdateCommand({

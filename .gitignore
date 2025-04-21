@@ -1,6 +1,6 @@
 backend/layers/awssdkv3/nodejs/node_modules/
 backend/layers/dbData/node_modules/*
-backend/layers/document-utils/nodejs/node_modules/
+backend/layers/document-utils/node_modules/
 backend/documents/node_modules/
 backend/documents/test-output.pdf
 backend/websockets/connections/node_modules/
