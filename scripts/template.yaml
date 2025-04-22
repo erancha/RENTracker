@@ -822,7 +822,7 @@ Resources:
                 Action:
                   - s3:ListBucket
                 Resource:
-                  - !Sub 'arn:aws:s3:::${DocumentsBucket}/'
+                  - !Sub 'arn:aws:s3:::${DocumentsBucket}'
       # - PolicyName: LambdaRDSAccessPolicy
       #   PolicyDocument:
       #     Version: '2012-10-17'

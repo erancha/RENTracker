@@ -10,7 +10,7 @@
  * @returns {string} The S3 key in the format: {saasTenantId}/{documentId}-rental-agreement.pdf
  */
 function prepareS3Key(documentId, saasTenantId) {
-  return `${saasTenantId}/${documentId}-rental-agreement.pdf`;
+  return `${saasTenantId}/${documentId}/rental-agreement.pdf`;
 }
 
 module.exports = {
