@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { prepareCorsHeaders } = require('/opt/corsHeaders');
 const dbData = require('/opt/dbData');
-const { prepareS3DocumentFolderKey, prepareS3Keys } = require('/opt/prepareS3Keys');
+const { prepareS3DocumentFolderKey, prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const APP_AWS_REGION = process.env.APP_AWS_REGION;
@@ -178,7 +178,7 @@ const handleGetDocument = async (documentId, corsHeaders) => {
           statusCode: 200,
           headers: corsHeaders,
           body: JSON.stringify({
-            payload: document,
+            payload: { ...document, presignedUrls: await prepareAttachmentsPresignedUrls(documentId, document.template_fields) },
             message: 'Document retrieved successfully',
           }),
         }
@@ -300,7 +300,7 @@ const handleGetDocumentPdf = async (documentId, corsHeaders) => {
       headers: corsHeaders,
       body: JSON.stringify({
         message: 'PDF URL retrieved successfully',
-        pdf_url: await preparePresignedPdfUrl(documentId),
+        pdf_url: await preparePresignedUrl(documentId),
       }),
     };
   } catch (error) {
@@ -405,12 +405,13 @@ const s3Client = new S3Client({ region: APP_AWS_REGION });
 /**
  * Prepare a document URL presigned through CloudFront.
  * @param {string} documentId - The unique identifier for the document.
+ * @param {string} fileName - The name of the file to be presigned. If not provided, defaults to 'rental-agreement.pdf'.
  * @returns {Promise<string>} The generated presigned URL.
  */
-async function preparePresignedPdfUrl(documentId) {
+async function preparePresignedUrl(documentId, fileName) {
   const command = new GetObjectCommand({
     Bucket: DOCUMENTS_BUCKET_NAME,
-    Key: prepareS3Keys(documentId, SAAS_TENANT_ID),
+    Key: fileName ? `${prepareS3DocumentFolderKey(documentId, SAAS_TENANT_ID)}/${fileName}` : prepareS3RentalAgreementKey(documentId, SAAS_TENANT_ID),
   });
 
   // Get S3 presigned URL
@@ -457,3 +458,19 @@ const extractFileContentFromMultipart = (base64Body, contentType) => {
   const fileContent = bodyBuffer.subarray(startPos, endPos - 2);
   return fileContent;
 };
+
+/**
+ * Prepare presigned URLs for specific fields in the document's template fields.
+ * @param {string} documentId - The unique identifier for the document.
+ * @param {Object} templateFields - The template fields containing file names for idCard, salary1, and salary2.
+ * @returns {Promise<Object>} An object containing presigned URLs for idCard, salary1, and salary2.
+ */
+async function prepareAttachmentsPresignedUrls(documentId, templateFields) {
+  const presignedUrls = {};
+
+  if (templateFields.idCard) presignedUrls.idCard = await preparePresignedUrl(documentId, 'idCard');
+  if (templateFields.salary1) presignedUrls.salary1 = await preparePresignedUrl(documentId, 'salary1');
+  if (templateFields.salary2) presignedUrls.salary2 = await preparePresignedUrl(documentId, 'salary2');
+
+  return presignedUrls;
+}

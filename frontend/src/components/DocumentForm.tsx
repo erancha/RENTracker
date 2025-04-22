@@ -31,6 +31,7 @@ import { actions as documentActions } from '../redux/documents/slice';
 import he from 'date-fns/locale/he';
 import { IncludedEquipmentSelect } from './IncludedEquipmentSelect';
 import { uploadFile } from '../services/rest';
+import ImagesViewer from './ImagesViewer';
 
 /**
  * DocumentForm component for creating and editing rental agreements
@@ -154,6 +155,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       errors: {},
       expandedSections: props.expandedSections || (props.userType === UserType.Tenant ? ['tenantDetails'] : []),
       initialFormData: templateFields, // Store the initial populated fields
+      showImagesViewer: false,
     };
   }
 
@@ -216,7 +218,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Basic Information */}
           <Accordion expanded={this.state.expandedSections.includes('basic')} onChange={this.handleAccordionChange('basic')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>פרטים בסיסיים</Typography>
+              <Typography className='section-header'>פרטים בסיסיים</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -230,7 +232,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Landlord Details */}
           <Accordion expanded={this.state.expandedSections.includes('landlordDetails')} onChange={this.handleAccordionChange('landlordDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>פרטי משכיר</Typography>
+              <Typography className='section-header'>פרטי משכיר</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -256,7 +258,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Tenant Details */}
           <Accordion expanded={this.state.expandedSections.includes('tenantDetails')} onChange={this.handleAccordionChange('tenantDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>פרטי שוכר</Typography>
+              <Typography className='section-header'>פרטי שוכר</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -282,7 +284,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Attachments */}
           <Accordion expanded={this.state.expandedSections.includes('attachments')} onChange={this.handleAccordionChange('attachments')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>קבצים מצורפים</Typography>
+              <Typography className='section-header'>קבצים מצורפים</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -297,12 +299,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 </Grid>
               </Grid>
             </AccordionDetails>
+
+            {this.props.selectedDocument?.presignedUrls && this.state.showImagesViewer && (
+              <ImagesViewer presignedUrls={this.props.selectedDocument?.presignedUrls || {}} onClose={() => this.setState({ showImagesViewer: false })} />
+            )}
           </Accordion>
 
           {/* Property Details */}
           <Accordion expanded={this.state.expandedSections.includes('propertyDetails')} onChange={this.handleAccordionChange('propertyDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>פרטי הנכס</Typography>
+              <Typography className='section-header'>פרטי הנכס</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -330,7 +336,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Lease & Financial Terms */}
           <Accordion expanded={this.state.expandedSections.includes('leaseTerms')} onChange={this.handleAccordionChange('leaseTerms')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>תנאי השכירות</Typography>
+              <Typography className='section-header'>תנאי השכירות</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -363,7 +369,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Utility Limits */}
           <Accordion expanded={this.state.expandedSections.includes('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>מגבלות צריכה</Typography>
+              <Typography className='section-header'>מגבלות צריכה</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -380,7 +386,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Security Details */}
           <Accordion expanded={this.state.expandedSections.includes('securityDetails')} onChange={this.handleAccordionChange('securityDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>בטחונות וערבויות (אופציונלי)</Typography>
+              <Typography className='section-header'>בטחונות וערבויות (אופציונלי)</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -406,7 +412,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Guarantor Details */}
           <Accordion expanded={this.state.expandedSections.includes('guarantorDetails')} onChange={this.handleAccordionChange('guarantorDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography>פרטי ערב (אופציונלי)</Typography>
+              <Typography className='section-header'>פרטי ערב (אופציונלי)</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -830,11 +836,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     return (
       <div>
         <Typography>{label}</Typography>
-        {existingFileName ? (
-          <Typography variant='body2' color='textSecondary'>
-            Existing file: {existingFileName} {/* TODO: Add functionality to view the currently uploaded file */}
+        {existingFileName && (
+          <Typography
+            variant='body2'
+            color='textSecondary'
+            onClick={() => this.setState({ showImagesViewer: !this.state.showImagesViewer })}
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+            Existing file: {existingFileName}
           </Typography>
-        ) : null}
+        )}
+
         <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} />
       </div>
     );
@@ -1087,6 +1098,7 @@ interface DocumentFormState {
   errors: Record<string, string>;
   expandedSections: string[];
   initialFormData: Record<string, any>;
+  showImagesViewer: boolean;
 }
 
 const mapStateToProps = (state: RootState) => ({

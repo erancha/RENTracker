@@ -1,5 +1,3 @@
-import { IdCard } from 'lucide-react';
-
 /**
  * Maps document form fields to their respective sections
  */

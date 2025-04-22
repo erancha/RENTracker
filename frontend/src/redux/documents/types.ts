@@ -6,6 +6,7 @@ export interface IDocument {
   template_fields: Record<string, string>;
   created_at: string;
   updated_at: string;
+  presignedUrls?: Record<string, string>;
 }
 
 export interface IDocumentsState {
