@@ -832,6 +832,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private renderFileField = (field: string, label: string) => {
     const existingFileName = this.state.formData[field];
+    const error = this.state.errors[field];
 
     return (
       <div>
@@ -847,6 +848,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         )}
 
         <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} />
+        {error && (
+          <Typography variant='body2' color='error'>
+            {error}
+          </Typography>
+        )}
       </div>
     );
   };

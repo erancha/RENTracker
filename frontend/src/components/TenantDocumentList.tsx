@@ -138,8 +138,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                         onClick={async () => {
                           await this.props.getDocumentThunk(doc.document_id);
                           this.setState({ showForm: true, editMode: true });
-                        }}
-                      >
+                        }}>
                         <Pencil />
                       </button>
                       <button
@@ -149,8 +148,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                           const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
                           else toast.error('Failed to generate PDF');
-                        }}
-                      >
+                        }}>
                         <FileText />
                       </button>
                     </div>
@@ -177,14 +175,21 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   };
 
   /**
-   * Extracts document ID from a WhatsApp message
-   * @param {string} message - The WhatsApp message containing document ID
-   * @returns {string|null} The extracted document ID or null if not found
+   * Extracts the second UUID after the first 'https' in a WhatsApp message and ensures the next part is '/rental-agreement.pdf'
+   * @param {string} message - The WhatsApp message containing the UUID
+   * @returns {string|null} The extracted UUID or null if not found
    */
   extractDocumentId = (message: string): string | null => {
-    // Match document ID between the last forward slash and '-rental-agreement'
-    const match = message.match(/\/([0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12})-rental-agreement/i);
-    return match ? match[1] : null;
+    // Match the second UUID after the first 'https' and ensure the next part is '/rental-agreement.pdf'
+    const match = message.match(
+      /https.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b(?=\/rental-agreement\.pdf)/i
+    );
+    const documentId = match ? match[2] : null;
+    if (!documentId) {
+      toast.warn('Invalid document ID format in WhatsApp message. Please ensure it is a valid UUID.');
+      console.warn('Invalid document ID format in WhatsApp message:', message, match);
+    }
+    return documentId;
   };
 
   /**
