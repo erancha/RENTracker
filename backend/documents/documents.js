@@ -1,7 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 const { prepareCorsHeaders } = require('/opt/corsHeaders');
 const dbData = require('/opt/dbData');
-const { prepareS3Key } = require('/opt/prepareS3Key');
+const { prepareS3DocumentFolderKey, prepareS3Keys } = require('/opt/prepareS3Keys');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const APP_AWS_REGION = process.env.APP_AWS_REGION;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
@@ -61,6 +62,8 @@ exports.handler = async (event) => {
         case 'DELETE':
           return await handleDeleteDocument(documentId, corsHeaders);
       }
+    } else if (path === '/upload' && httpMethod === 'POST') {
+      return await handleFileUpload(event, corsHeaders);
     }
 
     return {
@@ -335,11 +338,65 @@ const handleDeleteDocument = async (documentId, corsHeaders) => {
   }
 };
 
+/**
+ * Handles file upload and stores it in S3
+ * @param {Object} event - Lambda event object
+ * @param {Object} corsHeaders - CORS headers to include in response
+ * @returns {Promise<Object>} Response object with upload status
+ */
+const handleFileUpload = async (event, corsHeaders) => {
+  try {
+    const { documentId, fileName, fileType } = event.queryStringParameters;
+    if (!documentId || !fileName || !fileType) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'documentId, fileName, and fileType are required for file upload' }),
+      };
+    }
+
+    const fileContent = extractFileContentFromMultipart(event.body, event.headers['content-type']);
+    if (!fileContent) {
+      throw new Error('File content could not be extracted');
+    }
+
+    const s3Client = new S3Client({ region: APP_AWS_REGION });
+    const s3UploadedFileKey = `${prepareS3DocumentFolderKey(documentId, SAAS_TENANT_ID)}/${fileName}`;
+    const command = new PutObjectCommand({
+      Bucket: DOCUMENTS_BUCKET_NAME,
+      Key: s3UploadedFileKey,
+      Body: fileContent,
+      ContentType: fileType,
+    });
+
+    await s3Client.send(command);
+
+    console.log(`File (${fileType}, ${fileContent.length} bytes) uploaded successfully to S3: ${s3UploadedFileKey}`);
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        fileKey: s3UploadedFileKey,
+      }),
+    };
+  } catch (error) {
+    console.error(
+      `Error in handleFileUpload: documentId=${event.queryStringParameters?.documentId}, fileName=${event.queryStringParameters?.fileName}\n${error.message}`
+    );
+    return {
+      statusCode: error.statusCode || 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ message: `Error uploading file: ${error.message}` }),
+    };
+  }
+};
+
 //=============================================================================================================================================
 // Utilities
 //=============================================================================================================================================
 
-const { S3Client } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 
@@ -353,7 +410,7 @@ const s3Client = new S3Client({ region: APP_AWS_REGION });
 async function preparePresignedPdfUrl(documentId) {
   const command = new GetObjectCommand({
     Bucket: DOCUMENTS_BUCKET_NAME,
-    Key: prepareS3Key(documentId, SAAS_TENANT_ID),
+    Key: prepareS3Keys(documentId, SAAS_TENANT_ID),
   });
 
   // Get S3 presigned URL
@@ -367,3 +424,36 @@ async function preparePresignedPdfUrl(documentId) {
 
   return cloudfrontPresignedUrl;
 }
+
+/**
+ * Extracts file content from a multipart/form-data request body
+ * @param {string} base64Body - Base64 encoded multipart form data
+ * @param {string} contentType - Content-Type header with boundary
+ * @returns {Buffer} The extracted file content
+ */
+const extractFileContentFromMultipart = (base64Body, contentType) => {
+  // Convert base64 to buffer
+  const bodyBuffer = Buffer.from(base64Body, 'base64');
+
+  // Get the boundary from content type
+  const boundary = contentType.split('boundary=')[1];
+  const boundaryBuffer = Buffer.from('--' + boundary);
+  const headerEndBuffer = Buffer.from('\r\n\r\n');
+
+  // Find the start of file content (after headers)
+  const headerEndPos = bodyBuffer.indexOf(headerEndBuffer);
+  if (headerEndPos === -1) {
+    throw new Error('Could not find end of headers');
+  }
+  const startPos = headerEndPos + headerEndBuffer.length;
+
+  // Find the end (next boundary)
+  const endPos = bodyBuffer.indexOf(boundaryBuffer, startPos);
+  if (endPos === -1) {
+    throw new Error('Could not find end boundary');
+  }
+
+  // Extract file content (excluding trailing \r\n)
+  const fileContent = bodyBuffer.subarray(startPos, endPos - 2);
+  return fileContent;
+};

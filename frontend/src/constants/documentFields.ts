@@ -1,3 +1,5 @@
+import { IdCard } from 'lucide-react';
+
 /**
  * Maps document form fields to their respective sections
  */
@@ -13,6 +15,9 @@ export const fieldToSection: Record<string, string> = {
   tenantPhone: 'tenantDetails',
   tenantEmail: 'tenantDetails',
   tenantAddress: 'tenantDetails',
+  idCard: 'attachments',
+  salary1: 'attachments',
+  salary2: 'attachments',
   roomCount: 'propertyDetails',
   propertyAddress: 'propertyDetails',
   includedServices: 'propertyDetails',
@@ -45,6 +50,9 @@ export const fieldsToResetOnDuplicate = [
   'tenantPhone',
   'tenantEmail',
   'tenantAddress',
+  'idCard',
+  'salary1',
+  'salary2',
   'startDate',
   'endDate',
   'initialPaymentMonths',

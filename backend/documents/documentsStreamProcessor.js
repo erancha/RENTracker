@@ -5,7 +5,7 @@ const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
-const { prepareS3Key } = require('/opt/prepareS3Key');
+const { prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
 
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
@@ -77,7 +77,7 @@ async function handleCreate(record) {
   const styledHtml = createStyledHtml(html);
   const pdfBuffer = await convertToPdf(styledHtml);
 
-  const s3Key = prepareS3Key(newImage.document_id.S, SAAS_TENANT_ID);
+  const s3Key = prepareS3RentalAgreementKey(newImage.document_id.S, SAAS_TENANT_ID);
   try {
     await s3Client.send(
       new PutObjectCommand({
@@ -113,7 +113,7 @@ async function handleUpdate(record) {
  * @returns {Promise<void>}
  */
 async function handleDelete(record) {
-  const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
+  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   await s3Client.send(
     new DeleteObjectCommand({
       Bucket: DOCUMENTS_BUCKET_NAME,
@@ -131,7 +131,7 @@ async function handleDelete(record) {
  * @returns {Promise<void>}
  */
 async function handleInvalidate(record) {
-  const s3Key = prepareS3Key(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
+  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
   const command = new CreateInvalidationCommand({
     DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
     InvalidationBatch: {

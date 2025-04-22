@@ -30,6 +30,7 @@ import { getDocumentThunk, createDocument, updateDocumentThunk } from '../redux/
 import { actions as documentActions } from '../redux/documents/slice';
 import he from 'date-fns/locale/he';
 import { IncludedEquipmentSelect } from './IncludedEquipmentSelect';
+import { uploadFile } from '../services/rest';
 
 /**
  * DocumentForm component for creating and editing rental agreements
@@ -60,6 +61,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     tenantPhone: '',
     tenantEmail: '',
     tenantAddress: '',
+    idCard: '',
+    salary1: '',
+    salary2: '',
     propertyAddress: '',
     roomCount: '',
     leasePeriod: '12',
@@ -91,7 +95,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     'landlordEmail',
     'landlordAddress',
     // Tenant fields are only required for tenants
-    ...(this.props.userType === UserType.Tenant ? ['tenantName', 'tenantId', 'tenantPhone', 'tenantEmail'] : []),
+    ...(this.props.userType === UserType.Tenant ? ['tenantName', 'tenantId', 'tenantPhone', 'tenantEmail', 'idCard', 'salary1', 'salary2'] : []),
     'roomCount',
     'propertyAddress',
     'includedEquipment',
@@ -270,6 +274,26 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 </Grid>
                 <Grid item xs={12}>
                   {this.renderTextField('tenantAddress', 'כתובת')}
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Attachments */}
+          <Accordion expanded={this.state.expandedSections.includes('attachments')} onChange={this.handleAccordionChange('attachments')}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography>קבצים מצורפים</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  {this.renderFileField('idCard', 'צילום ת.ז')}
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {this.renderFileField('salary1', 'צילום משכורת 1')}
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  {this.renderFileField('salary2', 'צילום משכורת 2')}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -796,6 +820,27 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   };
 
   /**
+   * Renders a file input field
+   * @param {string} field - Field name
+   * @param {string} label - Field label
+   */
+  private renderFileField = (field: string, label: string) => {
+    const existingFileName = this.state.formData[field];
+
+    return (
+      <div>
+        <Typography>{label}</Typography>
+        {existingFileName ? (
+          <Typography variant='body2' color='textSecondary'>
+            Existing file: {existingFileName} {/* TODO: Add functionality to view the currently uploaded file */}
+          </Typography>
+        ) : null}
+        <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} />
+      </div>
+    );
+  };
+
+  /**
    * Handles changes to form input fields by updating the component's state
    * @param field - The name of the field to update in the form state
    * @param value - The new value for the field (can be any type - string for text fields, boolean for checkboxes, etc.)
@@ -933,6 +978,39 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       // Handle all other values
       return String(currentValue) !== String(initialValue);
     });
+  };
+
+  /**
+   * Handles file upload and updates the formData state with the uploaded file's information.
+   * @param files - FileList object containing selected files
+   * @param fileName - Name of the file to be uploaded
+   */
+  private handleFileUpload = async (files: FileList | null, fileName: string) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      try {
+        const { documentId } = this.props;
+        /*const { message, fileKey } =*/ await uploadFile({
+          JWT: this.props.auth.JWT as string,
+          file,
+          fileName,
+          documentId: documentId as string,
+        });
+
+        // Update formData with the uploaded file's name or metadata
+        this.setState((prevState) => ({
+          formData: {
+            ...prevState.formData,
+            [fileName]: file.name, // Store the file name or any relevant metadata
+          },
+        }));
+
+        toast.success(`File '${file.name}' uploaded successfully!`);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        toast.error('Failed to upload file. Please try again.');
+      }
+    }
   };
 }
 

@@ -8,9 +8,9 @@ interface IApiResponse<T> {
 }
 
 /**
- * Makes an authenticated request to the API
+ * Makes an authenticated request to the API for JSON data
  */
-const makeRequest = async <T>(url: string, method: string, JWT: string, body?: any): Promise<T> => {
+const makeJsonRequest = async <T>(url: string, method: string, JWT: string, body?: any): Promise<T> => {
   const response = await fetch(url, {
     method,
     headers: {
@@ -48,7 +48,7 @@ const makeRequest = async <T>(url: string, method: string, JWT: string, body?: a
  */
 export const getAllUsers = async (JWT: string): Promise<IUser[]> => {
   const url = `${appConfigData.REST_API_URL}/users`;
-  return makeRequest(url, 'GET', JWT);
+  return makeJsonRequest(url, 'GET', JWT);
 };
 
 /**
@@ -57,7 +57,7 @@ export const getAllUsers = async (JWT: string): Promise<IUser[]> => {
  */
 export const createDocument = async (JWT: string, data: { apartmentId: string; templateFields: Record<string, string> }): Promise<IDocument> => {
   const url = `${appConfigData.REST_API_URL}/documents`;
-  return makeRequest(url, 'POST', JWT, {
+  return makeJsonRequest(url, 'POST', JWT, {
     ...data,
     templateName: 'rental-agreement',
   });
@@ -72,7 +72,7 @@ export const updateDocument = async (
   data: { documentId: string; templateFields: Record<string, string>; tenantUserId?: string }
 ): Promise<IDocument> => {
   const url = `${appConfigData.REST_API_URL}/documents/${data.documentId}`;
-  return makeRequest(url, 'PUT', JWT, {
+  return makeJsonRequest(url, 'PUT', JWT, {
     templateFields: data.templateFields,
     tenantUserId: data.tenantUserId,
   });
@@ -84,7 +84,7 @@ export const updateDocument = async (
  */
 export const getDocument = async (JWT: string, documentId: string): Promise<IDocument> => {
   const url = `${appConfigData.REST_API_URL}/documents/${documentId}`;
-  return makeRequest(url, 'GET', JWT);
+  return makeJsonRequest(url, 'GET', JWT);
 };
 
 /**
@@ -106,7 +106,7 @@ export const getDocument = async (JWT: string, documentId: string): Promise<IDoc
  */
 export const getApartmentDocuments = async (JWT: string, apartmentId: string): Promise<IDocument[]> => {
   const url = `${appConfigData.REST_API_URL}/documents?apartmentId=${apartmentId}`;
-  return makeRequest(url, 'GET', JWT);
+  return makeJsonRequest(url, 'GET', JWT);
 };
 
 /**
@@ -128,7 +128,7 @@ export const getApartmentDocuments = async (JWT: string, apartmentId: string): P
  */
 export const getTenantDocuments = async (JWT: string, tenantUserId: string): Promise<IDocument[]> => {
   const url = `${appConfigData.REST_API_URL}/documents?tenantUserId=${tenantUserId}`;
-  return makeRequest(url, 'GET', JWT);
+  return makeJsonRequest(url, 'GET', JWT);
 };
 
 /**
@@ -140,5 +140,41 @@ export const getTenantDocuments = async (JWT: string, tenantUserId: string): Pro
  */
 export const deleteDocument = async (JWT: string, documentId: string): Promise<string> => {
   const url = `${appConfigData.REST_API_URL}/documents/${documentId}`;
-  return makeRequest(url, 'DELETE', JWT);
+  return makeJsonRequest(url, 'DELETE', JWT);
+};
+
+/**
+ * POST /upload
+ * Uploads a file to the server
+ */
+export const uploadFile = async ({
+  JWT,
+  file,
+  documentId,
+  fileName,
+}: {
+  JWT: string;
+  file: File;
+  documentId: string;
+  fileName?: string;
+}): Promise<{ message: string; fileKey: string }> => {
+  const url = `${appConfigData.REST_API_URL}/upload?documentId=${documentId}&fileName=${fileName || file.name}&fileType=${
+    file.type || 'application/octet-stream'
+  }`;
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${JWT}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
 };
