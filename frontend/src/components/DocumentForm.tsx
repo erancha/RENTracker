@@ -374,7 +374,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('waterLimit', 'מגבלת מים', { min: 0, adornment: '₪' })}
+                  {this.renderNumberField('waterLimit', 'מגבלת מים', { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   {this.renderNumberField('electricityLimit', 'מגבלת חשמל', { min: 0, adornment: '₪' })}
@@ -1004,7 +1004,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private handleFileUpload = async (files: FileList | null, fileName: string) => {
     const { documentId } = this.props;
-    if (!documentId) throw "<input type='file' .. disabled={!this.props.documentId} />";
+    if (!documentId) throw new Error("<input type='file' .. disabled={!this.props.documentId} />");
     if (files && files.length > 0) {
       const file = files[0];
       try {
