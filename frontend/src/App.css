@@ -58,8 +58,9 @@ body {
   transition: background-color 0.2s;
   scale: 0.8;
 
-  &.add {
-    animation: fade-in-from-30-percent 1s 10;
+  &.add,
+  &.edit {
+    animation: fade-in-from-30-percent 1s 3 5s;
   }
 
   &.cancel {
@@ -552,11 +553,6 @@ body {
     animation: pulsate-brightness 1s ease-in-out 5 forwards;
   }
 
-  .action-button.add {
-    animation-delay: 5s;
-    animation-iteration-count: 3;
-  }
-
   .actions {
     margin-top: 1rem;
     grid-template-columns: repeat(3, 2rem);
@@ -592,6 +588,7 @@ body {
 }
 
 /* Table Row Activity */
+.table-header.activity,
 .table-row.activity {
   display: grid;
   grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);

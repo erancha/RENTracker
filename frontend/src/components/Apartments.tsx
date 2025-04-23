@@ -124,8 +124,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     userType === UserType.Landlord ? ' isLandlord' : ''
                   }${apartment.apartment_id === currentApartmentId ? ' current' : ''}`}
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
-                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
-                >
+                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}>
                   <div className='apartment-id' title='apartment-id'>
                     {apartment.apartment_id}
                   </div>
@@ -147,7 +146,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     </div>
                     {[UserType.Landlord, UserType.Admin].includes(userType) && (
                       <div className='actions'>
-                        <button onClick={() => this.handleEditApartment(apartment)} className='action-button' title='Edit'>
+                        <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title='Edit'>
                           <Pencil />
                         </button>
                         <button className='action-button' title='Duplicate' onClick={() => this.handleDuplicateApartment(apartment)}>
@@ -197,8 +196,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     <button
       onClick={this.handleShowDocuments}
       className='action-button documents activity'
-      title='Toggle between Apartment Rental Agreements / Apartment Activity'
-    >
+      title='Toggle between Apartment Rental Agreements / Apartment Activity'>
       <FileText />
     </button>
   );

@@ -120,8 +120,52 @@ Globals:
           Principal:
             Service: lambda.amazonaws.com
           Action: sts:AssumeRole
+    Tracing: Active
+
+  Api:
+    TracingEnabled: true
 
 Resources:
+  #==========================================================================================================================================================
+  # X-Ray
+  #==========================================================================================================================================================
+
+  # ------------------------------------------------------------------------------
+  # XRayDaemonRole and XRayDaemon Lambda Function
+  # ------------------------------------------------------------------------------
+  # Purpose: Provides permissions and functionality for a daemon to send trace data to AWS X-Ray.
+  # Note: Not required for Lambda and API Gateway tracing. Currently unused and can be commented out.
+  #
+  # Tracing Behavior:
+  # - All requests are eligible to be traced when Tracing is set to Active for Lambda functions and TracingEnabled is true for API Gateway.
+  # - However, AWS X-Ray applies default sampling rules:
+  #   - The first request each second is traced.
+  #   - 5% of additional requests are traced.
+  # - This ensures that only a subset of requests are actually traced, balancing performance and trace coverage.
+
+  # XRayDaemonRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+
+  # XRayDaemon:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: xray-daemon.handler
+  #     Runtime: nodejs20.x
+  #     CodeUri: ../backend/layers/xray-daemon/
+  #     Timeout: 10
+  #     MemorySize: 128
+  #     Role: !GetAtt XRayDaemonRole.Arn
+
   #==========================================================================================================================================================
   # Networking resources:
   #  - 1 private subnet for Websocket Lambda functions, allowing inbound traffic only from the API gateway, and outbound traffic only to the RDS service.
@@ -357,6 +401,8 @@ Resources:
         SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
         SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
       Role: !GetAtt WebSocketConnectLambdaRole.Arn
+      # TracingConfig:
+      #   Mode: Active
 
   WebsocketDisconnect:
     Type: AWS::Serverless::Function
@@ -377,6 +423,8 @@ Resources:
         SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
         SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
       Role: !GetAtt WebSocketLambdaElasticacheSQSRole.Arn
+      # TracingConfig:
+      #   Mode: Active
 
   # Commands handler of all incoming messages from clients:
   WebsocketCommandsHandler:
@@ -412,6 +460,8 @@ Resources:
         SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
         SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
       Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
+      # TracingConfig:
+      #   Mode: Active
 
   WebsocketCommandsHandlerIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -791,6 +841,8 @@ Resources:
       VpcConfig:
         SubnetIds: [!Ref ExistingWebsocketsPrivateSubnetId]
         SecurityGroupIds: [!Ref ExistingWebSocketLambdaSG]
+      # TracingConfig:
+      #   Mode: Active
 
   DocumentsRestFunctionExecutionRole:
     Type: AWS::IAM::Role
@@ -876,6 +928,8 @@ Resources:
             BatchSize: 10
             StartingPosition: LATEST
             Enabled: true
+      # TracingConfig:
+      #   Mode: Active
 
   DocumentsStreamProcessorExecutionRole:
     Type: AWS::IAM::Role
@@ -1191,6 +1245,8 @@ Resources:
             Queue: !GetAtt MessagesToClientsQueue.Arn
             BatchSize: 10
             Enabled: true
+      # TracingConfig:
+      #   Mode: Active
 
   WebsocketEventsHandlerExecutionRole:
     Type: AWS::IAM::Role

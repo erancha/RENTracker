@@ -33,6 +33,7 @@ The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
     - [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
     - [5. Flexible **Deployment**](#5-flexible-deployment)
     - [6. **Monitoring** and **Logging**](#6-monitoring-and-logging)
+      - [6.1 **AWS X-Ray**](#61-aws-x-ray)
   - [Summary](#summary)
 
 <!-- tocstop -->
@@ -143,9 +144,15 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - Deploy with a single command: `sam build` and `sam deploy`
 - The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
 
-### 6. **Monitoring** and **Logging**
+### 6. **Monitoring and Logging**
 
 - **Monitoring** and **logging** via AWS CloudWatch
+
+#### 6.1 **AWS X-Ray**
+
+- **Purpose**: AWS X-Ray is used to trace requests as they travel through the application, providing insights into performance bottlenecks and service dependencies.
+- **Impact on Production Performance**: Minimal impact when sampling is enabled. Sampling ensures that only a subset of requests are traced, reducing overhead.
+- **Benefits**: Helps in identifying latency issues, debugging errors, and understanding the application's behavior under load.
 
 ## Summary
 

@@ -114,7 +114,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                     </div>
                     <div className='actions' data-title='Actions'>
                       <button
-                        className='action-button'
+                        className='action-button edit'
                         title='Edit'
                         onClick={async () => {
                           // First fetch the document

@@ -133,7 +133,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                     </div>
                     <div className='actions' data-title='Actions'>
                       <button
-                        className='action-button'
+                        className='action-button edit'
                         title='Edit'
                         onClick={async () => {
                           await this.props.getDocumentThunk(doc.document_id);
