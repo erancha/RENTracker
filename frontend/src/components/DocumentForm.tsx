@@ -847,7 +847,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           </Typography>
         )}
 
-        <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} />
+        <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} disabled={!this.props.documentId} />
         {error && (
           <Typography variant='body2' color='error'>
             {error}
@@ -1003,15 +1003,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param fileName - Name of the file to be uploaded
    */
   private handleFileUpload = async (files: FileList | null, fileName: string) => {
+    const { documentId } = this.props;
+    if (!documentId) throw "<input type='file' .. disabled={!this.props.documentId} />";
     if (files && files.length > 0) {
       const file = files[0];
       try {
-        const { documentId } = this.props;
         /*const { message, fileKey } =*/ await uploadFile({
           JWT: this.props.auth.JWT as string,
           file,
           fileName,
-          documentId: documentId as string,
+          documentId,
         });
 
         // Update formData with the uploaded file's name or metadata

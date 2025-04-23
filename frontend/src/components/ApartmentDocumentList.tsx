@@ -62,7 +62,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     return (
       <div className='page body-container'>
         <div className='header documents-container-header'>
-          Rental Agreements
+          Apartment Rental Agreements
           {!this.state.showForm && (
             <button
               onClick={() => {
@@ -72,7 +72,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                   showForm: true,
                   editMode: false,
                   duplicateTemplateFields: null,
-                  sectionsToExpand: [],
+                  sectionsToExpand: ['landlordDetails'],
                 });
               }}
               className='action-button add'>
@@ -106,7 +106,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                     <div className='updated' data-title='Last Updated'>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
-                    <div className='name' data-title='Name'>
+                    <div className='name' data-title='Name' title={`Document ${document.document_id}`}>
                       '{getDocumentTitle(document.template_fields?.tenantName)}'
                     </div>
                     <div className='period' data-title='Period'>

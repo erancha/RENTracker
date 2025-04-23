@@ -890,6 +890,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${DocumentsBucket}'
+              - Effect: Allow
+                Action:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject

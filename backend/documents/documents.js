@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { prepareCorsHeaders } = require('/opt/corsHeaders');
 const dbData = require('/opt/dbData');
-const { prepareS3DocumentFolderKey, prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
+const { prepareS3DocumentFolderPrefix, prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const APP_AWS_REGION = process.env.APP_AWS_REGION;
@@ -347,12 +347,8 @@ const handleDeleteDocument = async (documentId, corsHeaders) => {
 const handleFileUpload = async (event, corsHeaders) => {
   try {
     const { documentId, fileName, fileType } = event.queryStringParameters;
-    if (!documentId || !fileName || !fileType) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ message: 'documentId, fileName, and fileType are required for file upload' }),
-      };
+    if (isInvalidValue(documentId) || isInvalidValue(fileName) || isInvalidValue(fileType)) {
+      throw { statusCode: 400, message: 'documentId, fileName, and fileType are required for file upload' };
     }
 
     const fileContent = extractFileContentFromMultipart(event.body, event.headers['content-type']);
@@ -361,7 +357,7 @@ const handleFileUpload = async (event, corsHeaders) => {
     }
 
     const s3Client = new S3Client({ region: APP_AWS_REGION });
-    const s3UploadedFileKey = `${prepareS3DocumentFolderKey(documentId, SAAS_TENANT_ID)}/${fileName}`;
+    const s3UploadedFileKey = `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${fileName}`;
     const command = new PutObjectCommand({
       Bucket: DOCUMENTS_BUCKET_NAME,
       Key: s3UploadedFileKey,
@@ -411,7 +407,7 @@ const s3Client = new S3Client({ region: APP_AWS_REGION });
 async function preparePresignedUrl(documentId, fileName) {
   const command = new GetObjectCommand({
     Bucket: DOCUMENTS_BUCKET_NAME,
-    Key: fileName ? `${prepareS3DocumentFolderKey(documentId, SAAS_TENANT_ID)}/${fileName}` : prepareS3RentalAgreementKey(documentId, SAAS_TENANT_ID),
+    Key: fileName ? `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${fileName}` : prepareS3RentalAgreementKey(documentId, SAAS_TENANT_ID),
   });
 
   // Get S3 presigned URL
@@ -473,4 +469,13 @@ async function prepareAttachmentsPresignedUrls(documentId, templateFields) {
   if (templateFields.salary2) presignedUrls.salary2 = await preparePresignedUrl(documentId, 'salary2');
 
   return presignedUrls;
+}
+
+/**
+ * Utility function to check for invalid values
+ * @param {any} value - The value to check
+ * @returns {boolean} True if the value is invalid, false otherwise
+ */
+function isInvalidValue(value) {
+  return !value || value === 'undefined';
 }

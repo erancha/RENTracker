@@ -158,6 +158,10 @@ export const uploadFile = async ({
   documentId: string;
   fileName?: string;
 }): Promise<{ message: string; fileKey: string }> => {
+  if (!documentId || documentId === 'undefined' || !fileName || fileName === 'undefined') {
+    console.warn('Warning: documentId or fileName is falsy or undefined');
+  }
+
   const url = `${appConfigData.REST_API_URL}/upload?documentId=${documentId}&fileName=${fileName || file.name}&fileType=${
     file.type || 'application/octet-stream'
   }`;

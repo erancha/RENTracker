@@ -1,11 +1,11 @@
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 const { CloudFrontClient, CreateInvalidationCommand } = require('@aws-sdk/client-cloudfront');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
-const { prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
+const { prepareS3RentalAgreementKey, prepareS3DocumentFolderPrefix } = require('/opt/prepareS3Keys');
 
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
@@ -113,16 +113,32 @@ async function handleUpdate(record) {
  * @returns {Promise<void>}
  */
 async function handleDelete(record) {
-  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
-  await s3Client.send(
-    new DeleteObjectCommand({
+  const s3DocumentFolderPrefix = prepareS3DocumentFolderPrefix(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
+
+  try {
+    // List all objects with the folder prefix
+    const listCommand = new ListObjectsV2Command({
       Bucket: DOCUMENTS_BUCKET_NAME,
-      Key: s3Key,
-    })
-  );
+      Prefix: s3DocumentFolderPrefix,
+    });
+    const listResponse = await s3Client.send(listCommand);
+
+    // Delete all objects in the folder
+    if (listResponse.Contents && listResponse.Contents.length > 0) {
+      const deleteCommand = new DeleteObjectsCommand({
+        Bucket: DOCUMENTS_BUCKET_NAME,
+        Delete: {
+          Objects: listResponse.Contents.map((item) => ({ Key: item.Key })),
+        },
+      });
+      await s3Client.send(deleteCommand);
+    }
+  } catch (error) {
+    console.error(`Error deleting folder: ${s3DocumentFolderPrefix}`, error);
+  }
 
   await handleInvalidate(record);
-  console.log(`PDF deleted and invalidated from S3: ${s3Key}`);
+  console.log(`Folder deleted and invalidated from S3: ${s3DocumentFolderPrefix}`);
 }
 
 /**
@@ -131,7 +147,7 @@ async function handleDelete(record) {
  * @returns {Promise<void>}
  */
 async function handleInvalidate(record) {
-  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.NewImage.document_id.S, SAAS_TENANT_ID);
+  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
   const command = new CreateInvalidationCommand({
     DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
     InvalidationBatch: {
