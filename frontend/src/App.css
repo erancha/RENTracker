@@ -478,6 +478,10 @@ body {
   &.current {
     background-color: #e3f2fd;
     border-left: 4px solid #1976d2;
+
+    & .actions > .documents.activity {
+      animation: pulsate-brightness 1s ease-in-out 5 forwards;
+    }
   }
 
   & .actions > .action-button:not(:hover) {
@@ -486,10 +490,6 @@ body {
     & .highlight {
       scale: 120%;
     }
-  }
-
-  & .actions > .documents.activity {
-    animation: spin 1s ease-in 1;
   }
 
   > .details > div:not(.actions)::before,
@@ -548,10 +548,20 @@ body {
 
 /* Documents Container */
 .documents-container {
+  .header span {
+    animation: pulsate-brightness 1s ease-in-out 5 forwards;
+  }
+
+  .action-button.add {
+    animation-delay: 5s;
+    animation-iteration-count: 3;
+  }
+
   .actions {
     margin-top: 1rem;
     grid-template-columns: repeat(3, 2rem);
   }
+
   > .data-container .actions {
     margin-top: 0;
     padding-top: 5px;

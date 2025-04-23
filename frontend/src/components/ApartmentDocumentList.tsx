@@ -61,8 +61,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
 
     return (
       <div className='page body-container'>
-        <div className='header documents-container-header m-n-relation'>
-          Apartment Rental Agreements
+        <div className='header m-n-relation'>
+          <span>Apartment Rental Agreements</span>
           {!this.state.showForm && (
             <button
               onClick={() => {

@@ -83,7 +83,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
 
     return (
       <div className='page body-container'>
-        <div className='header documents-container-header'>
+        <div className='header'>
           Tenant Rental Agreements
           <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
             {!this.state.showDocumentIdInput && <Plus />}
