@@ -625,7 +625,7 @@ body {
     text-align: start;
     background-color: whitesmoke;
     border-radius: 5px;
-    padding: 5px 5px 10px 5px;
+    padding: 10px 5px 8px 5px;
 
     &.m-n-relation {
       font-size: 1.3rem;

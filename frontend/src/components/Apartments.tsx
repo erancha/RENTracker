@@ -194,7 +194,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    */
   renderDocumentsToggleButton = () => (
     <button
-      onClick={this.handleShowDocuments}
+      onClick={this.handleToggleDocumentsActivity}
       className='action-button documents activity'
       title='Toggle between Apartment Rental Agreements / Apartment Activity'>
       <FileText />
@@ -204,7 +204,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   /**
    * Toggles between documents and activity view
    */
-  handleShowDocuments = () => {
+  handleToggleDocumentsActivity = () => {
     this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
   };
 

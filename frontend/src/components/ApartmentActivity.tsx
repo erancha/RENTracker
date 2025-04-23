@@ -11,7 +11,7 @@ import {
   prepareDeleteApartmentActivityCommandAction,
   deleteApartmentActivityAction,
 } from '../redux/apartmentActivity/actions';
-import { Save, Trash2, Undo2 } from 'lucide-react';
+import { Plus, Save, Trash2, Undo2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { UserType } from 'redux/auth/types';
 
@@ -21,9 +21,9 @@ type ActivityField = keyof Pick<IApartmentActivity, 'description' | 'pending_con
 /**
  * Component for managing and displaying apartment activity.
  * @class ApartmentActivity
- * @extends React.Component<IApartmentActivityProps, { emptyActivity: IApartmentActivity }>
+ * @extends React.Component<IApartmentActivityProps, { showEmptyActivity: boolean, emptyActivity: IApartmentActivity }>
  */
-class ApartmentActivity extends React.Component<IApartmentActivityProps, { emptyActivity: INewApartmentActivity }> {
+class ApartmentActivity extends React.Component<IApartmentActivityProps, { showEmptyActivity: boolean; emptyActivity: INewApartmentActivity }> {
   private newActivityAmountRef = React.createRef<HTMLTextAreaElement>();
 
   /**
@@ -39,7 +39,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { empty
 
   constructor(props: IApartmentActivityProps) {
     super(props);
-    this.state = { emptyActivity: this.createInitialActivity() };
+    this.state = { showEmptyActivity: false, emptyActivity: this.createInitialActivity() };
   }
 
   componentDidMount(): void {
@@ -60,10 +60,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { empty
       !this.props.currentApartment.is_disabled
     ) {
       this.setState((prevState) => ({
-        emptyActivity: {
-          ...prevState.emptyActivity,
-          apartment_id: this.props.currentApartment?.apartment_id || '',
-        },
+        showEmptyActivity: prevState.showEmptyActivity,
+        emptyActivity: { ...prevState.emptyActivity, apartment_id: this.props.currentApartment?.apartment_id || '' },
       }));
     }
 
@@ -78,18 +76,29 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { empty
 
     return (
       <div className='page body-container'>
-        <div className='header m-n-relation'>Apartment Activity</div>
+        <div className='header m-n-relation'>
+          <span>Apartment Activity</span>
+          <button
+            onClick={() => {
+              // Reset the selected document to ensure form starts fresh
+              this.setState({
+                showEmptyActivity: true,
+                emptyActivity: this.createInitialActivity(),
+              });
+            }}
+            className='action-button add'>
+            <Plus />
+          </button>
+        </div>
         <div className='activity-container'>
-          {activity.length > 0 && (
-            <div className='table-header activity'>
-              <div className='saved-at'>Saved At</div>
-              <div className='description'>Description</div>
-              <div className='pending-confirmation'>Wait for confirmation</div>
-            </div>
-          )}
+          <div className='table-header activity'>
+            <div className='saved-at'>Saved At</div>
+            <div className='description'>Description</div>
+            <div className='pending-confirmation'>Wait for confirmation</div>
+          </div>
 
           <div className='data-container activity-list'>
-            {this.props.currentApartment && !this.props.currentApartment.is_disabled && (
+            {this.props.currentApartment && !this.props.currentApartment.is_disabled && this.state.showEmptyActivity && (
               <div className='table-row activity input'>{this.renderActivity(this.state.emptyActivity)}</div>
             )}
 
@@ -153,7 +162,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { empty
    * Cancels the current activity and resets the form
    */
   handleCancelActivity = () => {
-    this.setState({ emptyActivity: this.createInitialActivity() });
+    if (this.state.emptyActivity.description) this.setState({ emptyActivity: this.createInitialActivity() });
+    else this.setState({ ...this.state, showEmptyActivity: false });
   };
 
   /**
