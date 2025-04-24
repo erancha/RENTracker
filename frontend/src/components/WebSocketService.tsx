@@ -322,7 +322,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
   // CRUD: event containing Read data
   private handleDataRead(dataRead: any) {
     if (dataRead.apartments) this.props.setApartmentsAction(dataRead.apartments);
-    if (dataRead.activity) this.props.setApartmentActivityAction(dataRead.activity[0].apartment_id, dataRead.activity);
+    if (dataRead.activity?.length > 0) this.props.setApartmentActivityAction(dataRead.activity[0].apartment_id, dataRead.activity);
   }
 
   // CRUD: event containing Updated data

@@ -21,7 +21,7 @@ import {
   resetApartmentFormAction,
 } from '../redux/apartments/actions';
 import { clearApartmentActivityAction, prepareReadApartmentActivityCommandAction } from '../redux/apartmentActivity/actions';
-import { Trash2, Pencil, FileText, Copy, Plus } from 'lucide-react';
+import { Trash2, Pencil, FileText, Copy, Plus, List } from 'lucide-react';
 import { filterAndSortApartments } from '../utils/utils';
 import { ApartmentForm } from './ApartmentForm';
 import ApartmentDocumentList from './ApartmentDocumentList';
@@ -155,7 +155,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                         <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title='Delete'>
                           <Trash2 />
                         </button>
-                        {this.renderDocumentsToggleButton()}
+                        {this.renderDocumentsToggleButton(apartment.apartment_id)}
                       </div>
                     )}
                   </div>
@@ -192,20 +192,21 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * Renders the documents/activity toggle button
    * @returns {JSX.Element} Button with appropriate styling based on state
    */
-  renderDocumentsToggleButton = () => (
+  renderDocumentsToggleButton = (apartment_id: string) => (
     <button
-      onClick={this.handleToggleDocumentsActivity}
+      onClick={() => this.handleToggleDocumentsActivity(apartment_id)}
       className='action-button documents activity'
-      title='Toggle between Apartment Rental Agreements / Apartment Activity'>
-      <FileText />
+      title={`Toggle from Apartment ${this.state.showDocuments ? 'Rental Agreements to Activity' : 'Activity to Rental Agreements'}`}>
+      {this.state.showDocuments ? <FileText /> : <List />}
     </button>
   );
 
   /**
    * Toggles between documents and activity view
    */
-  handleToggleDocumentsActivity = () => {
-    this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
+  handleToggleDocumentsActivity = (apartment_id: string) => {
+    // toggle only if the apartment_id of the current apartment is the same as the apartment_id last saved in redux (to avoid toggling when the user just wants to select another apartment)
+    if (apartment_id === this.props.currentApartmentId) this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
   };
 
   handleShowActivity = () => {
