@@ -36,7 +36,7 @@ try {
             # Build and push Docker image to ECR
             $apartmentId = aws sts get-caller-identity --query "Apartment" --output text
             $ecrRentTrackingRepositoryName = "rentTracking-repository"
-            $rentTrackingServiceName = "RenTracker-service"
+            $rentTrackingServiceName = "RENTracker-service"
             $rentTrackingDockerResults = ./common/dev-build-push-docker-image.ps1 `
                 -skipDockerBuildAndPush $skipDockerBuildAndPush `
                 -apartmentId $apartmentId `

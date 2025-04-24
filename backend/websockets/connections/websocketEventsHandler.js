@@ -21,10 +21,10 @@ exports.handler = async (event) => {
       recordsExtractedFromQueue.map(async (record) => {
         const extractedRecord = JSON.parse(record.body);
         const MAX_LOG_LENGTH = 1000;
-        const extractedRecordMessage = `Extracted record: ${record.body.substring(0, MAX_LOG_LENGTH)}${
+        const extractedRecordLogMessage = `Extracted record: ${record.body.substring(0, MAX_LOG_LENGTH)}${
           record.body.length > MAX_LOG_LENGTH ? ' ...' : ''
         }, record.body length: ${record.body.length} bytes`;
-        console.log(extractedRecordMessage);
+        console.log(extractedRecordLogMessage);
 
         if (extractedRecord.targetConnectionIds) {
           const targetConnectionIds = extractedRecord.targetConnectionIds;
@@ -33,11 +33,11 @@ exports.handler = async (event) => {
             // Send the message to all connected websocket clients:
             const jsonMessage = JSON.stringify(extractedRecord.message);
             const bufferData = Buffer.from(jsonMessage);
-            await sendMessageToConnectedClients({ appGatewayClient, targetConnectionIds, bufferData, extractedRecordMessage });
+            await sendMessageToConnectedClients({ appGatewayClient, targetConnectionIds, bufferData, extractedRecordMessage: extractedRecordLogMessage });
           }
         }
 
-        if (extractedRecord.message) await publishToEventBridge(extractedRecord.message);
+        if (extractedRecord.message) await checkAndPublishToEventBridge({ extractedMessage: extractedRecord.message });
       })
     );
   } catch (error) {
@@ -69,30 +69,31 @@ const sendMessageToConnectedClients = async ({ appGatewayClient, targetConnectio
 //=========================================================================================================================================
 // Helper function to publish events to EventBridge
 //=========================================================================================================================================
-const publishToEventBridge = async (eventDetail) => {
-  try {
-    const params = {
-      Entries: [
-        {
-          Source: 'RenTracker-service',
-          DetailType: 'command-executed',
-          Detail: JSON.stringify(eventDetail),
-          EventBusName: `${process.env.STACK_NAME}-commands-event-bus`,
-          Time: new Date(),
-        },
-      ],
-    };
+const checkAndPublishToEventBridge = async ({ extractedMessage }) => {
+  if (extractedMessage.dataCreated || extractedMessage.dataUpdated || extractedMessage.dataDeleted)
+    try {
+      const params = {
+        Entries: [
+          {
+            Source: 'RENTracker-service',
+            DetailType: 'command-executed',
+            Detail: JSON.stringify(extractedMessage),
+            EventBusName: `${process.env.STACK_NAME}-commands-event-bus`,
+            Time: new Date(),
+          },
+        ],
+      };
 
-    const command = new PutEventsCommand(params);
-    const result = await eventBridgeClient.send(command);
+      const command = new PutEventsCommand(params);
+      const result = await eventBridgeClient.send(command);
 
-    if (process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'true') {
-      console.log(`Event ${JSON.stringify(eventDetail)} published successfully: ${JSON.stringify(result)}`);
+      if (process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'false') {
+        console.log(`Event ${JSON.stringify(extractedMessage)} published successfully: ${JSON.stringify(result)}`);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error publishing event to EventBridge:', error);
+      throw error;
     }
-
-    return result;
-  } catch (error) {
-    console.error('Error publishing event to EventBridge:', error);
-    throw error;
-  }
 };

@@ -1242,7 +1242,7 @@ Resources:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
-          ENABLE_ENHANCED_LOGGING: false
+          ENABLE_ENHANCED_LOGGING: true
       Role: !GetAtt WebsocketEventsHandlerExecutionRole.Arn
       Events: # event source mapping
         SQSTrigger:
@@ -1301,17 +1301,22 @@ Resources:
       EventBusName: !Ref CommandsEventBus
       EventPattern:
         source:
-          - 'RenTracker-service' # An identifier that needs to match exactly with the Source field we specify when publishing events
+          - 'RENTracker-service' # An identifier that needs to match exactly with the Source field we specify when publishing events
         detail-type:
           - 'command-executed'
         detail: # This rule will trigger the target Lambda when:
-          # 1. The event source is 'RenTracker-service'
+          # 1. The event source is 'RENTracker-service'
           # 2. The detail-type is 'command-executed'
-          # 3. The event detail is a nested structure where 'dataUpdated' contains a key named 'apartments', e.g. "dataUpdated": {"apartments": {"rent_amount": 8600, ...
-          dataUpdated:
-            apartments:
-              is_disabled:
-                - false
+          # 3. The event detail matches either dataUpdated OR dataCreated conditions
+          $or:
+            - dataUpdated:
+                apartments:
+                  is_disabled:
+                    - false
+            - dataCreated:
+                activity:
+                  pending_confirmation:
+                    - true
       State: ENABLED
       Targets:
         - Arn: !Ref TargetChattyLambdaArn
