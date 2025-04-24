@@ -27,32 +27,48 @@ export interface IReadApartmentActivityParams {
 }
 
 // ApartmentActivity-specific action types
-export const ADD_APARTMENT_APARTMENT_ACTIVITY = 'ADD_APARTMENT_APARTMENT_ACTIVITY';
-export const SET_APARTMENT_APARTMENT_ACTIVITY = 'SET_APARTMENT_APARTMENT_ACTIVITY';
+export const ADD_APARTMENT_ACTIVITY = 'ADD_APARTMENT_ACTIVITY';
+export const SET_APARTMENT_ACTIVITY = 'SET_APARTMENT_ACTIVITY';
 export const SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND = 'SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND';
-export const DELETE_APARTMENT_APARTMENT_ACTIVITY = 'DELETE_APARTMENT_APARTMENT_ACTIVITY';
+export const DELETE_APARTMENT_ACTIVITY = 'DELETE_APARTMENT_ACTIVITY';
 export const CLEAR_APARTMENT_ACTIVITY = 'CLEAR_APARTMENT_ACTIVITY';
 
 // ApartmentActivity-specific action interfaces
 export interface ISetApartmentActivityAction {
-  type: typeof SET_APARTMENT_APARTMENT_ACTIVITY;
-  payload: IApartmentActivity[];
+  type: typeof SET_APARTMENT_ACTIVITY;
+  payload: {
+    apartmentId: string;
+    activity: IApartmentActivity[];
+  };
 }
 
 export interface IAddApartmentActivityAction {
-  type: typeof ADD_APARTMENT_APARTMENT_ACTIVITY;
+  type: typeof ADD_APARTMENT_ACTIVITY;
   payload: IApartmentActivity;
 }
 
 export interface IDeleteApartmentActivityAction {
-  type: typeof DELETE_APARTMENT_APARTMENT_ACTIVITY;
-  payload: string; // activity id
+  type: typeof DELETE_APARTMENT_ACTIVITY;
+  payload: {
+    apartmentId: string;
+    activityId: string;
+  };
 }
 
-export type ApartmentActivityActionTypes = ISetApartmentActivityAction | IAddApartmentActivityAction;
+export interface ISetApartmentActivityConfirmedByBackendAction {
+  type: typeof SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND;
+  payload: {
+    apartmentId: string;
+    activityId: string;
+  };
+}
+
+export interface IClearApartmentActivityAction {
+  type: typeof CLEAR_APARTMENT_ACTIVITY;
+}
 
 export interface IApartmentActivityState {
-  activity: IApartmentActivity[];
+  activity: Record<string, IApartmentActivity[]>; // Group activities by apartmentId
 }
 
 // analyticsData: any[];

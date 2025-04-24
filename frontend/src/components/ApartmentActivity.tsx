@@ -154,7 +154,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
   handleDeleteActivity = (activity_id: string, activity_description: string) => {
     if (window.confirm(`Are you sure you want to delete activity '${activity_description}'?`)) {
       this.props.prepareDeleteApartmentActivityCommandAction(activity_id);
-      this.props.deleteApartmentActivityAction(activity_id);
+      this.props.deleteApartmentActivityAction((this.props.currentApartment as IApartment).apartment_id, activity_id);
     }
   };
 
@@ -269,7 +269,7 @@ interface IApartmentActivityProps {
  */
 const mapStateToProps = (state: IAppState) => ({
   userType: state.auth.userType,
-  activity: state.apartmentActivity.activity,
+  activity: state.apartmentActivity.activity[state.apartments.currentApartmentId as string] || [],
   apartments: state.apartments.apartments,
   currentApartment: state.apartments.currentApartmentId
     ? state.apartments.apartments.find((acc) => acc.apartment_id === state.apartments.currentApartmentId)

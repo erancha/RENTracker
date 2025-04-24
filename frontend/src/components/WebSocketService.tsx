@@ -314,15 +314,15 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     } else if (dataCreated.activity) {
       const newReceivedActivity = dataCreated.activity;
       const isNewActivity = !this.props.activity.find((activity) => activity.activity_id === newReceivedActivity.activity_id);
-      if (isNewActivity) this.props.addApartmentActivityAction({ ...newReceivedActivity });
-      else this.props.setApartmentActivityConfirmedByBackendAction(newReceivedActivity.activity_id);
+      if (isNewActivity) this.props.addApartmentActivityAction(newReceivedActivity);
+      else this.props.setApartmentActivityConfirmedByBackendAction(newReceivedActivity.apartment_id, newReceivedActivity.activity_id);
     }
   }
 
   // CRUD: event containing Read data
   private handleDataRead(dataRead: any) {
     if (dataRead.apartments) this.props.setApartmentsAction(dataRead.apartments);
-    if (dataRead.activity) this.props.setApartmentActivityAction(dataRead.activity);
+    if (dataRead.activity) this.props.setApartmentActivityAction(dataRead.activity[0].apartment_id, dataRead.activity);
   }
 
   // CRUD: event containing Updated data
@@ -339,6 +339,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (dataDeleted.apartments) {
       this.props.deleteApartmentAction(dataDeleted.apartments.apartment_id);
       toast(`Apartment ${dataDeleted.apartments.apartment_id} was deleted.`);
+    } else if (dataDeleted.activity) {
+      // console.log(dataDeleted.activity); TODO
     }
   }
 
@@ -409,7 +411,7 @@ const mapStateToProps = (state: IAppState) => ({
   deleteCommand: state.crud.deleteCommand,
   apartments: state.apartments.apartments,
   currentApartmentId: state.apartments.currentApartmentId,
-  activity: state.apartmentActivity.activity,
+  activity: state.apartmentActivity.activity[state.apartments.currentApartmentId as string],
   menuSelectedPage: state.menu.menuSelectedPage, // TODO
 });
 

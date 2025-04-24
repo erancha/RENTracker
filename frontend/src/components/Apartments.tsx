@@ -262,7 +262,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     // Only proceed if the apartment_id is different from current
     if (apartment_id !== this.props.currentApartmentId) {
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearApartmentActivityAction();
       this.props.prepareReadApartmentActivityCommandAction(apartment_id);
     }
   };

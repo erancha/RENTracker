@@ -1,59 +1,74 @@
 // Reducers
 import {
-  IApartmentActivityState,
-  ADD_APARTMENT_APARTMENT_ACTIVITY,
-  CLEAR_APARTMENT_ACTIVITY,
-  DELETE_APARTMENT_APARTMENT_ACTIVITY,
-  IDeleteApartmentActivityAction,
+  ADD_APARTMENT_ACTIVITY,
+  IAddApartmentActivityAction,
+  SET_APARTMENT_ACTIVITY,
+  ISetApartmentActivityAction,
   SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND,
-  SET_APARTMENT_APARTMENT_ACTIVITY,
+  ISetApartmentActivityConfirmedByBackendAction,
+  DELETE_APARTMENT_ACTIVITY,
+  IDeleteApartmentActivityAction,
+  CLEAR_APARTMENT_ACTIVITY,
+  IClearApartmentActivityAction,
+  IApartmentActivityState,
 } from './types';
 import initialState from '../store/initialState';
-import {
-  ISetApartmentActivityAction,
-  IAddApartmentActivityAction,
-  ISetApartmentActivityConfirmedByBackendAction,
-  IClearApartmentActivityAction,
-} from './actions';
 
 type HandledActions =
-  | ISetApartmentActivityAction
   | IAddApartmentActivityAction
+  | ISetApartmentActivityAction
   | ISetApartmentActivityConfirmedByBackendAction
-  | IClearApartmentActivityAction
-  | IDeleteApartmentActivityAction;
+  | IDeleteApartmentActivityAction
+  | IClearApartmentActivityAction;
 
 export const apartmentActivityReducer = (state: IApartmentActivityState = initialState.apartmentActivity, action: HandledActions): IApartmentActivityState => {
   switch (action.type) {
     // Set activity data.
-    case SET_APARTMENT_APARTMENT_ACTIVITY:
+    case SET_APARTMENT_ACTIVITY: {
+      const { apartmentId, activity } = action.payload;
       return {
         ...state,
-        activity: action.payload,
+        activity: {
+          ...state.activity,
+          [apartmentId]: activity,
+        },
       };
+    }
 
     // Add a activity.
-    case ADD_APARTMENT_APARTMENT_ACTIVITY: {
+    case ADD_APARTMENT_ACTIVITY: {
+      const activity = action.payload;
       return {
         ...state,
-        activity: [action.payload, ...state.activity],
+        activity: {
+          ...state.activity,
+          [activity.apartment_id]: [activity, ...(state.activity[activity.apartment_id] || [])],
+        },
       };
     }
 
     // Delete activity
-    case DELETE_APARTMENT_APARTMENT_ACTIVITY: {
-      // Remove activity from the list
+    case DELETE_APARTMENT_ACTIVITY: {
+      const { apartmentId, activityId } = action.payload;
       return {
         ...state,
-        activity: state.activity.filter((activity) => activity.activity_id !== action.payload),
+        activity: {
+          ...state.activity,
+          [apartmentId]: state.activity[apartmentId]?.filter((activity) => activity.activity_id !== activityId) || [],
+        },
       };
     }
 
     // Set activity as onroute
     case SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND: {
+      const { apartmentId, activityId } = action.payload;
       return {
         ...state,
-        activity: state.activity.map((activity) => (activity.activity_id === action.payload ? { ...activity, onroute: false } : activity)),
+        activity: {
+          ...state.activity,
+          [apartmentId]:
+            state.activity[apartmentId]?.map((activity) => (activity.activity_id === activityId ? { ...activity, onroute: false } : activity)) || [],
+        },
       };
     }
 
@@ -61,7 +76,7 @@ export const apartmentActivityReducer = (state: IApartmentActivityState = initia
     case CLEAR_APARTMENT_ACTIVITY: {
       return {
         ...state,
-        activity: [],
+        activity: {},
       };
     }
 

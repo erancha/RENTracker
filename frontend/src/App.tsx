@@ -134,7 +134,7 @@ class AppComponent extends React.Component<IAppProps> {
           <ul>
             <li>
               The app supports two user roles: Landlords who manage properties, rental agreements, and financials (TBD), and Tenants who complete their details
-              in the rental agreement, and manage their activity (TBD).
+              in the rental agreement, and manage their activity.
             </li>
             <li>The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront.</li>
             <li>

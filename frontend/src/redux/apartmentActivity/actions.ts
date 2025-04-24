@@ -1,36 +1,20 @@
 import {
-  ICreateApartmentActivityParams,
-  DELETE_APARTMENT_APARTMENT_ACTIVITY,
+  DELETE_APARTMENT_ACTIVITY,
   IDeleteApartmentActivityAction,
-  IApartmentActivity,
-  INewApartmentActivity,
-  SET_APARTMENT_APARTMENT_ACTIVITY,
-  ADD_APARTMENT_APARTMENT_ACTIVITY,
+  SET_APARTMENT_ACTIVITY,
+  ISetApartmentActivityAction,
+  ADD_APARTMENT_ACTIVITY,
+  IAddApartmentActivityAction,
   SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND,
+  ISetApartmentActivityConfirmedByBackendAction,
   CLEAR_APARTMENT_ACTIVITY,
+  INewApartmentActivity,
+  IApartmentActivity,
+  ICreateApartmentActivityParams,
+  IClearApartmentActivityAction,
 } from './types';
 import { CommandType } from '../crud/types';
 import { prepareCreateCommandAction, prepareReadCommandAction, prepareDeleteCommandAction } from '../crud/actions';
-
-// ApartmentActivity-specific action interfaces
-export interface ISetApartmentActivityAction {
-  type: typeof SET_APARTMENT_APARTMENT_ACTIVITY;
-  payload: IApartmentActivity[];
-}
-
-export interface IAddApartmentActivityAction {
-  type: typeof ADD_APARTMENT_APARTMENT_ACTIVITY;
-  payload: IApartmentActivity;
-}
-
-export interface ISetApartmentActivityConfirmedByBackendAction {
-  type: typeof SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND;
-  payload: string; // activity id
-}
-
-export interface IClearApartmentActivityAction {
-  type: typeof CLEAR_APARTMENT_ACTIVITY;
-}
 
 // CRUD operations
 export const prepareCreateApartmentActivityCommandAction = (activity: INewApartmentActivity) =>
@@ -52,24 +36,24 @@ export const prepareDeleteApartmentActivityCommandAction = (activity_id: string)
   });
 
 // Regular actions
-export const setApartmentActivityAction = (activity: IApartmentActivity[]): ISetApartmentActivityAction => ({
-  type: SET_APARTMENT_APARTMENT_ACTIVITY,
-  payload: activity,
+export const setApartmentActivityAction = (apartmentId: string, activity: IApartmentActivity[]): ISetApartmentActivityAction => ({
+  type: SET_APARTMENT_ACTIVITY,
+  payload: { apartmentId, activity },
 });
 
 export const addApartmentActivityAction = (activity: IApartmentActivity): IAddApartmentActivityAction => ({
-  type: ADD_APARTMENT_APARTMENT_ACTIVITY,
+  type: ADD_APARTMENT_ACTIVITY,
   payload: activity,
 });
 
-export const deleteApartmentActivityAction = (activity_id: string): IDeleteApartmentActivityAction => ({
-  type: DELETE_APARTMENT_APARTMENT_ACTIVITY,
-  payload: activity_id,
+export const deleteApartmentActivityAction = (apartmentId: string, activityId: string): IDeleteApartmentActivityAction => ({
+  type: DELETE_APARTMENT_ACTIVITY,
+  payload: { apartmentId, activityId },
 });
 
-export const setApartmentActivityConfirmedByBackendAction = (activityId: string): ISetApartmentActivityConfirmedByBackendAction => ({
+export const setApartmentActivityConfirmedByBackendAction = (apartmentId: string, activityId: string): ISetApartmentActivityConfirmedByBackendAction => ({
   type: SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND,
-  payload: activityId,
+  payload: { apartmentId, activityId },
 });
 
 export const clearApartmentActivityAction = (): IClearApartmentActivityAction => ({

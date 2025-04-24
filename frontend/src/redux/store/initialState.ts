@@ -46,7 +46,7 @@ const initialState: IAppState = {
     },
   },
   apartmentActivity: {
-    activity: [],
+    activity: {},
   },
   // analyticsData: [],
   users: {
