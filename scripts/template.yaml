@@ -1005,6 +1005,8 @@ Resources:
     Properties:
       TableName: !Sub ${AWS::StackName}-Apartments
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       AttributeDefinitions:
         - AttributeName: apartment_id
           AttributeType: S
@@ -1072,6 +1074,8 @@ Resources:
     Properties:
       TableName: !Sub ${AWS::StackName}-Documents
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
       AttributeDefinitions:
@@ -1119,6 +1123,8 @@ Resources:
     Properties:
       TableName: !Sub ${AWS::StackName}-ApartmentActivity
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
       AttributeDefinitions:
         - AttributeName: activity_id
           AttributeType: S
