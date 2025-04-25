@@ -1,8 +1,12 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand, DeleteCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 const { logMiddleware, isLandlordUser } = require('./utils');
+const { captureAWSv3Client } = require('aws-xray-sdk-core');
 
-const ddbClient = new DynamoDBClient({ region: process.env.APP_AWS_REGION });
+// Create DynamoDB client with X-Ray tracing. X-Ray automatically propagates the parent trace ID
+// from the Lambda context through the async context, so all DynamoDB operations made through
+// this client will be linked as subsegments to the parent trace without any manual context passing
+const ddbClient = captureAWSv3Client(new DynamoDBClient({ region: process.env.APP_AWS_REGION }));
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 // const LANDLORDS_TABLE_NAME = process.env.LANDLORDS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
@@ -433,6 +437,7 @@ const getApartmentActivity = logMiddleware('ddb_getApartmentActivity')(async ({ 
         },
         FilterExpression: 'saas_tenant_id = :saas_tenant_id',
         ScanIndexForward: false, // Sort in descending order by created_at
+        Limit: 10, // Limit the query to 100 records
       })
     );
     return Items || [];

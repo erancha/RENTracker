@@ -90,7 +90,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
 
     const upload = (data: any) => {
       try {
-        this.webSocket?.send(JSON.stringify({ action: 'CommandsHandlerKey', data }));
+        this.webSocket?.send(JSON.stringify({ action: 'CommandsHandlerRouteKey', data }));
       } catch (error) {
         toast.error(`Failed to send a message to the websocket server: ${error}`);
       }

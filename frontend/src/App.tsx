@@ -136,11 +136,11 @@ class AppComponent extends React.Component<IAppProps> {
               The app supports two user roles: Landlords who manage properties, rental agreements, and financials (TBD), and Tenants who complete their details
               in the rental agreement, and manage their activity.
             </li>
-            <li>The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront.</li>
             <li>
-              It offers an intuitive, mobile-friendly UI/UX, and robust monitoring via AWS CloudWatch, built with AWS services, React, and WebSockets for
-              real-time updates.
+              The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS
+              services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates
             </li>
+            <li>It offers an intuitive, mobile-friendly React UI/UX.</li>
           </ul>
           <div className='link-container'>
             <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>

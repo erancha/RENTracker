@@ -1,1 +1,1 @@
-return "rntrk"
+return "rnt"

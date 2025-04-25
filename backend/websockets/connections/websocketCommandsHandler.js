@@ -1,3 +1,5 @@
+const AWSXRay = require('aws-xray-sdk-core');
+const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { SQSClient } = require('@aws-sdk/client-sqs');
 const { insertMessageToSQS } = require('/opt/connections');
 const { handleCommand, determineTargetUsers } = require('/opt/commandsHandlers');
@@ -7,50 +9,49 @@ const redisClient = getRedisClient();
 const AWS_REGION = process.env.APP_AWS_REGION;
 const STACK_NAME = process.env.STACK_NAME;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
-const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 
 //=============================================================================================================================================
-// 1. Receives one request from a connected websocket client.
+// 1. Receives an event from a connected websocket client.
 // 2. Gets required data from redis using the sender's connectionId (event.requestContext.connectionId).
 // 3. Performs CRUD operations on the database.
 // 4. Broadcasts the data to other connected users thru an SQS queue (another handler in the default lambda space takes this responsibility).
 //=============================================================================================================================================
 exports.handler = async (event) => {
-  // if (event.testPG) return await testPGOperations();
+  // console.log(JSON.stringify(event, null, 2));
+
+  const segment = AWSXRay.getSegment(); // Get the current X-Ray segment
+  const handlerSubsegment = segment.addNewSubsegment('websocketCommandsHandler');
+
   let statusCode = 200;
 
   try {
-    // console.log(JSON.stringify(event, null, 2));
     const senderConnectionId = event.requestContext.connectionId;
     const incomingData = JSON.parse(event.body).data;
 
     const { type: commandType, params: commandParams } = incomingData.command;
     const connectedUserId = await getUserId(senderConnectionId);
+
+    const handleCommandSubsegment = handlerSubsegment.addNewSubsegment('handleCommand');
     const response = await handleCommand({ commandType, commandParams, connectedUserId });
+    handleCommandSubsegment.close();
+
     const targetUserIds = determineTargetUsers({ commandType, commandParams, response, connectedUserId });
 
     // Send the message to target websockets connected users through SQS
     if (response) {
       const targetConnectionIds = await getConnectionIdsForUsers(targetUserIds);
       if (targetConnectionIds.length > 0) {
-        const sqsClient = new SQSClient({ region: AWS_REGION });
-        await insertMessageToSQS(
-          JSON.stringify({
-            targetConnectionIds,
-            message: response,
-          }),
-          sqsClient,
-          SQS_MESSAGES_TO_CLIENTS_Q_URL
-        );
+        const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+        await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: response }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
       }
     } else statusCode = 400; // bad request
   } catch (error) {
-    console.error('Full error details:');
-    console.error(error.stack); // This will show the full stack trace
     console.error('Error message:', error.message);
+    console.error(error.stack);
     console.error(`Error processing event: ${JSON.stringify(event, null, 2)}`);
-    console.error('Error occurred at:', new Date().toISOString());
     statusCode = 500; // internal server error
+  } finally {
+    handlerSubsegment.close(); // Close the handler subsegment
   }
 
   return { statusCode };

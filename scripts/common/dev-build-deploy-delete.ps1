@@ -67,7 +67,7 @@ elseif (-not $deleteStack) {
 }
 
 Push-Location util
-# ./manage-log-groups.ps1
+./manage-log-groups.ps1 -manageRetentionLogGroupsSuffix $commonConstants.stackName
 # ./list-all-non-default-resources.ps1 -region $commonConstants.region | Select-String -Pattern "$($commonConstants.stackName)-|$($commonConstants.stackNameMain)-"
 Pop-Location
 

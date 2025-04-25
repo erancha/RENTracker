@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const AWSXRay = require('aws-xray-sdk');
+const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { SQSClient } = require('@aws-sdk/client-sqs');
 const { collectConnectionsAndUsernames, insertMessageToSQS } = require('/opt/connections');
 const dbData = require('/opt/dbData');
@@ -17,77 +19,80 @@ const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 //======================================================================================================
 exports.handler = async (event) => {
   // console.log('Event: ', JSON.stringify(event, null, 2));
-
-  // Extract JWT token and category from the query string:
-  let currentJwtToken;
-  if (event.queryStringParameters && event.queryStringParameters.token) currentJwtToken = event.queryStringParameters.token;
-  else throw new Error('JWT token is missing in the query string');
-  const decodedJwt = jwt.decode(currentJwtToken);
-  if (!decodedJwt || !decodedJwt.sub) throw new Error(`Invalid token: Missing user id (sub): ${currentJwtToken}, ${JSON.stringify(decodedJwt)}`);
-  else {
-    // Check if the token has expired //TODO: Introduce a Lambda authorizer - the $connect handler should receive a verified JWT.
-    // console.log(JSON.stringify(decodedJwt, null, 2));
-    const currentTimeInSeconds = Math.floor(Date.now() / 1000); // Convert to seconds
-    if (decodedJwt.exp < currentTimeInSeconds) {
-      throw new Error(`Token has expired ${currentTimeInSeconds - decodedJwt.exp} seconds ago`);
-    } // else console.log(`Token will expire in ${decodedJwt.exp - currentTimeInSeconds} seconds ...`);
-  }
-
-  // Extract user id (sub) and user name from the token
-  const currentConnectionId = event.requestContext.connectionId;
-  const currentUserId = decodedJwt.sub;
-  const currentUserName = decodedJwt.name;
-  const currentUserEmail = decodedJwt.email;
-  const currentUserPhoneNumber = decodedJwt.phone_number;
-
-  /*
-   * Key Points of the connections management implementation:
-   * 1. Uses a single hash per connection to store all connection data
-   *    - More intuitive data representation
-   *    - Easier to inspect and debug
-   *    - Reduced memory overhead (fewer keys)
-   *
-   * 2. Maintains Lua scripts for atomic operations
-   *    - Single round trip to Redis
-   *    - Ensures data consistency
-   *    - Logic runs on Redis server
-   *
-   * 3. Key structure:
-   *    - ${STACK_NAME}:conn:${connectionId} -> Hash storing connection details
-   *    - ${STACK_NAME}:active_connections -> Set of all active connection IDs
-   *    - ${STACK_NAME}:user:${userId}:connections -> Set of user's connection IDs
-   */
-  const luaScript = `
-      local connectionId = KEYS[1]
-      local userId = ARGV[1]
-      local userName = ARGV[2]
-      local userEmail = ARGV[3]
-      local STACK_NAME = ARGV[4]
-      local EXPIRATION_TIME = tonumber(ARGV[5])
-
-      -- Store all connection data in a single hash
-      redis.call('HMSET', STACK_NAME .. ':conn:' .. connectionId,
-                'userId', userId,
-                'userName', userName,
-                'userEmail', userEmail,
-                'connectedAt', redis.call('TIME')[1])
-      
-      -- Set expiration on the connection hash
-      redis.call('EXPIRE', STACK_NAME .. ':conn:' .. connectionId, EXPIRATION_TIME)
-
-      -- Add to active connections set
-      redis.call('SADD', STACK_NAME .. ':active_connections', connectionId)
-      redis.call('EXPIRE', STACK_NAME .. ':active_connections', EXPIRATION_TIME)
-      
-      -- Add to user's connections set
-      redis.call('SADD', STACK_NAME .. ':user:' .. userId .. ':connections', connectionId)
-      redis.call('EXPIRE', STACK_NAME .. ':user:' .. userId .. ':connections', EXPIRATION_TIME)
-
-      -- Return all active connections for gathering state
-      return redis.call('SMEMBERS', STACK_NAME .. ':active_connections')
-  `;
+  const segment = AWSXRay.getSegment();
+  const handlerSubsegment = segment.addNewSubsegment('$connectHandler');
 
   try {
+    // Extract JWT token and category from the query string:
+    let currentJwtToken;
+    if (event.queryStringParameters && event.queryStringParameters.token) currentJwtToken = event.queryStringParameters.token;
+    else throw new Error('JWT token is missing in the query string');
+    const decodedJwt = jwt.decode(currentJwtToken);
+    if (!decodedJwt || !decodedJwt.sub) throw new Error(`Invalid token: Missing user id (sub): ${currentJwtToken}, ${JSON.stringify(decodedJwt)}`);
+    else {
+      // Check if the token has expired //TODO: Introduce a Lambda authorizer - the $connect handler should receive a verified JWT.
+      // console.log(JSON.stringify(decodedJwt, null, 2));
+      const currentTimeInSeconds = Math.floor(Date.now() / 1000); // Convert to seconds
+      if (decodedJwt.exp < currentTimeInSeconds) {
+        throw new Error(`Token has expired ${currentTimeInSeconds - decodedJwt.exp} seconds ago`);
+      } // else console.log(`Token will expire in ${decodedJwt.exp - currentTimeInSeconds} seconds ...`);
+    }
+
+    // Extract user id (sub) and user name from the token
+    const currentConnectionId = event.requestContext.connectionId;
+    const currentUserId = decodedJwt.sub;
+    const currentUserName = decodedJwt.name;
+    const currentUserEmail = decodedJwt.email;
+    const currentUserPhoneNumber = decodedJwt.phone_number;
+
+    /*
+     * Key Points of the connections management implementation:
+     * 1. Uses a single hash per connection to store all connection data
+     *    - More intuitive data representation
+     *    - Easier to inspect and debug
+     *    - Reduced memory overhead (fewer keys)
+     *
+     * 2. Maintains Lua scripts for atomic operations
+     *    - Single round trip to Redis
+     *    - Ensures data consistency
+     *    - Logic runs on Redis server
+     *
+     * 3. Key structure:
+     *    - ${STACK_NAME}:conn:${connectionId} -> Hash storing connection details
+     *    - ${STACK_NAME}:active_connections -> Set of all active connection IDs
+     *    - ${STACK_NAME}:user:${userId}:connections -> Set of user's connection IDs
+     */
+    const luaScript = `
+        local connectionId = KEYS[1]
+        local userId = ARGV[1]
+        local userName = ARGV[2]
+        local userEmail = ARGV[3]
+        local STACK_NAME = ARGV[4]
+        local EXPIRATION_TIME = tonumber(ARGV[5])
+
+        -- Store all connection data in a single hash
+        redis.call('HMSET', STACK_NAME .. ':conn:' .. connectionId,
+                  'userId', userId,
+                  'userName', userName,
+                  'userEmail', userEmail,
+                  'connectedAt', redis.call('TIME')[1])
+        
+        -- Set expiration on the connection hash
+        redis.call('EXPIRE', STACK_NAME .. ':conn:' .. connectionId, EXPIRATION_TIME)
+
+        -- Add to active connections set
+        redis.call('SADD', STACK_NAME .. ':active_connections', connectionId)
+        redis.call('EXPIRE', STACK_NAME .. ':active_connections', EXPIRATION_TIME)
+        
+        -- Add to user's connections set
+        redis.call('SADD', STACK_NAME .. ':user:' .. userId .. ':connections', connectionId)
+        redis.call('EXPIRE', STACK_NAME .. ':user:' .. userId .. ':connections', EXPIRATION_TIME)
+
+        -- Return all active connections for gathering state
+        return redis.call('SMEMBERS', STACK_NAME .. ':active_connections')
+    `;
+
+    const connectionsAndUsernamesSubsegment = handlerSubsegment.addNewSubsegment('redisExecution');
     const EXPIRATION_TIME = /*12 **/ 60 * 60; // === 12 hours
     const connectionIds = await redisClient.eval(
       luaScript,
@@ -100,23 +105,17 @@ exports.handler = async (event) => {
       EXPIRATION_TIME
     );
     const connectionsAndUsernames = await collectConnectionsAndUsernames(connectionIds, redisClient, STACK_NAME);
-    // console.log(JSON.stringify(connectionsAndUsernames, null, 2));
 
+    const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
     // Send all connected usernames (including the current user) to all connected users excluding the current user (handled below):
-    const sqsClient = new SQSClient({ region: AWS_REGION });
     const targetConnectionIds = connectionIds.filter((connectionId) => connectionId !== currentConnectionId);
     if (targetConnectionIds.length > 0) {
-      await insertMessageToSQS(
-        JSON.stringify({
-          targetConnectionIds: connectionIds.filter((connectionId) => connectionId !== currentConnectionId),
-          message: { connectionsAndUsernames },
-        }),
-        sqsClient,
-        SQS_MESSAGES_TO_CLIENTS_Q_URL
-      );
+      await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: { connectionsAndUsernames } }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
     }
+    connectionsAndUsernamesSubsegment.close();
 
     // Wrap database operations in a timeout of 5 seconds:
+    const dbOperationSubsegment = handlerSubsegment.addNewSubsegment('dbOperation');
     const MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS = 5000;
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
@@ -154,10 +153,13 @@ exports.handler = async (event) => {
     }
 
     await insertMessageToSQS(sqsMessageBody, sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
+    dbOperationSubsegment.close();
 
     return { statusCode: 200 };
   } catch (error) {
     console.error('$connect:', error, event);
     return { statusCode: 500, body: JSON.stringify({ error: 'Internal Server Error' }) };
+  } finally {
+    handlerSubsegment.close();
   }
 };

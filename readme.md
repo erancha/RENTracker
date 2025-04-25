@@ -146,7 +146,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 
 ### 6. **Monitoring and Logging**
 
-- **Monitoring** and **logging** via AWS CloudWatch
+- **Monitoring** and **logging** via AWS CloudWatch and X-Ray
 
 #### 6.1 **AWS X-Ray**
 

@@ -6,6 +6,7 @@ const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
 const { prepareS3RentalAgreementKey, prepareS3DocumentFolderPrefix } = require('/opt/prepareS3Keys');
+const AWSXRay = require('aws-xray-sdk');
 
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
@@ -20,7 +21,11 @@ const cloudfront = new CloudFrontClient();
 exports.handler = async (event) => {
   // console.log('Received event:', JSON.stringify(event, null, 2));
 
+  const segment = AWSXRay.getSegment();
+  const handlerSubsegment = segment.addNewSubsegment('documentsStreamProcessor');
+
   for (const record of event.Records) {
+    const recordSubsegment = handlerSubsegment.addNewSubsegment(`recordEventName:${record.eventName}`);
     try {
       switch (record.eventName) {
         case 'INSERT':
@@ -35,8 +40,12 @@ exports.handler = async (event) => {
       }
     } catch (error) {
       console.error(`Error processing record: ${JSON.stringify(record)}`, error);
+    } finally {
+      recordSubsegment.close();
     }
   }
+
+  handlerSubsegment.close();
 };
 
 //=============================================================================================================================================

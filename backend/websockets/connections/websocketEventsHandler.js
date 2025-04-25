@@ -1,5 +1,6 @@
 const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbridge');
+const AWSXRay = require('aws-xray-sdk');
 const eventBridgeClient = new EventBridgeClient();
 
 const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https');
@@ -10,6 +11,9 @@ const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https')
 //   2. Sends each extracted message to WebSocket clients, on connection ids extracted from the message.
 //=========================================================================================================================================
 exports.handler = async (event) => {
+  const segment = AWSXRay.getSegment(); // Get the current X-Ray segment
+  const handlerSubsegment = segment.addNewSubsegment('websocketEventsHandler');
+
   try {
     const appGatewayClient = new ApiGatewayManagementApiClient({
       apiVersion: '2018-11-29',
@@ -26,22 +30,39 @@ exports.handler = async (event) => {
         }, record.body length: ${record.body.length} bytes`;
         console.log(extractedRecordLogMessage);
 
-        if (extractedRecord.targetConnectionIds) {
-          const targetConnectionIds = extractedRecord.targetConnectionIds;
-
-          if (extractedRecord.message) {
+        // Sending to connected Websockets clients:
+        if (extractedRecord.targetConnectionIds && extractedRecord.message) {
+          const sendMessageSubsegment = handlerSubsegment.addNewSubsegment('sendMessageToConnectedClients');
+          try {
             // Send the message to all connected websocket clients:
             const jsonMessage = JSON.stringify(extractedRecord.message);
             const bufferData = Buffer.from(jsonMessage);
-            await sendMessageToConnectedClients({ appGatewayClient, targetConnectionIds, bufferData, extractedRecordMessage: extractedRecordLogMessage });
+            await sendMessageToConnectedClients({
+              appGatewayClient,
+              targetConnectionIds: extractedRecord.targetConnectionIds,
+              bufferData,
+              extractedRecordMessage: extractedRecordLogMessage,
+            });
+          } finally {
+            sendMessageSubsegment.close();
           }
         }
 
-        if (extractedRecord.message) await checkAndPublishToEventBridge({ extractedMessage: extractedRecord.message });
+        // Publishing to EventBridge:
+        if (extractedRecord.message) {
+          const extractedMessage = extractedRecord.message;
+          if (extractedMessage.dataCreated || extractedMessage.dataUpdated || extractedMessage.dataDeleted) {
+            const sendMessageSubsegment = handlerSubsegment.addNewSubsegment('publishToEventBridge');
+            await publishToEventBridge({ extractedMessage });
+            sendMessageSubsegment.close();
+          }
+        }
       })
     );
   } catch (error) {
     console.error(`Error: ${error}, event: ${JSON.stringify(event, null, 2)}`);
+  } finally {
+    handlerSubsegment.close(); // Close the handler subsegment
   }
 };
 
@@ -69,31 +90,27 @@ const sendMessageToConnectedClients = async ({ appGatewayClient, targetConnectio
 //=========================================================================================================================================
 // Helper function to publish events to EventBridge
 //=========================================================================================================================================
-const checkAndPublishToEventBridge = async ({ extractedMessage }) => {
-  if (extractedMessage.dataCreated || extractedMessage.dataUpdated || extractedMessage.dataDeleted)
-    try {
-      const params = {
-        Entries: [
-          {
-            Source: 'RENTracker-service',
-            DetailType: 'command-executed',
-            Detail: JSON.stringify(extractedMessage),
-            EventBusName: `${process.env.STACK_NAME}-commands-event-bus`,
-            Time: new Date(),
-          },
-        ],
-      };
+const publishToEventBridge = async ({ extractedMessage }) => {
+  try {
+    const command = new PutEventsCommand({
+      Entries: [
+        {
+          Source: 'RENTracker-service',
+          DetailType: 'command-executed',
+          Detail: JSON.stringify(extractedMessage),
+          EventBusName: `${process.env.STACK_NAME}-commands-event-bus`,
+          Time: new Date(),
+        },
+      ],
+    });
+    const result = await eventBridgeClient.send(command);
 
-      const command = new PutEventsCommand(params);
-      const result = await eventBridgeClient.send(command);
-
-      if (process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'false') {
-        console.log(`Event ${JSON.stringify(extractedMessage)} published successfully: ${JSON.stringify(result)}`);
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Error publishing event to EventBridge:', error);
-      throw error;
+    if (process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'false') {
+      console.log(`Event ${JSON.stringify(extractedMessage)} published successfully: ${JSON.stringify(result)}`);
     }
+
+    return result;
+  } catch (error) {
+    console.error('Error publishing event to EventBridge:', error);
+  }
 };

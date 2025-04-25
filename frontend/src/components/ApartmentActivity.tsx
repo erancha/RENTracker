@@ -145,9 +145,28 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
    * Saves a activity and resets the form
    * @param {IApartmentActivity} activity - ApartmentActivity to save
    */
-  handleSaveActivity = (activity: INewApartmentActivity) => {
-    this.props.addApartmentActivityAction({ ...activity, created_at: new Date().toISOString(), onroute: true });
-    this.props.prepareCreateApartmentActivityCommandAction(activity);
+  handleSaveActivity = async (activity: INewApartmentActivity) => {
+    //DEBUG - START
+    const debugPattern = /.*--\d{3}--\d{3}$/; // Matches text ending with two dashes, 3 digits, two dashes, and another 3 digits
+    if (debugPattern.test(activity.description)) {
+      const match = activity.description.match(/--(\d{3})--(\d{3})$/);
+      if (match) {
+        const iterations = parseInt(match[1], 10); // First 3 digits as iterations
+        const sleepTime = parseInt(match[2], 10); // Second 3 digits as sleep time
+        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+        for (let i = 0; i < iterations; i++) {
+          activity.activity_id = uuidv4();
+          activity.description = `${activity.description} - ${i}`;
+          this.props.addApartmentActivityAction({ ...activity, created_at: new Date().toISOString(), onroute: true });
+          this.props.prepareCreateApartmentActivityCommandAction(activity);
+          await sleep(sleepTime); // Pauses execution for sleepTime ms
+        }
+      }
+      //DEBUG - END
+    } else {
+      this.props.addApartmentActivityAction({ ...activity, created_at: new Date().toISOString(), onroute: true });
+      this.props.prepareCreateApartmentActivityCommandAction(activity);
+    }
     this.setState({ emptyActivity: this.createInitialActivity() });
   };
 

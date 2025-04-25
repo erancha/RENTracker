@@ -159,6 +159,7 @@ Resources:
   # XRayDaemon:
   #   Type: AWS::Serverless::Function
   #   Properties:
+  #     FunctionName: !Sub 'XRayDaemon-${AWS::StackName}'
   #     Handler: xray-daemon.handler
   #     Runtime: nodejs20.x
   #     CodeUri: ../backend/layers/xray-daemon/
@@ -372,12 +373,14 @@ Resources:
   WebsocketConnect:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'WbscktConnect-${AWS::StackName}'
       CodeUri: ../backend/websockets/connections/
       Handler: connect.handler
       Runtime: nodejs20.x
       Timeout: 10 # seconds
       Layers:
         - !Ref RedisClientLayer
+        - !Ref AwsSdkV3Layer
         - !Ref ConnectionsUsernamesLayer
         - !Ref CommandsHandlersLayer
         - !Ref DbDataLayer
@@ -407,6 +410,7 @@ Resources:
   WebsocketDisconnect:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'WbscktDisconnect-${AWS::StackName}'
       CodeUri: ../backend/websockets/connections/
       Handler: disconnect.handler
       Runtime: nodejs20.x
@@ -430,6 +434,7 @@ Resources:
   WebsocketCommandsHandler:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'WbscktCommandsHandler-${AWS::StackName}'
       CodeUri: ../backend/websockets/connections/
       Handler: websocketCommandsHandler.handler
       Runtime: nodejs20.x
@@ -475,7 +480,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: CommandsHandlerKey
+      RouteKey: CommandsHandlerRouteKey
       OperationName: WebsocketCommandsHandlerRoute
       Target: !Join
         - '/'
@@ -508,6 +513,7 @@ Resources:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
         - !Ref WebSocketLambdaElasticacheSQSPolicy
       Policies:
         - PolicyName: DDBAccessPolicy
@@ -547,6 +553,7 @@ Resources:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
         - !Ref WebSocketLambdaElasticacheSQSPolicy
       Policies:
         - PolicyName: DDBAccessPolicy
@@ -666,7 +673,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebsocketCommandsHandler
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/CommandsHandlerKey'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/CommandsHandlerRouteKey'
 
   #==========================================================================================================================================================
   # RESTful API
@@ -719,6 +726,7 @@ Resources:
   # UsersRestFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:
+  #     FunctionName: !Sub 'UsersRestFunction-${AWS::StackName}'
   #     CodeUri: ../backend/rest/
   #     Handler: users.handler
   #     Runtime: nodejs20.x
@@ -753,6 +761,7 @@ Resources:
   DocumentsRestFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'DocumentsRestFunction-${AWS::StackName}'
       CodeUri: ../backend/documents/
       Handler: documents.handler
       Runtime: nodejs20.x
@@ -906,6 +915,7 @@ Resources:
   DocumentsStreamProcessor:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'DocumentsStreamProcessor-${AWS::StackName}'
       CodeUri: ../backend/documents/
       Handler: documentsStreamProcessor.handler
       Runtime: nodejs20.x
@@ -937,6 +947,7 @@ Resources:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
       Policies:
         - PolicyName: S3InvalidateAndRefreshPolicy
           PolicyDocument:
@@ -1003,7 +1014,7 @@ Resources:
   ApartmentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${AWS::StackName}-Apartments
+      TableName: !Sub 'Apartments-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
@@ -1030,7 +1041,7 @@ Resources:
   # LandlordsTable:
   #   Type: AWS::DynamoDB::Table
   #   Properties:
-  #     TableName: !Sub ${AWS::StackName}-Landlords
+  #     TableName: !Sub 'Apartments-${AWS::StackName}'
   #     BillingMode: PAY_PER_REQUEST
   #     AttributeDefinitions:
   #       - AttributeName: landlord_id
@@ -1051,7 +1062,7 @@ Resources:
   # TenantsTable:
   #   Type: AWS::DynamoDB::Table
   #   Properties:
-  #     TableName: !Sub ${AWS::StackName}-Tenants
+  #     TableName: !Sub 'Tenants-${AWS::StackName}'
   #     BillingMode: PAY_PER_REQUEST
   #     AttributeDefinitions:
   #       - AttributeName: tenant_id
@@ -1072,7 +1083,7 @@ Resources:
   DocumentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${AWS::StackName}-Documents
+      TableName: !Sub 'Documents-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
@@ -1121,7 +1132,7 @@ Resources:
   ActivityTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${AWS::StackName}-ApartmentActivity
+      TableName: !Sub 'ApartmentActivity-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
@@ -1193,6 +1204,7 @@ Resources:
   # DbManagementFunction:
   #   Type: AWS::Serverless::Function
   #   Properties:
+  #     FunctionName: !Sub 'DbManagementFunction-${AWS::StackName}'
   #     CodeUri: ../backend/dbManagement/
   #     Handler: dbManagement.handler
   #     Runtime: nodejs20.x
@@ -1230,6 +1242,7 @@ Resources:
   WebsocketEventsHandler:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'WbscktEventsHandler-${AWS::StackName}'
       Handler: websocketEventsHandler.handler
       Runtime: nodejs20.x
       Timeout: 10 # seconds
@@ -1258,7 +1271,9 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
-      ManagedPolicyArns: ['arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole']
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
       Policies:
         - PolicyName: SQSReceiveMessagePolicy
           PolicyDocument:

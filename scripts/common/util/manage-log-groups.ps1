@@ -1,6 +1,7 @@
 param (
-    [string]$deleteLogGroupsPrefix = "",
-    [string]$deleteLogStreamsPrefix = ""
+    [string]$deleteLogGroupsSuffix = "",
+    [string]$deleteLogStreamsSuffix = "",
+    [string]$manageRetentionLogGroupsSuffix = ""
 )
 
 . ./get-ElapsedTimeFormatted.ps1
@@ -15,16 +16,16 @@ Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : $s
 $logGroups = aws logs --region $commonConstants.region describe-log-groups --query 'logGroups[*].logGroupName' --output text | Out-String | ForEach-Object { $_.Trim() }
 $logGroupsArray = $logGroups -split '\s+' | Where-Object { $_ -ne '' }
 
-if ($deleteLogGroupsPrefix -ne "") {
-    $filteredLogGroups = $logGroupsArray | Where-Object { $_.StartsWith($deleteLogGroupsPrefix) }
+if ($deleteLogGroupsSuffix -ne "") {
+    $filteredLogGroups = $logGroupsArray | Where-Object { $_.EndsWith($deleteLogGroupsSuffix) }
     foreach ($logGroup in $filteredLogGroups) {
         Write-Host "Deleting log group: $logGroup"
         aws logs --region $commonConstants.region delete-log-group --log-group-name $logGroup | Out-Null
     }
 }
-elseif ($deleteLogStreamsPrefix -ne "") {
+elseif ($deleteLogStreamsSuffix -ne "") {
     # Filter log groups that start with the specified prefix
-    $filteredLogGroups = $logGroupsArray | Where-Object { $_.StartsWith($deleteLogStreamsPrefix) }
+    $filteredLogGroups = $logGroupsArray | Where-Object { $_.EndsWith($deleteLogStreamsSuffix) }
     
     foreach ($logGroup in $filteredLogGroups) {
         try {
@@ -68,6 +69,19 @@ elseif ($deleteLogStreamsPrefix -ne "") {
         catch {
             Write-Warning "Error processing log group $logGroup : $_"
             continue
+        }
+    }
+}
+elseif ($manageRetentionLogGroupsSuffix -ne "") {
+    $filteredLogGroups = $logGroupsArray | Where-Object { $_.EndsWith($manageRetentionLogGroupsSuffix) }
+    foreach ($logGroup in $filteredLogGroups) {
+        # Check if log group name length is valid
+        if ($logGroup.Length -le 512) {
+            Write-Host "Setting retention policy for log group: $logGroup"
+            aws logs --region $commonConstants.region put-retention-policy --log-group-name $logGroup --retention-in-days 1 | Out-Null
+        }
+        else {
+            Write-Host "Skipped log group due to invalid name length: $logGroup"
         }
     }
 }
