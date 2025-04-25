@@ -1,8 +1,8 @@
 # Preface
 
-**RENTracker** is a property rent management app that streamlines rent agreements and activity (TBD).
+**RENTracker** is a property rent management app that streamlines rent agreements and activity.
 
-The app supports two user roles: Landlords who manage properties, rental agreements, and activity (TBD), and Tenants who complete their details in the rental agreement, and manage their activity.
+The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in the rental agreement.
 
 Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
 
