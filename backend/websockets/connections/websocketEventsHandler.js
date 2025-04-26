@@ -4,6 +4,8 @@ const AWSXRay = require('aws-xray-sdk');
 const eventBridgeClient = new EventBridgeClient();
 
 const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https');
+const STACK_NAME = process.env.STACK_NAME;
+const ENABLE_ENHANCED_LOGGING = process.env.ENABLE_ENHANCED_LOGGING;
 
 //=========================================================================================================================================
 // Handler:
@@ -11,7 +13,8 @@ const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https')
 //   2. Sends each extracted message to WebSocket clients, on connection ids extracted from the message.
 //=========================================================================================================================================
 exports.handler = async (event) => {
-  const segment = AWSXRay.getSegment(); // Get the current X-Ray segment
+  const segment = AWSXRay.getSegment();
+  segment.addAnnotation('stackName', STACK_NAME);
   const handlerSubsegment = segment.addNewSubsegment('websocketEventsHandler');
 
   try {
@@ -62,7 +65,7 @@ exports.handler = async (event) => {
   } catch (error) {
     console.error(`Error: ${error}, event: ${JSON.stringify(event, null, 2)}`);
   } finally {
-    handlerSubsegment.close(); // Close the handler subsegment
+    handlerSubsegment.close();
   }
 };
 
@@ -98,14 +101,14 @@ const publishToEventBridge = async ({ extractedMessage }) => {
           Source: 'RENTracker-service',
           DetailType: 'command-executed',
           Detail: JSON.stringify(extractedMessage),
-          EventBusName: `${process.env.STACK_NAME}-commands-event-bus`,
+          EventBusName: `${STACK_NAME}-commands-event-bus`,
           Time: new Date(),
         },
       ],
     });
     const result = await eventBridgeClient.send(command);
 
-    if (process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'false') {
+    if (ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'false') {
       console.log(`Event ${JSON.stringify(extractedMessage)} published successfully: ${JSON.stringify(result)}`);
     }
 

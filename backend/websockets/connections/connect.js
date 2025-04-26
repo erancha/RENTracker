@@ -20,6 +20,7 @@ const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 exports.handler = async (event) => {
   // console.log('Event: ', JSON.stringify(event, null, 2));
   const segment = AWSXRay.getSegment();
+  segment.addAnnotation('stackName', STACK_NAME);
   const handlerSubsegment = segment.addNewSubsegment('$connectHandler');
 
   try {

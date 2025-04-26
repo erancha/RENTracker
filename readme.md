@@ -2,7 +2,7 @@
 
 **RENTracker** is a property rent management app that streamlines rent agreements and activity.
 
-The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in the rental agreement.
+The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in rental agreements.
 
 Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
 
@@ -10,7 +10,7 @@ The application features an intuitive mobile-friendly design and monitoring capa
 
 User authentication is securely handled through Google.
 
-The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
+The app is available online at https://d1qes2uy1amux4.cloudfront.net
 
 # Table Of Content
 
@@ -142,7 +142,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - Uses AWS SAM (Serverless Application Model) for deployment
 - Infrastructure is defined with CloudFormation templates
 - Deploy with a single command: `sam build` and `sam deploy`
-- The app is available online at https://d3uo2ovuz6gcru.cloudfront.net
+- The app is available online at https://d1qes2uy1amux4.cloudfront.net
 
 ### 6. **Monitoring and Logging**
 

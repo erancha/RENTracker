@@ -113,7 +113,7 @@ class AppComponent extends React.Component<IAppProps> {
       <div className={`app-overview-container${menuOpen ? ' menu-is-opened' : ''}`}>
         <hr />
         <div className='header2'>
-          <p>RENTracker is a property rent management app that streamlines rent agreements and activity (TBD).</p>
+          <p>RENTracker is a property rent management app that streamlines rent agreements and activity.</p>
           <p>
             The app provides <span className='secure-authentication'>secure authentication</span> through Google:{' '}
             <span className='text-link sign-in-from-overview' onClick={() => loginWithGoogleAction(auth)}>
@@ -133,8 +133,8 @@ class AppComponent extends React.Component<IAppProps> {
           )}
           <ul>
             <li>
-              The app supports two user roles: Landlords who manage properties, rental agreements, and financials (TBD), and Tenants who complete their details
-              in the rental agreement, and manage their activity.
+              The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in
+              rental agreements.
             </li>
             <li>
               The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS

@@ -19,7 +19,8 @@ const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 exports.handler = async (event) => {
   // console.log(JSON.stringify(event, null, 2));
 
-  const segment = AWSXRay.getSegment(); // Get the current X-Ray segment
+  const segment = AWSXRay.getSegment();
+  segment.addAnnotation('stackName', STACK_NAME);
   const handlerSubsegment = segment.addNewSubsegment('websocketCommandsHandler');
 
   let statusCode = 200;
@@ -51,7 +52,7 @@ exports.handler = async (event) => {
     console.error(`Error processing event: ${JSON.stringify(event, null, 2)}`);
     statusCode = 500; // internal server error
   } finally {
-    handlerSubsegment.close(); // Close the handler subsegment
+    handlerSubsegment.close();
   }
 
   return { statusCode };

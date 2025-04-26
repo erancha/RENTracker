@@ -2,6 +2,9 @@ const { getRedisClient } = process.env.AWS_LAMBDA_FUNCTION_NAME
   ? require('/opt/redisClient') // Lambda environment
   : require('/usr/src/app/layers/redisClient/redisClient'); // Local/ECS environment
 
+const STACK_NAME = process.env.STACK_NAME;
+const DISABLE_APP_CACHE = process.env.DISABLE_APP_CACHE;
+
 /*
  * Key differences between Cache-Aside and Cache-Through patterns:
  *
@@ -51,8 +54,8 @@ const { getRedisClient } = process.env.AWS_LAMBDA_FUNCTION_NAME
 const get = async (cacheKey, dbFunction) => {
   try {
     const startTime = Date.now();
-    const disableAppCache = process.env.DISABLE_APP_CACHE === 'true';
-    const fullCacheKey = `${process.env.STACK_NAME}:${cacheKey}`;
+    const disableAppCache = DISABLE_APP_CACHE === 'true';
+    const fullCacheKey = `${STACK_NAME}:${cacheKey}`;
     const redisClient = getRedisClient();
     const elapsedTimeRedisClient = Date.now() - startTime;
 
@@ -82,8 +85,8 @@ const get = async (cacheKey, dbFunction) => {
 
 const invalidateGet = async (cacheKey) => {
   try {
-    const disableAppCache = process.env.DISABLE_APP_CACHE === 'true';
-    const fullCacheKey = `${process.env.STACK_NAME}:${cacheKey}`;
+    const disableAppCache = DISABLE_APP_CACHE === 'true';
+    const fullCacheKey = `${STACK_NAME}:${cacheKey}`;
 
     if (!disableAppCache) {
       const redisClient = getRedisClient();

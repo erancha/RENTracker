@@ -8,6 +8,7 @@ const path = require('path');
 const { prepareS3RentalAgreementKey, prepareS3DocumentFolderPrefix } = require('/opt/prepareS3Keys');
 const AWSXRay = require('aws-xray-sdk');
 
+const STACK_NAME = process.env.STACK_NAME;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
 const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
@@ -22,6 +23,7 @@ exports.handler = async (event) => {
   // console.log('Received event:', JSON.stringify(event, null, 2));
 
   const segment = AWSXRay.getSegment();
+  segment.addAnnotation('stackName', STACK_NAME);
   const handlerSubsegment = segment.addNewSubsegment('documentsStreamProcessor');
 
   for (const record of event.Records) {

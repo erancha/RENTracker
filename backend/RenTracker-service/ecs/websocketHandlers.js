@@ -5,12 +5,17 @@ const { getRedisClient, getPublisherClient, getSubscriberClient } = require('./l
 const { handleCommand, handleRead, determineTargetUsers, setTaskId } = require('./layers/commandsHandlers/commandsHandlers');
 const dbData = require('./layers/dbData/dbData');
 
+const STACK_NAME = process.env.STACK_NAME;
+const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
+const ENABLE_ENHANCED_LOGGING = process.env.ENABLE_ENHANCED_LOGGING;
+
 setTaskId(CURRENT_TASK_ID);
 
 // Refer to ./websockets-ecs.png
 // -----------------------------
-const CONNECTED_USERS_TO_TASKS_IDS_MAP = `${process.env.STACK_NAME}:UsersToTasksIdsMap()`;
-const CONNECTED_USERS_IDS_TO_NAMES_MAP = `${process.env.STACK_NAME}:UsersIdsToNamesMap()`;
+const CONNECTED_USERS_TO_TASKS_IDS_MAP = `${STACK_NAME}:UsersToTasksIdsMap()`;
+const CONNECTED_USERS_IDS_TO_NAMES_MAP = `${STACK_NAME}:UsersIdsToNamesMap()`;
 
 // WebSocket clients connected to this task instance: userId --> socket
 const userIdSocketMap = new Map();
@@ -35,7 +40,7 @@ const onWebsocketConnect = async (socket, request) => {
   const currentUserEmail = decodedJwt.email;
   const currentUserPhoneNumber = decodedJwt.phone_number;
 
-  await dbData.upsertUser(currentUserId, currentUserName, currentUserEmail, currentUserPhoneNumber, process.env.SAAS_TENANT_ID);
+  await dbData.upsertUser(currentUserId, currentUserName, currentUserEmail, currentUserPhoneNumber, SAAS_TENANT_ID);
 
   socket.userId = currentUserId;
   userIdSocketMap.set(currentUserId, socket);
@@ -218,7 +223,7 @@ async function broadcastConnectionsUpdate(connectionsAndUsernames, excludeUserId
 
 // Helper function to check if a user is an admin
 function isAdminUser(userId) {
-  return userId === process.env.ADMIN_USER_ID;
+  return userId === ADMIN_USER_ID;
 }
 
 // Helper function to write a response to the client
@@ -227,7 +232,7 @@ function writeResponse({ response, responseSocket }) {
     if (responseSocket) responseSocket.send(JSON.stringify(response));
     console.log(
       `Task ${CURRENT_TASK_ID}: Response ${
-        process.env.ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'true' ? JSON.stringify(response, null, 2) : JSON.stringify(response).substring(0, 500)
+        ENABLE_ENHANCED_LOGGING?.toLowerCase() === 'true' ? JSON.stringify(response, null, 2) : JSON.stringify(response).substring(0, 500)
       }${responseSocket ? ' sent to the client' : ''}.`
     );
   } else throw `Task ${CURRENT_TASK_ID}: No response was prepared!`;

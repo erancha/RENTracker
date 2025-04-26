@@ -776,6 +776,7 @@ Resources:
       Environment:
         Variables:
           NODE_ENV: production
+          STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ALLOWED_ORIGIN: !If
             - AllowOnlyCloudfrontOriginCondition
@@ -926,9 +927,10 @@ Resources:
         - !Ref DocumentUtilsLayer
       Environment:
         Variables:
+          STACK_NAME: !Ref AWS::StackName
+          SAAS_TENANT_ID: !Ref SaaSTenantUserId
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
       Events:
         DocumentsTableStream:
