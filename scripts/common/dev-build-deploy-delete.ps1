@@ -39,10 +39,10 @@ if (-not $skipBuildDeploy) {
 }
 
 if ($deleteStack) {
-    $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
-    Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Detaching MyWebSocketLambdaSG from elasticache's and RDS' SGs ..."
-    ./remove-sg-from-sg.ps1 -mySGName "MyWebSocketLambdaSG" -targetSGId 'sg-0c5868829116d3628' -port 6379 # TODO: --> constants.ps1 : $elasticacheSGId
-    # ./remove-sg-from-sg.ps1 -mySGName "MyWebSocketLambdaSG" -targetSGId 'sg-0280f7af5f31cb24d' -port 5432 # TODO: --> constants.ps1 : $rdsSGId
+    # $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
+    # Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Detaching MyAppSG from elasticache's and RDS' SGs ..."
+    # ./remove-sg-from-sg.ps1 -mySGName "MyAppSG" -targetSGId 'sg-0c5868829116d3628' -port 6379 # TODO: --> constants.ps1 : $elasticacheSGId
+    # ./remove-sg-from-sg.ps1 -mySGName "MyAppSG" -targetSGId 'sg-0280f7af5f31cb24d' -port 5432 # TODO: --> constants.ps1 : $rdsSGId
 
     $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Deleting stack '$($commonConstants.stackName)' ..."

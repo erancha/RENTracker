@@ -61,15 +61,14 @@ try {
                 "ExistingVpcId='vpc-08016eb77e7ac9962'", # en-VPC
                 "ExistingUserPoolId='eu-central-1_OHq1aZYju'", # en-UserPool
                 "ExistingCognitoDomain='ena-575491442067.auth.eu-central-1.amazoncognito.com'",
-                # "ExistingNotesEncryptionKeyId='d0efc261-b71d-4f5c-9686-9876cc664243'",
+                "ExistingAppPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
+                "ExistingAppSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
                 "ExistingElasticacheRedisClusterAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'", # https://eu-central-1.console.aws.amazon.com/cognito/v2/idp/user-pools/eu-central-1_OHq1aZYju/branding/domain?region=eu-central-1
-                "ExistingWebsocketsPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
-                "ExistingWebSocketLambdaSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
-                "ExistingRDSEndpoint='crud-rds.ctqgw46o4gm3.eu-central-1.rds.amazonaws.com'", # crud-rds
-                "ExistingRDSSecurityGroupId='sg-0280f7af5f31cb24d'", # crud-RDSSG
-                # "DisableAppCache='true'",
-                "DeveloperIP='149.106.249.221/32'",
                 "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'"
+                # "DisableAppCache='true'",
+                # "ExistingRDSEndpoint='crud-rds.ctqgw46o4gm3.eu-central-1.rds.amazonaws.com'", # crud-rds
+                # "ExistingRDSSecurityGroupId='sg-0280f7af5f31cb24d'", # crud-RDSSG
+                # "DeveloperIP='149.106.249.221/32'"
             )
 
             if ($commonConstants.isMainBranch) {
@@ -104,12 +103,12 @@ try {
                 else {
                     Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Deployment completed successfully." -ForegroundColor Green
 
-                    $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
-                    Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Attaching MyWebSocketLambdaSG to elasticache's and RDS' SGs ..."
-                    Push-Location common
-                    ./add-sg-to-sg.ps1 -mySGName "MyWebSocketLambdaSG" -targetSGId 'sg-0c5868829116d3628' -port 6379 # TODO: --> constants.ps1 : $elasticacheSGId
-                    # ./add-sg-to-sg.ps1 -mySGName "MyWebSocketLambdaSG" -targetSGId 'sg-0280f7af5f31cb24d' -port 5432 # TODO: --> constants.ps1 : $rdsSGId
-                    Pop-Location
+                    # $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
+                    # Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Attaching MyAppSG to elasticache's and RDS' SGs ..."
+                    # Push-Location common
+                    # ./add-sg-to-sg.ps1 -mySGName "MyAppSG" -targetSGId 'sg-0c5868829116d3628' -port 6379 # TODO: --> constants.ps1 : $elasticacheSGId
+                    # ./add-sg-to-sg.ps1 -mySGName "MyAppSG" -targetSGId 'sg-0280f7af5f31cb24d' -port 5432 # TODO: --> constants.ps1 : $rdsSGId
+                    # Pop-Location
                 }
 
                 if ($prepareForFrontend) {

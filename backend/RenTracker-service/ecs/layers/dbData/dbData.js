@@ -162,20 +162,6 @@ const getDocument = async ({ document_id, saas_tenant_id }) => {
 };
 
 /**
- * Get all documents for an apartment
- * @param {Object} params
- * @param {string} params.apartment_id - ID of the apartment
- * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
- * @returns {Promise<Array>} List of documents
- */
-const getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
-  validateUUID(apartment_id, 'apartment_id');
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
-
-  return await gwData.getApartmentDocuments({ apartment_id, saas_tenant_id });
-};
-
-/**
  * Get all documents for a tenant
  * @param {Object} params
  * @param {string} params.tenant_user_id - ID of the tenant
@@ -283,6 +269,12 @@ const cache_getApartmentActivity = async ({ apartment_id, saas_tenant_id }) => {
   return await cache.get(`getApartmentActivity(${apartment_id})`, () => gwData.getApartmentActivity({ apartment_id, saas_tenant_id }));
 };
 
+const cache_getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => {
+  validateUUID(apartment_id, 'apartment_id');
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
+  return await cache.get(`getApartmentDocuments(${apartment_id})`, () => gwData.getApartmentDocuments({ apartment_id, saas_tenant_id }));
+};
+
 module.exports = {
   isLandlordUser,
   healthCheck,
@@ -295,7 +287,6 @@ module.exports = {
   getAllApartments,
   createDocument,
   getDocument,
-  getApartmentDocuments,
   getTenantDocuments,
   updateDocument,
   deleteDocument,
@@ -307,7 +298,9 @@ module.exports = {
     getAllUsers: cache_getAllUsers,
     getApartmentsOfLandlord: cache_getApartmentsOfLandlord,
     getApartmentActivity: cache_getApartmentActivity,
+    getApartmentDocuments: cache_getApartmentDocuments,
     invalidation: {
+      // TODO: It's asymmetric that the cache functions do receive the saas_tenant_id and the invalidation functions don't ..
       getAllUsers: () => cache.invalidateGet('getAllUsers()'),
       getApartmentsOfLandlord: (user_id) =>
         user_id
@@ -321,6 +314,10 @@ module.exports = {
         apartment_id
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
           : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
+      getApartmentDocuments: (apartment_id) =>
+        apartment_id
+          ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
+          : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentDocuments()'),
     },
   },
 };

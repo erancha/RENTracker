@@ -6,6 +6,7 @@ const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
 const { prepareS3RentalAgreementKey, prepareS3DocumentFolderPrefix } = require('/opt/prepareS3Keys');
+const dbData = require('/opt/dbData');
 const AWSXRay = require('aws-xray-sdk');
 
 const STACK_NAME = process.env.STACK_NAME;
@@ -77,6 +78,7 @@ marked.use({
  */
 async function handleCreate(record) {
   const newImage = record.dynamodb.NewImage;
+  await dbData.cache.invalidation.getApartmentDocuments(newImage.apartment_id.S);
 
   const templateName = newImage.template_name.S;
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
@@ -114,7 +116,7 @@ async function handleCreate(record) {
  */
 async function handleUpdate(record) {
   await handleCreate(record);
-  await handleInvalidate(record);
+  // await handleInvalidate(record);
 }
 
 /**
@@ -127,6 +129,8 @@ async function handleDelete(record) {
   const s3DocumentFolderPrefix = prepareS3DocumentFolderPrefix(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
 
   try {
+    await dbData.cache.invalidation.getApartmentDocuments(record.dynamodb.OldImage.apartment_id.S);
+
     // List all objects with the folder prefix
     const listCommand = new ListObjectsV2Command({
       Bucket: DOCUMENTS_BUCKET_NAME,
@@ -148,7 +152,7 @@ async function handleDelete(record) {
     console.error(`Error deleting folder: ${s3DocumentFolderPrefix}`, error);
   }
 
-  await handleInvalidate(record);
+  // await handleInvalidate(record);
   console.log(`Folder deleted and invalidated from S3: ${s3DocumentFolderPrefix}`);
 }
 
@@ -157,18 +161,24 @@ async function handleDelete(record) {
  * @param {Object} record - DynamoDB stream record.
  * @returns {Promise<void>}
  */
-async function handleInvalidate(record) {
-  const s3Key = prepareS3RentalAgreementKey(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
-  const command = new CreateInvalidationCommand({
-    DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
-    InvalidationBatch: {
-      CallerReference: `${Date.now()}`,
-      Paths: { Quantity: 1, Items: [`/${s3Key}`] },
-    },
-  });
-  await cloudfront.send(command);
-  console.log(`CloudFront cache invalidated for: ${s3Key}`);
-}
+//TODO: Add yet another VPC endpoint for CloudFront invalidation.
+// async function handleInvalidate(record) {
+//   try {
+//     const s3Key = prepareS3RentalAgreementKey(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
+//     await cloudfront.send(
+//       new CreateInvalidationCommand({
+//         DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
+//         InvalidationBatch: {
+//           CallerReference: `${Date.now()}`,
+//           Paths: { Quantity: 1, Items: [`/${s3Key}`] },
+//         },
+//       })
+//     );
+//     console.log(`CloudFront cache invalidated for: ${s3Key}`);
+//   } catch (error) {
+//     console.error('Error invalidating CloudFront cache:', error);
+//   }
+// }
 
 //=============================================================================================================================================
 // Utilities

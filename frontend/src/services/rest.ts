@@ -106,6 +106,7 @@ export const getDocument = async (JWT: string, documentId: string): Promise<IDoc
  */
 export const getApartmentDocuments = async (JWT: string, apartmentId: string): Promise<IDocument[]> => {
   const url = `${appConfigData.REST_API_URL}/documents?apartmentId=${apartmentId}`;
+  // for (let i = 0; i < 10; i++) await makeJsonRequest(url, 'GET', JWT);
   return makeJsonRequest(url, 'GET', JWT);
 };
 

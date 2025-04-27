@@ -3,6 +3,7 @@ const { prepareCorsHeaders } = require('/opt/corsHeaders');
 const dbData = require('/opt/dbData');
 const { prepareS3DocumentFolderPrefix, prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const AWSXRay = require('aws-xray-sdk');
 
 const APP_AWS_REGION = process.env.APP_AWS_REGION;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
@@ -13,7 +14,8 @@ const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
 // Main REST handler
 //=============================================================================================================================================
 exports.handler = async (event) => {
-  // console.log(JSON.stringify(event, null, 2));
+  const segment = AWSXRay.getSegment();
+
   const corsHeaders = prepareCorsHeaders(event.headers?.origin);
 
   // Handle OPTIONS requests for CORS preflight
@@ -43,27 +45,27 @@ exports.handler = async (event) => {
     if (path === '/documents') {
       switch (httpMethod) {
         case 'POST':
-          return await handleCreateDocument(event, corsHeaders);
+          return await handleCreateDocument({ event, corsHeaders, parentSegment: segment });
         case 'GET':
           return event.queryStringParameters?.tenantUserId
-            ? await handleGetTenantDocuments(event, corsHeaders)
-            : await handleGetApartmentDocuments(event, corsHeaders);
+            ? await handleGetTenantDocuments({ event, corsHeaders, parentSegment: segment })
+            : await handleGetApartmentDocuments({ event, corsHeaders, parentSegment: segment });
       }
     } else if (path.startsWith('/documents/')) {
       const documentId = path.split('/')[2];
       switch (httpMethod) {
         case 'GET':
           if (path.endsWith('/pdf')) {
-            return await handleGetDocumentPdf(documentId, corsHeaders);
+            return await handleGetDocumentPdf({ documentId, corsHeaders, parentSegment: segment });
           }
-          return await handleGetDocument(documentId, corsHeaders);
+          return await handleGetDocument({ documentId, corsHeaders, parentSegment: segment });
         case 'PUT':
-          return await handleUpdateDocument(documentId, event, corsHeaders);
+          return await handleUpdateDocument({ documentId, event, corsHeaders, parentSegment: segment });
         case 'DELETE':
-          return await handleDeleteDocument(documentId, corsHeaders);
+          return await handleDeleteDocument({ documentId, corsHeaders, parentSegment: segment });
       }
     } else if (path === '/upload' && httpMethod === 'POST') {
-      return await handleFileUpload(event, corsHeaders);
+      return await handleFileUpload({ event, corsHeaders, parentSegment: segment });
     }
 
     return {
@@ -87,14 +89,17 @@ exports.handler = async (event) => {
 
 /**
  * Create a new document
- * @param {Object} event - Lambda event object
- * @param {Object} event.body - Request body containing document details
- * @param {string} event.body.apartmentId - ID of the apartment
- * @param {Object} event.body.templateFields - Fields to populate in the template
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {Object} params.event - Lambda event object
+ * @param {Object} params.event.body - Request body containing document details
+ * @param {string} params.event.body.apartmentId - ID of the apartment
+ * @param {Object} params.event.body.templateFields - Fields to populate in the template
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with created document
  */
-const handleCreateDocument = async (event, corsHeaders) => {
+const handleCreateDocument = async ({ event, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleCreateDocument');
   try {
     const documentId = uuidv4();
     const { apartmentId, templateFields } = JSON.parse(event.body);
@@ -107,6 +112,7 @@ const handleCreateDocument = async (event, corsHeaders) => {
       saas_tenant_id: SAAS_TENANT_ID,
     });
 
+    subsegment.close();
     return {
       statusCode: 201,
       headers: corsHeaders,
@@ -116,6 +122,8 @@ const handleCreateDocument = async (event, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleCreateDocument:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -127,15 +135,18 @@ const handleCreateDocument = async (event, corsHeaders) => {
 
 /**
  * Update an existing document
- * @param {string} documentId - UUID of the document to update
- * @param {Object} event - Lambda event object
- * @param {Object} event.body - Request body containing update details
- * @param {Object} event.body.templateFields - Updated template fields
- * @param {string} [event.body.tenantUserId] - User ID of the tenant that resides in the property
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {string} params.documentId - UUID of the document to update
+ * @param {Object} params.event - Lambda event object
+ * @param {Object} params.event.body - Request body containing update details
+ * @param {Object} params.event.body.templateFields - Updated template fields
+ * @param {string} [params.event.body.tenantUserId] - User ID of the tenant that resides in the property
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with updated document
  */
-const handleUpdateDocument = async (documentId, event, corsHeaders) => {
+const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleUpdateDocument');
   try {
     const { templateFields, tenantUserId } = JSON.parse(event.body);
 
@@ -146,6 +157,7 @@ const handleUpdateDocument = async (documentId, event, corsHeaders) => {
       tenant_user_id: tenantUserId,
     });
 
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -155,6 +167,8 @@ const handleUpdateDocument = async (documentId, event, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleUpdateDocument:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -166,13 +180,17 @@ const handleUpdateDocument = async (documentId, event, corsHeaders) => {
 
 /**
  * Get a specific document by ID
- * @param {string} documentId - UUID of the document to retrieve
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {string} params.documentId - UUID of the document to retrieve
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with document data
  */
-const handleGetDocument = async (documentId, corsHeaders) => {
+const handleGetDocument = async ({ documentId, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleGetDocument');
   try {
     const document = await dbData.getDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    subsegment.close();
     return document
       ? {
           statusCode: 200,
@@ -190,6 +208,8 @@ const handleGetDocument = async (documentId, corsHeaders) => {
           }),
         };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleGetDocument:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -201,17 +221,21 @@ const handleGetDocument = async (documentId, corsHeaders) => {
 
 /**
  * Get all documents for an apartment
- * @param {Object} event - Lambda event object
- * @param {Object} event.queryStringParameters - Query parameters
- * @param {string} event.queryStringParameters.apartmentId - ID of the apartment to fetch documents for
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {Object} params.event - Lambda event object
+ * @param {Object} params.event.queryStringParameters - Query parameters
+ * @param {string} params.event.queryStringParameters.apartmentId - ID of the apartment to fetch documents for
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with list of documents
  * @throws {Object} 400 error if apartmentId is missing
  */
-const handleGetApartmentDocuments = async (event, corsHeaders) => {
+const handleGetApartmentDocuments = async ({ event, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleGetApartmentDocuments');
   try {
     const { apartmentId } = event.queryStringParameters || {};
     if (!apartmentId) {
+      subsegment.close();
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -219,7 +243,8 @@ const handleGetApartmentDocuments = async (event, corsHeaders) => {
       };
     }
 
-    const documents = await dbData.getApartmentDocuments({ apartment_id: apartmentId, saas_tenant_id: SAAS_TENANT_ID });
+    const documents = await dbData.cache.getApartmentDocuments({ apartment_id: apartmentId, saas_tenant_id: SAAS_TENANT_ID });
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -229,6 +254,8 @@ const handleGetApartmentDocuments = async (event, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleGetApartmentDocuments:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -240,17 +267,21 @@ const handleGetApartmentDocuments = async (event, corsHeaders) => {
 
 /**
  * Get all documents for a tenant
- * @param {Object} event - Lambda event object
- * @param {Object} event.queryStringParameters - Query parameters
- * @param {string} event.queryStringParameters.tenantUserId - ID of the tenant to fetch documents for
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {Object} params.event - Lambda event object
+ * @param {Object} params.event.queryStringParameters - Query parameters
+ * @param {string} params.event.queryStringParameters.tenantUserId - ID of the tenant to fetch documents for
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with list of documents
  * @throws {Object} 400 error if tenantUserId is missing
  */
-const handleGetTenantDocuments = async (event, corsHeaders) => {
+const handleGetTenantDocuments = async ({ event, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleGetTenantDocuments');
   try {
     const { tenantUserId } = event.queryStringParameters || {};
     if (!tenantUserId) {
+      subsegment.close();
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -259,6 +290,7 @@ const handleGetTenantDocuments = async (event, corsHeaders) => {
     }
 
     const documents = await dbData.getTenantDocuments({ tenant_user_id: tenantUserId, saas_tenant_id: SAAS_TENANT_ID });
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -268,6 +300,8 @@ const handleGetTenantDocuments = async (event, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleGetTenantDocuments:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -279,15 +313,19 @@ const handleGetTenantDocuments = async (event, corsHeaders) => {
 
 /**
  * Retrieve the PDF URL of a document
- * @param {string} documentId - ID of the document to retrieve
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {string} params.documentId - ID of the document to retrieve
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with PDF URL
  * @throws {Object} 404 error if PDF not found
  */
-const handleGetDocumentPdf = async (documentId, corsHeaders) => {
+const handleGetDocumentPdf = async ({ documentId, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleGetDocumentPdf');
   try {
     const document = await dbData.getDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
     if (!document) {
+      subsegment.close();
       return {
         statusCode: 404,
         headers: corsHeaders,
@@ -295,6 +333,7 @@ const handleGetDocumentPdf = async (documentId, corsHeaders) => {
       };
     }
 
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -304,6 +343,8 @@ const handleGetDocumentPdf = async (documentId, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error retrieving PDF URL:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -315,20 +356,26 @@ const handleGetDocumentPdf = async (documentId, corsHeaders) => {
 
 /**
  * Delete a document by ID
- * @param {string} documentId - UUID of the document to delete
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {string} params.documentId - UUID of the document to delete
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with deleted document ID
  * @throws {Object} 404 error if document not found
  */
-const handleDeleteDocument = async (documentId, corsHeaders) => {
+const handleDeleteDocument = async ({ documentId, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleDeleteDocument');
   try {
-    const deletedDocument = await dbData.deleteDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    const deletedDocumentId = await dbData.deleteDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(deletedDocument),
+      body: JSON.stringify(deletedDocumentId),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error('Error in handleDeleteDocument:', error);
     return {
       statusCode: error.statusCode || 500,
@@ -340,11 +387,14 @@ const handleDeleteDocument = async (documentId, corsHeaders) => {
 
 /**
  * Handles file upload and stores it in S3
- * @param {Object} event - Lambda event object
- * @param {Object} corsHeaders - CORS headers to include in response
+ * @param {Object} params - Parameters object
+ * @param {Object} params.event - Lambda event object
+ * @param {Object} params.corsHeaders - CORS headers to include in response
+ * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with upload status
  */
-const handleFileUpload = async (event, corsHeaders) => {
+const handleFileUpload = async ({ event, corsHeaders, parentSegment }) => {
+  const subsegment = parentSegment.addNewSubsegment('handleFileUpload');
   try {
     const { documentId, fileName, fileType } = event.queryStringParameters;
     if (isInvalidValue(documentId) || isInvalidValue(fileName) || isInvalidValue(fileType)) {
@@ -369,6 +419,7 @@ const handleFileUpload = async (event, corsHeaders) => {
 
     console.log(`File (${fileType}, ${fileContent.length} bytes) uploaded successfully to S3: ${s3UploadedFileKey}`);
 
+    subsegment.close();
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -378,6 +429,8 @@ const handleFileUpload = async (event, corsHeaders) => {
       }),
     };
   } catch (error) {
+    subsegment.addError(error);
+    subsegment.close();
     console.error(
       `Error in handleFileUpload: documentId=${event.queryStringParameters?.documentId}, fileName=${event.queryStringParameters?.fileName}\n${error.message}`
     );

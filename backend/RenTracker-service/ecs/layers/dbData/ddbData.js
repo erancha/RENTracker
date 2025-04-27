@@ -437,7 +437,7 @@ const getApartmentActivity = logMiddleware('ddb_getApartmentActivity')(async ({ 
         },
         FilterExpression: 'saas_tenant_id = :saas_tenant_id',
         ScanIndexForward: false, // Sort in descending order by created_at
-        Limit: 10, // Limit the query to 100 records
+        Limit: 10, // TODO: Add pagination support
       })
     );
     return Items || [];

@@ -14,10 +14,14 @@ Parameters:
   ExistingVpcId:
     Type: String
     Description: 'ID of an existing VPC'
-  ExistingWebsocketsPrivateSubnetId:
+  ExistingAppPrivateSubnetId:
     Type: String
-    Description: 'ID of an existing private subnet for websockets (leave empty to create a new one)'
+    Description: 'ID of an existing private subnet for app/business logic Lambda functions (leave empty to create a new one)'
     Default: ''
+  ExistingAppSG:
+    Type: String
+    Description: 'App/business logic Lambda functions security group (leave empty to create a new one)'
+    Default: 'sg-d3289ca9'
   ExistingRDSEndpoint:
     Type: String
     Description: 'Address of an existing RDS instance (leave empty to create a new one)'
@@ -25,10 +29,6 @@ Parameters:
   ExistingRDSSecurityGroupId:
     Type: String
     Description: 'RDS security group (leave empty to create a new one)'
-    Default: 'sg-d3289ca9'
-  ExistingWebSocketLambdaSG:
-    Type: String
-    Description: 'WebSocket Lambda functions security group (leave empty to create a new one)'
     Default: 'sg-d3289ca9'
 
   DeveloperIP:
@@ -99,8 +99,9 @@ Parameters:
     Description: 'ARN of the Lambda function to be invoked by EventBridge'
 
 Conditions:
-  CreateRDSInstance: !Equals [!Ref ExistingRDSEndpoint, '']
-  HasDeveloperIP: !Not [!Equals [!Ref DeveloperIP, '']]
+  CreateAppPrivateSubnets: !Equals [!Ref ExistingAppPrivateSubnetId, '']
+  # CreateRDSInstance: !Equals [!Ref ExistingRDSEndpoint, '']
+  # HasDeveloperIP: !Not [!Equals [!Ref DeveloperIP, '']]
   # DeployForProductionCondition: !Equals [!Ref StageName, 'prod']
   HasCustomDomainName: !Not [!Equals [!Ref CustomDomainName, '']]
   HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
@@ -177,10 +178,10 @@ Resources:
   #   The API gateway forwards the requests to the Lambda functions.
   #==========================================================================================================================================================
 
-  # Private subnets for Lambda functions and RDS
-  MyWebsocketsPrivateSubnet1:
+  # Private subnet(s) for app/business logic Lambda functions
+  MyAppPrivateSubnet1:
     Type: AWS::EC2::Subnet
-    Condition: CreateRDSInstance
+    Condition: CreateAppPrivateSubnets
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
@@ -189,36 +190,11 @@ Resources:
       AvailabilityZone: !Select [0, !GetAZs '']
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-WebsocketsPrivateSubnet1'
+          Value: !Sub '${AWS::StackName}-AppPrivateSubnet1'
 
-  MyRDSPrivateSubnet1:
-    Type: AWS::EC2::Subnet
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      VpcId: !Ref ExistingVpcId
-      CidrBlock: 10.0.9.0/24
-      AvailabilityZone: !Select [0, !GetAZs '']
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-RDSPrivateSubnet1'
-  MyRDSPrivateSubnet2:
-    Type: AWS::EC2::Subnet
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      VpcId: !Ref ExistingVpcId
-      CidrBlock: 10.0.10.0/24
-      AvailabilityZone: !Select [1, !GetAZs '']
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-RDSPrivateSubnet2'
-
-  MyWebSocketLambdaSG:
+  MyAppSG:
     Type: AWS::EC2::SecurityGroup
-    Condition: CreateRDSInstance
+    Condition: CreateAppPrivateSubnets
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
@@ -238,69 +214,94 @@ Resources:
           ToPort: 443
           CidrIp: 0.0.0.0/0
 
-  MyRDSBasedFunctionSG:
-    Type: AWS::EC2::SecurityGroup
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupDescription: Security group for Lambda Functions inside RDS private subnets
-      VpcId: !Ref ExistingVpcId
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-RDSBasedFunction-SG'
+  # MyRDSPrivateSubnet1:
+  #   Type: AWS::EC2::Subnet
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     VpcId: !Ref ExistingVpcId
+  #     CidrBlock: 10.0.9.0/24
+  #     AvailabilityZone: !Select [0, !GetAZs '']
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub '${AWS::StackName}-RDSPrivateSubnet1'
+  # MyRDSPrivateSubnet2:
+  #   Type: AWS::EC2::Subnet
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     VpcId: !Ref ExistingVpcId
+  #     CidrBlock: 10.0.10.0/24
+  #     AvailabilityZone: !Select [1, !GetAZs '']
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub '${AWS::StackName}-RDSPrivateSubnet2'
 
-  MyRDSSG:
-    Type: AWS::EC2::SecurityGroup
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupDescription: RDS Security Group
-      VpcId: !Ref ExistingVpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref MyWebSocketLambdaSG
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref MyRDSBasedFunctionSG
-        - !If
-          - HasDeveloperIP
-          - IpProtocol: tcp
-            FromPort: 5432
-            ToPort: 5432
-            CidrIp: !Ref DeveloperIP
-          - !Ref AWS::NoValue
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-RDS-SG'
+  # MyRDSBasedFunctionSG:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     GroupDescription: Security group for Lambda Functions inside RDS private subnets
+  #     VpcId: !Ref ExistingVpcId
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub '${AWS::StackName}-RDSBasedFunction-SG'
 
-  MyWebSocketLambdaSGEgressRule:
-    Type: AWS::EC2::SecurityGroupEgress # MyWebSocketLambdaSG --> MyRDSSG
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupId: !Ref MyWebSocketLambdaSG
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      DestinationSecurityGroupId: !Ref MyRDSSG
+  # MyRDSSG:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     GroupDescription: RDS Security Group
+  #     VpcId: !Ref ExistingVpcId
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 5432
+  #         ToPort: 5432
+  #         SourceSecurityGroupId: !Ref MyAppSG
+  #       - IpProtocol: tcp
+  #         FromPort: 5432
+  #         ToPort: 5432
+  #         SourceSecurityGroupId: !Ref MyRDSBasedFunctionSG
+  #     - !If
+  #       - HasDeveloperIP
+  #       - IpProtocol: tcp
+  #         FromPort: 5432
+  #         ToPort: 5432
+  #         CidrIp: !Ref DeveloperIP
+  #       - !Ref AWS::NoValue
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub '${AWS::StackName}-RDS-SG'
 
-  MyRDSBasedFunctionEgressRule:
-    Type: AWS::EC2::SecurityGroupEgress # MyRDSBasedFunctionSG --> MyRDSSG.
-    Condition: CreateRDSInstance
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupId: !Ref MyRDSBasedFunctionSG
-      IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
-      DestinationSecurityGroupId: !Ref MyRDSSG
+  # MyAppSGEgressRule:
+  #   Type: AWS::EC2::SecurityGroupEgress # MyAppSG --> MyRDSSG
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     GroupId: !Ref MyAppSG
+  #     IpProtocol: tcp
+  #     FromPort: 5432
+  #     ToPort: 5432
+  #     DestinationSecurityGroupId: !Ref MyRDSSG
+
+  # MyRDSBasedFunctionEgressRule:
+  #   Type: AWS::EC2::SecurityGroupEgress # MyRDSBasedFunctionSG --> MyRDSSG.
+  #   Condition: CreateRDSInstance
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     GroupId: !Ref MyRDSBasedFunctionSG
+  #     IpProtocol: tcp
+  #     FromPort: 5432
+  #     ToPort: 5432
+  #     DestinationSecurityGroupId: !Ref MyRDSSG
 
   # ------------------------------------------------------------------------------
   # Lambda layers.
@@ -401,8 +402,8 @@ Resources:
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
           # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
       VpcConfig:
-        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
       Role: !GetAtt WebSocketConnectLambdaRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -424,8 +425,8 @@ Resources:
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
       VpcConfig:
-        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
       Role: !GetAtt WebSocketLambdaElasticacheSQSRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -462,8 +463,8 @@ Resources:
           ENABLE_ENHANCED_LOGGING: false
           DISABLE_APP_CACHE: !Ref DisableAppCache
       VpcConfig:
-        SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
+        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
       Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -755,8 +756,8 @@ Resources:
   #           Auth:
   #             Authorizer: CognitoAuthorizer
   #     VpcConfig:
-  #       SubnetIds: [!Ref ExistingWebsocketsPrivateSubnetId]
-  #       SecurityGroupIds: [!Ref ExistingWebSocketLambdaSG]
+  #       SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+  #       SecurityGroupIds: [!Ref ExistingAppSG]
 
   DocumentsRestFunction:
     Type: AWS::Serverless::Function
@@ -778,6 +779,7 @@ Resources:
           NODE_ENV: production
           STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           ALLOWED_ORIGIN: !If
             - AllowOnlyCloudfrontOriginCondition
             - !Sub 'https://${FrontendDistribution.DomainName}'
@@ -849,8 +851,8 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
       VpcConfig:
-        SubnetIds: [!Ref ExistingWebsocketsPrivateSubnetId]
-        SecurityGroupIds: [!Ref ExistingWebSocketLambdaSG]
+        SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+        SecurityGroupIds: [!Ref ExistingAppSG]
       # TracingConfig:
       #   Mode: Active
 
@@ -860,6 +862,7 @@ Resources:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
       Policies:
         - PolicyName: DocumentsTableAccessPolicy
           PolicyDocument:
@@ -925,13 +928,19 @@ Resources:
       Layers:
         - !Ref AwsSdkV3Layer
         - !Ref DocumentUtilsLayer
+        - !Ref RedisClientLayer
+        - !Ref DbDataLayer
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
+      VpcConfig:
+        SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+        SecurityGroupIds: [!Ref ExistingAppSG]
       Events:
         DocumentsTableStream:
           Type: DynamoDB
@@ -1221,8 +1230,8 @@ Resources:
   #         DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
   #         SAAS_TENANT_ID: !Ref SaaSTenantUserId
   #     VpcConfig:
-  #       SubnetIds: [!If [CreateRDSInstance, !Ref MyWebsocketsPrivateSubnet1, !Ref ExistingWebsocketsPrivateSubnetId]]
-  #       SecurityGroupIds: [!If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]]
+  #       SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
+  #       SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
   #     Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
 
   #==========================================================================================================================================================
@@ -1516,15 +1525,16 @@ Outputs:
     Description: 'Cognito User Pool Domain'
     Value: !Ref ExistingCognitoDomain
 
+  MyAppSG:
+    Description: 'App/business logic lambda functions security group'
+    Value: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
+
   # MyRDSEndpoint:
   #   Description: 'RDS instance endpoint'
   #   Value: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
   # MyRDSSecurityGroupId:
   #   Description: 'RDS security group'
   #   Value: !If [CreateRDSInstance, !Ref MyRDSSG, !Ref ExistingRDSSecurityGroupId]
-  MyWebSocketLambdaSG:
-    Description: 'Websockets Lambda functions security group'
-    Value: !If [CreateRDSInstance, !Ref MyWebSocketLambdaSG, !Ref ExistingWebSocketLambdaSG]
 
   S3BucketName:
     Description: 'Name of the S3 bucket hosting the frontend'
