@@ -1,17 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { IDocument, IDocumentsState } from './types';
-import { createDocument, updateDocumentThunk, getDocumentThunk, getApartmentDocumentsThunk, getTenantDocumentsThunk } from './thunks';
-
-const initialState: IDocumentsState = {
-  documents: [],
-  loading: false,
-  error: null,
-  selectedDocument: null,
-};
+import { IDocument } from './types';
+import { createDocumentThunk, updateDocumentThunk, getDocumentThunk, getApartmentDocumentsThunk, getTenantDocumentsThunk } from './thunks';
+import initialState from 'redux/store/initialState';
 
 const documentsSlice = createSlice({
   name: 'documents',
-  initialState,
+  initialState: initialState.documents,
   reducers: {
     setLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
@@ -65,7 +59,7 @@ const documentsSlice = createSlice({
       state.error = action.error.message || 'Failed to fetch tenant documents';
     });
 
-    // Fetch Documents
+    // Fetch Apartment Documents
     builder.addCase(getApartmentDocumentsThunk.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -81,11 +75,11 @@ const documentsSlice = createSlice({
     });
 
     // Create Document
-    builder.addCase(createDocument.pending, (state) => {
+    builder.addCase(createDocumentThunk.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(createDocument.fulfilled, (state, action) => {
+    builder.addCase(createDocumentThunk.fulfilled, (state, action) => {
       state.loading = false;
       state.selectedDocument = action.payload;
       // Remove any existing document with the same ID
@@ -93,7 +87,7 @@ const documentsSlice = createSlice({
       // Add new document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
     });
-    builder.addCase(createDocument.rejected, (state, action) => {
+    builder.addCase(createDocumentThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || 'Failed to create document';
     });

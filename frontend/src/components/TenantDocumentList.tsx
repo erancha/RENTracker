@@ -4,7 +4,6 @@ import { RootState } from '../redux/store/reducers';
 import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getTenantDocumentsThunk } from '../redux/documents/thunks';
 import { Pencil, FileText, Plus, ArrowRight, Undo2 } from 'lucide-react';
-import Spinner from './Spinner';
 import { timeShortDisplay, formatDate } from 'utils/utils';
 import DocumentForm from './DocumentForm';
 import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
@@ -78,7 +77,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { documents = [], loading, error } = this.props;
+    const { documents = [], error } = this.props;
     const { showForm, showDocumentIdInput, documentIdInput } = this.state;
 
     return (
@@ -91,9 +90,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
         </div>
 
         <div className='documents-container'>
-          {loading ? (
-            <Spinner />
-          ) : showDocumentIdInput ? (
+          {showDocumentIdInput ? (
             <div className='document-id-input-container'>
               <div className='input-and-error-container'>
                 <textarea
@@ -180,14 +177,19 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * @returns {string|null} The extracted UUID or null if not found
    */
   extractDocumentId = (message: string): string | null => {
-    // Match the second UUID after the first 'https' and ensure the next part is '/rental-agreement.pdf'
-    const match = message.match(
-      /https.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b(?=\/rental-agreement\.pdf)/i
-    );
-    const documentId = match ? match[2] : null;
-    if (!documentId) {
-      toast.warn('Invalid document ID format in WhatsApp message. Please ensure it is a valid UUID.');
-      console.warn('Invalid document ID format in WhatsApp message:', message, match);
+    let documentId: string | null = null;
+    if (message) {
+      // Match the second UUID after the first 'https' and ensure the next part is '/rental-agreement.pdf'
+      const match = message.match(
+        /https.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b(?=\/rental-agreement\.pdf)/i
+      );
+      documentId = match ? match[2] : null;
+      if (!documentId) {
+        const warningMessage = `Invalid document ID format in the message: ${message}. Please ensure it is a valid UUID.`;
+        toast.warn(warningMessage);
+        console.warn(warningMessage, match);
+        navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
+      }
     }
     return documentId;
   };

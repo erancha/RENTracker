@@ -7,20 +7,18 @@ import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getApartmentDocumentsThunk, deleteDocumentThunk } from '../redux/documents/thunks';
 import { actions as documentActions } from '../redux/documents/slice';
 import { Pencil, Plus, Copy, Share2, Trash2, FileText } from 'lucide-react';
-import Spinner from './Spinner';
 import { timeShortDisplay, formatDate } from 'utils/utils';
 import { fieldsToResetOnDuplicate } from '../constants/documentFields';
 import DocumentForm from './DocumentForm';
 import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
+import Spinner from './Spinner';
 
 /**
  * Component for managing and displaying rental agreement documents associated with a specific apartment.
  * This component is specifically designed for landlord use cases, where documents are organized by apartment.
  */
 class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentListState> {
-  private fetchedApartmentId: string | null = null;
-
   state: DocumentListState = {
     showForm: false,
     editMode: false,
@@ -29,13 +27,11 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
   };
 
   /**
-   * Fetches apartment documents when component mounts
+   * Fetches apartment documents when the component mounts
    */
-  componentDidMount() {
-    const { apartmentId, getApartmentDocumentsThunk } = this.props;
-    if (apartmentId !== this.fetchedApartmentId) {
-      this.fetchedApartmentId = apartmentId;
-      getApartmentDocumentsThunk(apartmentId);
+  componentDidMount(): void {
+    if (this.props.apartmentId) {
+      this.props.getApartmentDocumentsThunk(this.props.apartmentId);
     }
   }
 
@@ -44,10 +40,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * @param {DocumentListProps} prevProps - Previous component props
    */
   componentDidUpdate(prevProps: DocumentListProps) {
-    const { apartmentId, getApartmentDocumentsThunk } = this.props;
-    if (apartmentId !== this.fetchedApartmentId) {
-      this.fetchedApartmentId = apartmentId;
-      getApartmentDocumentsThunk(apartmentId);
+    if (this.props.apartmentId !== prevProps.apartmentId) {
+      this.props.getApartmentDocumentsThunk(this.props.apartmentId);
     }
   }
 

@@ -481,7 +481,7 @@ body {
     border-left: 4px solid #1976d2;
 
     & .actions > .documents.activity {
-      animation: pulsate-brightness 1s ease-in-out 5 forwards;
+      animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
     }
   }
 
@@ -549,10 +549,6 @@ body {
 
 /* Documents Container */
 .documents-container {
-  .header span {
-    animation: pulsate-brightness 1s ease-in-out 3 forwards;
-  }
-
   .actions {
     margin-top: 1rem;
     grid-template-columns: repeat(3, 2rem);

@@ -168,13 +168,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
         </div>
 
         {!showApartmentForm && filteredApartments.length > 0 && (
-          <>
-            {showDocuments ? (
-              <div className='documents-container'>{currentApartmentId && <ApartmentDocumentList key={currentApartmentId} />}</div>
-            ) : (
-              <ApartmentActivity />
-            )}
-          </>
+          <>{showDocuments ? <div className='documents-container'>{currentApartmentId && <ApartmentDocumentList />}</div> : <ApartmentActivity />}</>
         )}
       </div>
     );
@@ -263,7 +257,9 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     // Only proceed if the apartment_id is different from current
     if (apartment_id !== this.props.currentApartmentId) {
       this.props.setCurrentApartmentAction(apartment_id);
-      this.props.prepareReadApartmentActivityCommandAction(apartment_id);
+
+      // Send command to read apartment activity only if the component's state is to show activity.
+      if (!this.state.showDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
     }
   };
 

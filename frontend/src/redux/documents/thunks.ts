@@ -13,7 +13,7 @@ interface CreateDocumentPayload {
   templateFields: Record<string, string>;
 }
 
-export const createDocument = createAsyncThunk<IDocument, CreateDocumentPayload>('documents/createDocument', async (data, { dispatch, getState }) => {
+export const createDocumentThunk = createAsyncThunk<IDocument, CreateDocumentPayload>('documents/createDocumentThunk', async (data, { dispatch, getState }) => {
   const state = getState() as RootState;
   const JWT = state.auth.JWT;
   if (!JWT) throw new Error('No JWT token');

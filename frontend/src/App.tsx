@@ -6,7 +6,6 @@ import { IAppState } from './redux/store/types';
 import { loginWithGoogleAction, checkAuthStatusAction } from './redux/auth/actions';
 import { AuthContextProps, useAuth } from 'react-oidc-context';
 import { toggleOverviewAction, setMenuSelectedPageAction } from './redux/menu/actions';
-import { createDocument, updateDocumentThunk, getDocumentThunk } from './redux/documents/thunks';
 import Spinner from './components/Spinner';
 import Apartments from './components/Apartments';
 import Analytics from './components/Analytics';
@@ -173,9 +172,6 @@ interface IAppProps {
   apartments: IApartment[];
   userType: UserType;
   currentApartmentId: string | null;
-  getDocumentThunk: typeof getDocumentThunk;
-  createDocument: typeof createDocument;
-  updateDocumentThunk: typeof updateDocumentThunk;
   selectedDocument: IDocument | null;
   JWT: string | null;
   auth: AuthContextProps;
@@ -203,9 +199,6 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setMenuSelectedPageAction,
       checkAuthStatusAction,
       loginWithGoogleAction,
-      getDocumentThunk,
-      createDocument,
-      updateDocumentThunk,
     },
     dispatch
   );

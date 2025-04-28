@@ -26,7 +26,7 @@ import { IDocument } from '../redux/documents/types';
 import { UserType, IAuthState } from '../redux/auth/types';
 import { getDocumentTitle } from '../utils/documentUtils';
 import { fieldToSection } from '../constants/documentFields';
-import { getDocumentThunk, createDocument, updateDocumentThunk } from '../redux/documents/thunks';
+import { getDocumentThunk, createDocumentThunk, updateDocumentThunk } from '../redux/documents/thunks';
 import { actions as documentActions } from '../redux/documents/slice';
 import he from 'date-fns/locale/he';
 import { IncludedEquipmentSelect } from './IncludedEquipmentSelect';
@@ -884,7 +884,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { documentId, createDocument, updateDocumentThunk, onSave, onClose, apartmentId } = this.props;
+    const { documentId, createDocumentThunk, updateDocumentThunk, onSave, onClose, apartmentId } = this.props;
 
     // Validate all fields
     const errors: Record<string, string> = {};
@@ -946,7 +946,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           ...(this.props.userType === UserType.Tenant && this.props.userId ? { tenantUserId: this.props.userId } : {}),
         });
       } else {
-        savedDocument = await createDocument({ apartmentId: apartmentId as string, templateFields: this.state.formData });
+        savedDocument = await createDocumentThunk({ apartmentId: apartmentId as string, templateFields: this.state.formData });
       }
       this.props.setSelectedDocument(savedDocument);
 
@@ -1087,7 +1087,7 @@ interface StateProps {
  * Props from Redux dispatch
  */
 interface DispatchProps {
-  createDocument: (payload: CreateDocumentPayload) => Promise<IDocument>;
+  createDocumentThunk: (payload: CreateDocumentPayload) => Promise<IDocument>;
   updateDocumentThunk: (payload: UpdateDocumentPayload) => Promise<IDocument>;
   setSelectedDocument: (document: IDocument | null) => void;
 }
@@ -1124,8 +1124,8 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, unknown, AnyActio
     const action = await dispatch(getDocumentThunk(id));
     return action.payload as IDocument;
   },
-  createDocument: async (payload: CreateDocumentPayload) => {
-    const action = await dispatch(createDocument(payload));
+  createDocumentThunk: async (payload: CreateDocumentPayload) => {
+    const action = await dispatch(createDocumentThunk(payload));
     return action.payload as IDocument;
   },
   updateDocumentThunk: async (payload: UpdateDocumentPayload) => {
