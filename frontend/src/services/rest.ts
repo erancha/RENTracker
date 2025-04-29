@@ -183,3 +183,54 @@ export const uploadFile = async ({
 
   return await response.json();
 };
+
+/**
+ * POST /upload
+ * Uploads base64 image data to the server
+ */
+export const uploadContent = async ({
+  JWT,
+  content,
+  fileName,
+  documentId,
+}: {
+  JWT: string;
+  content: string;
+  fileName: string;
+  documentId?: string;
+}): Promise<{ message: string; fileKey: string }> => {
+  const fileType = 'image/png';
+
+  // Convert base64 to blob
+  const base64Data = content.split(',')[1];
+  const byteCharacters = atob(base64Data);
+  const byteArrays = [];
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+  const blob = new Blob(byteArrays, { type: fileType });
+
+  const formData = new FormData();
+  formData.append('file', blob);
+
+  const url = `${appConfigData.REST_API_URL}/upload?documentId=${documentId}&fileName=${fileName}&fileType=${fileType}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${JWT}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload content');
+  }
+
+  return response.json();
+};

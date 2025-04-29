@@ -30,8 +30,9 @@ import { getDocumentThunk, createDocumentThunk, updateDocumentThunk } from '../r
 import { actions as documentActions } from '../redux/documents/slice';
 import he from 'date-fns/locale/he';
 import { IncludedEquipmentSelect } from './IncludedEquipmentSelect';
-import { uploadFile } from '../services/rest';
+import { uploadFile, uploadContent } from '../services/rest';
 import ImagesViewer from './ImagesViewer';
+import SignatureMaker from './SignatureMaker';
 
 /**
  * DocumentForm component for creating and editing rental agreements
@@ -440,6 +441,23 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 <Grid item xs={12}>
                   {this.renderTextField('guarantorAddress', 'כתובת')}
                 </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Signature */}
+          <Accordion expanded={this.state.expandedSections.includes('signature')} onChange={this.handleAccordionChange('signature')}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography className='section-header'>חתימה</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid item xs={12}>
+                <SignatureMaker
+                  onSave={(imageData) => {
+                    this.handleSignatureUpload(imageData);
+                    this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
+                  }}
+                />
               </Grid>
             </AccordionDetails>
           </Accordion>
@@ -1028,6 +1046,38 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         console.error('Error uploading file:', error);
         toast.error('Failed to upload file. Please try again.');
       }
+    }
+  };
+
+  /**
+   * Handles image content upload and updates the formData state with the uploaded file's information.
+   * @param files - FileList object containing selected files
+   * @param fileName - Name of the file to be uploaded
+   */
+  private handleSignatureUpload = async (imageData: string) => {
+    try {
+      const documentId = this.props.documentId;
+      const fileName = 'signature';
+
+      /*const { message, fileKey } =*/ await uploadContent({
+        JWT: this.props.auth.JWT as string,
+        content: imageData,
+        fileName,
+        documentId,
+      });
+
+      // Update formData with the signature data
+      this.setState((prevState) => ({
+        formData: {
+          ...prevState.formData,
+          [fileName]: fileName,
+        },
+      }));
+
+      toast.success('Signature saved successfully!');
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      toast.error('Failed to save signature. Please try again.');
     }
   };
 }

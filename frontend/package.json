@@ -23,6 +23,7 @@
     "oidc-client-ts": "^3.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-konva": "^18.2.10",
     "react-markdown": "^9.0.1",
     "react-oidc-context": "^3.2.0",
     "react-redux": "^8.1.3",

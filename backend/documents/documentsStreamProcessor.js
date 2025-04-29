@@ -1,4 +1,4 @@
-const { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { CloudFrontClient, CreateInvalidationCommand } = require('@aws-sdk/client-cloudfront');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer-core');
@@ -83,11 +83,24 @@ async function handleCreate(record) {
   const templateName = newImage.template_name.S;
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
 
+  // Signature for interpolation as the tenant's signature
+  const noSignaturePlaceholder = '. '.repeat(5);
+  let signatureUrl = '';
+  try {
+    signatureUrl = await getDocumentImageAsDataUrl(newImage.document_id.S, 'signature');
+    templateFields.tenantSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
+  } catch (error) {
+    console.log('No signature found, using placeholder:', error);
+    templateFields.tenantSignatureImage = noSignaturePlaceholder;
+  }
+  templateFields.signatureUnderline = '_'.repeat(50);
+  templateFields.landlordSignatureImage = noSignaturePlaceholder;
+
   const template = loadTemplate(templateName);
   const interpolated = interpolateTemplate(template, templateFields);
   const processedHtml = preprocessMarkdown(interpolated);
   const html = marked(processedHtml);
-  const styledHtml = createStyledHtml(html);
+  const styledHtml = createStyledHtml(html, signatureUrl); // Signature for the footer
   const pdfBuffer = await convertToPdf(styledHtml);
 
   const s3Key = prepareS3RentalAgreementKey(newImage.document_id.S, SAAS_TENANT_ID);
@@ -348,8 +361,13 @@ const interpolateTemplate = (template, fields) => {
 
   // Handle standard {{key}} replacements with highlighting and italics
   result = result.replace(/\{\{([^}]+)\}\}/g, (match, field) => {
-    const value = fields[field.trim()];
-    return value !== undefined && value !== '' ? `<mark><i>${value}</i></mark>` : `____________`;
+    const trimmedField = field.trim();
+    const value = fields[trimmedField];
+    return trimmedField.toLowerCase().includes('signature')
+      ? value || ''
+      : value !== undefined && value !== ''
+      ? `<mark><i>${value}</i></mark>`
+      : '?'.repeat(5);
   });
 
   // Log any remaining uninterpolated placeholders
@@ -402,9 +420,10 @@ const preprocessMarkdown = (markdown) => {
 /**
  * Create a styled HTML document with proper RTL support
  * @param {string} content - HTML content to style
+ * @param {string} [footerImagePath] - Optional path to footer image
  * @returns {string} Complete HTML document with styling
  */
-const createStyledHtml = (content) => {
+const createStyledHtml = (content, footerImagePath) => {
   return `
     <!DOCTYPE html>
     <html dir="rtl" lang="he">
@@ -412,16 +431,15 @@ const createStyledHtml = (content) => {
         <meta charset="UTF-8">
         <style>
           @page {
-            margin: 1.5cm;
             size: A4;
+            margin: 1cm;
+            padding: 0.5cm;
           }
           body {
             font-family: Arial, sans-serif;
             direction: rtl;
             text-align: right;
-            padding: 20px;
             max-width: 800px;
-            margin: 0 auto;
             line-height: 1.4;
             font-size: 8pt;
           }
@@ -500,7 +518,7 @@ const createStyledHtml = (content) => {
           }
           
           p {
-            margin: 0.8em 0;
+            margin: 0.3em 0 1em;
           }
           
           br {
@@ -508,14 +526,61 @@ const createStyledHtml = (content) => {
             margin: 0.7em 0;
             content: "";
           }
+          
+          .page-footer {
+            position: fixed;
+            opacity: 0.7;
+            bottom: 0;
+            left: -10cm;
+            right: 5cm;
+            height: 30px;
+            background: white;
+          }
+
+          .signature-img {
+              height: 20px;
+              width: 100px;
+              display: block;
+              margin: 10px auto;
+              opacity: 1;
+          }
         </style>
       </head>
       <body>
         ${content}
+        ${
+          footerImagePath
+            ? `
+        <div class="page-footer">
+          <img src="${footerImagePath}" class="signature-img" alt="Footer Image" />
+        </div>
+        `
+            : ''
+        }
       </body>
     </html>
   `;
 };
+
+/**
+ * Gets an image from S3 and returns it as a base64 data URL
+ * @param {string} documentId - The document ID
+ * @param {string} imageType - Type of image (e.g., 'signature', 'footer')
+ * @returns {Promise<string>} Base64 data URL of the image
+ * @throws {Error} If the image cannot be retrieved from S3
+ */
+async function getDocumentImageAsDataUrl(documentId, imageType) {
+  const s3Key = `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${imageType}`;
+  const response = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: DOCUMENTS_BUCKET_NAME,
+      Key: s3Key,
+    })
+  );
+  const buffer = await response.Body.transformToByteArray();
+  const base64 = Buffer.from(buffer).toString('base64');
+  return `data:image/png;base64,${base64}`;
+}
 
 /**
  * Convert HTML string to PDF buffer using Puppeteer
@@ -550,13 +615,26 @@ async function convertToPdf(html) {
       timeout: 60000,
     });
 
-    // Wait for fonts to load
-    await page.evaluate(() => document.fonts.ready);
+    // Wait for fonts and images to load
+    await Promise.all([
+      page.evaluate(() => document.fonts.ready),
+      page.evaluate(() => {
+        return Promise.all(
+          Array.from(document.images)
+            .filter((img) => !img.complete)
+            .map(
+              (img) =>
+                new Promise((resolve) => {
+                  img.onload = img.onerror = resolve;
+                })
+            )
+        );
+      }),
+    ]);
 
     // Generate PDF with enhanced settings
     const pdf = await page.pdf({
       format: 'A4',
-      margin: { top: '1.5cm', right: '1.5cm', bottom: '1.5cm', left: '1.5cm' },
       printBackground: true,
       preferCSSPageSize: true,
       scale: 1,

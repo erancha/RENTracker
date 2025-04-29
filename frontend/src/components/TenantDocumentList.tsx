@@ -46,29 +46,28 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
       getTenantDocumentsThunk(userId);
     }
 
-    // console.log(JSON.stringify(this.props, null, 2), JSON.stringify(prevProps, null, 2));
+    // console.log(
+    //   `loading: ${this.props.loading}, prevProps.loading: ${prevProps.loading}, this.props.selectedDocument: ${this.props.selectedDocument}, this.props.documents.length: ${this.props.documents.length}`
+    // );
 
     if (!this.props.loading && prevProps.loading) {
-      if (this.props.selectedDocument) {
-        if (
-          !this.props.selectedDocument.template_fields.tenantEmail ||
-          this.props.selectedDocument.template_fields.tenantEmail.toLowerCase() === this.props.email.toLowerCase()
-        )
+      // no documments yet - open the new document form:
+      if (this.props.documents.length === 0) {
+        this.setState({ showDocumentIdInput: true });
+      } // if selected document changed, update the edit mode:
+      else if (this.props.error) navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
+    } else if (!this.props.loading) {
+      if (this.props.selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument !== this.props.selectedDocument)) {
+        const template_fields = this.props.selectedDocument.template_fields;
+        // the selected document is either not linked yet or already linked to the current tenant:
+        if (!template_fields.tenantEmail || template_fields.tenantEmail.toLowerCase() === this.props.email.toLowerCase())
           this.setState({ showDocumentIdInput: false, showForm: true });
         else {
           toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenantEmail}`);
           navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
-          this.setState({
-            showDocumentIdInput: true,
-            showForm: false,
-            documentIdInput: '',
-          });
+          this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
         }
-      } else if (this.props.documents.length === 0) {
-        this.setState({ showDocumentIdInput: true });
       }
-    } else if (this.props.error) {
-      navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
     }
   }
 

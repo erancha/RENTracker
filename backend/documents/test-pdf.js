@@ -123,7 +123,6 @@ async function generatePdf(html, outputPath) {
     const pdf = await page.pdf({
       path: outputPath,
       format: 'A4',
-      margin: { top: '1.5cm', right: '1.5cm', bottom: '1.5cm', left: '1.5cm' },
       printBackground: true,
       preferCSSPageSize: true,
       scale: 1,
@@ -179,27 +178,31 @@ async function main() {
         <head>
           <meta charset="UTF-8">
           <style>
+            @page {
+              size: A4;
+              margin: 1cm;
+              padding: 0.5cm;
+            }
+
             body {
               font-family: Arial, sans-serif;
               direction: rtl;
               text-align: right;
-              padding: 20px;
               max-width: 800px;
-              margin: 0 auto;
               line-height: 1.4;
               font-size: 9pt;
             }
-            
+
             mark {
               background-color: #fff3b8;
               padding: 0 2px;
             }
-            
+
             mark i {
               font-style: italic;
               font-weight: 500;
             }
-            
+
             .bold-text {
               font-weight: bold;
               text-align: center;
@@ -207,7 +210,7 @@ async function main() {
               font-size: 10pt;
               display: block;
             }
-            
+
             h1 {
               color: #000;
               font-size: 18pt;
@@ -215,7 +218,7 @@ async function main() {
               margin: 0.5em 0 1em 0;
               page-break-after: avoid;
             }
-            
+
             h2.section-header-2 {
               color: #000;
               font-size: 13pt;
@@ -223,7 +226,7 @@ async function main() {
               margin: 1.2em 0 0.6em 0;
               page-break-after: avoid;
             }
-            
+
             h3.section-header-3 {
               color: #000;
               font-size: 10pt;
@@ -231,50 +234,71 @@ async function main() {
               margin: 2.5em 0 0.4em 0;
               page-break-after: avoid;
             }
-            
+
             .section-number {
               display: inline-block;
               margin-left: 0.5em;
             }
-            
+
             strong {
               font-weight: bold;
             }
-            
+
             .section-number strong {
               font-weight: bold;
             }
-            
+
             table {
               width: 100%;
               border-collapse: collapse;
               margin: 1em 0;
             }
-            
+
             th, td {
               border: 1px solid #ddd;
               padding: 12px;
               text-align: right;
             }
-            
+
             th {
               background-color: #f5f5f5;
               font-weight: bold;
             }
-            
+
             p {
-              margin: 0.7em 0;
+              margin: 0.3em 0 1em;
             }
-            
+
             br {
               display: block;
               margin: 0.5em 0;
               content: "";
             }
+
+            .page-footer {
+              position: fixed;
+              opacity: 0.7;
+              bottom: 0;
+              left: -10cm;
+              right: 5cm;
+              height: 30px;
+              background: white;
+            }
+
+            .signature-img {
+              height: 20px;
+              width: 100px;
+              display: block;
+              margin: 10px auto;
+              opacity: 1;
+            }
           </style>
         </head>
         <body>
           ${html}
+          <div class="page-footer">
+            <img src="https://rnt-f-frontend.s3.eu-central-1.amazonaws.com/signature-sample.png" class="signature-img" alt="Signature" />
+          </div>
         </body>
       </html>
     `;
