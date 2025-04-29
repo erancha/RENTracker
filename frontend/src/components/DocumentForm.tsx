@@ -457,19 +457,24 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     this.handleSignatureUpload(imageData);
                     this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
                   }}
+                  onCancel={() => this.handleAccordionChange('signature')(new Event('dummy') as any, false)} // collapses the current section.
                 />
               </Grid>
             </AccordionDetails>
           </Accordion>
 
-          <div className='actions'>
-            <button type='submit' className='action-button save' title={this.props.documentId ? 'Update' : 'Create'}>
-              <Save />
-            </button>
-            <button type='button' className='action-button cancel' title='Cancel' onClick={this.handleCancel}>
-              <Undo2 />
-            </button>
-          </div>
+          {
+            /* To avoid closing the form unintentionally instead of the signature accordion */ !this.state.expandedSections.includes('signature') && (
+              <div className='actions'>
+                <button type='submit' className='action-button save' title={this.props.documentId ? 'Update' : 'Create'}>
+                  <Save />
+                </button>
+                <button type='button' className='action-button cancel' title='Cancel' onClick={this.handleCancel}>
+                  <Undo2 />
+                </button>
+              </div>
+            )
+          }
         </form>
       </Paper>
     );
@@ -860,7 +865,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             variant='body2'
             color='textSecondary'
             onClick={() => this.setState({ showImagesViewer: !this.state.showImagesViewer })}
-            style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+          >
             Existing file: {existingFileName}
           </Typography>
         )}
@@ -1074,7 +1080,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         },
       }));
 
-      toast.success('Signature saved successfully!');
+      toast.success('Signature saved successfully!', { autoClose: 1000 });
     } catch (error) {
       console.error('Error saving signature:', error);
       toast.error('Failed to save signature. Please try again.');

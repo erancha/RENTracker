@@ -5,10 +5,12 @@ import { Check, Undo2 } from 'lucide-react';
 
 interface SignatureMakerProps {
   onSave: (imageData: string) => void;
+  onCancel: () => void;
 }
 
-const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave }) => {
+const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => {
   const [lines, setLines] = useState<any[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
   const isDrawing = useRef(false);
   const stageRef = useRef<any>(null);
 
@@ -16,6 +18,7 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave }) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
     setLines([...lines, { points: [pos.x, pos.y] }]);
+    setHasChanges(true);
   };
 
   const handleMouseMove = (e: any) => {
@@ -26,6 +29,7 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave }) => {
     lastLine.points = lastLine.points.concat([point.x, point.y]);
     lines.splice(lines.length - 1, 1, lastLine);
     setLines(lines.concat());
+    setHasChanges(true);
   };
 
   const handleMouseUp = () => {
@@ -66,6 +70,8 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave }) => {
 
   const handleClear = () => {
     setLines([]);
+    if (hasChanges) setHasChanges(false);
+    else onCancel();
   };
 
   return (
@@ -90,9 +96,11 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave }) => {
       </Stage>
 
       <div className='actions' style={{ marginTop: '10px' }}>
-        <button type='button' className='action-button save' title='Save' onClick={handleSave}>
-          <Check />
-        </button>
+        {hasChanges && (
+          <button type='button' className='action-button save' title='Save' onClick={handleSave}>
+            <Check />
+          </button>
+        )}
         <button type='button' className='action-button cancel' title='Cancel' onClick={handleClear}>
           <Undo2 />
         </button>

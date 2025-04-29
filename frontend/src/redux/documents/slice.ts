@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { IDocument } from './types';
 import { createDocumentThunk, updateDocumentThunk, getDocumentThunk, getApartmentDocumentsThunk, getTenantDocumentsThunk } from './thunks';
 import initialState from 'redux/store/initialState';
+import { toast } from 'react-toastify';
 
 const documentsSlice = createSlice({
   name: 'documents',
@@ -86,6 +87,7 @@ const documentsSlice = createSlice({
       state.documents = state.documents.filter((doc) => doc.document_id !== action.payload.document_id);
       // Add new document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
+      toast.success('Document created successfully', { autoClose: 2000 });
     });
     builder.addCase(createDocumentThunk.rejected, (state, action) => {
       state.loading = false;
@@ -104,6 +106,7 @@ const documentsSlice = createSlice({
       state.documents = state.documents.filter((doc) => doc.document_id !== action.payload.document_id);
       // Add updated document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
+      toast.success('Document updated successfully', { autoClose: 2000 });
     });
     builder.addCase(updateDocumentThunk.rejected, (state, action) => {
       state.loading = false;
