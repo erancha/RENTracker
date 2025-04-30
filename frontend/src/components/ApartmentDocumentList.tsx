@@ -69,7 +69,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                   sectionsToExpand: ['landlordDetails'],
                 });
               }}
-              className='action-button add'>
+              className='action-button add'
+            >
               <Plus />
             </button>
           )}
@@ -115,7 +116,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                           await this.props.getDocumentThunk(document.document_id);
                           // Then show the form
                           this.setState({ showForm: true, editMode: true });
-                        }}>
+                        }}
+                      >
                         <Pencil />
                       </button>
                       <button className='action-button' title='Duplicate' onClick={() => this.handleDuplicateDocument(document)}>
@@ -131,7 +133,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                           const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
                           else toast.error('Failed to generate PDF');
-                        }}>
+                        }}
+                      >
                         <FileText />
                       </button>
                       <button
@@ -139,9 +142,10 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                         title='Share via WhatsApp'
                         onClick={async () => {
                           const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
-                          if (pdf_url) this.handleShareWhatsApp(document.document_id, pdf_url);
+                          if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
                           else toast.error('Failed to generate PDF');
-                        }}>
+                        }}
+                      >
                         <Share2 />
                       </button>
                     </div>
@@ -162,13 +166,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * @param {string} documentId - ID of document to share
    * @param {string} pdf_url - URL in CloudFront of the document to share
    */
-  handleShareWhatsApp = (documentId: string, pdf_url: string) => {
+  handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
     const message = `\nPlease find below a link to your rental agreement: *'${getDocumentTitle(
       document?.template_fields?.tenantName
-    )}'*.\n\n*To complete tenant information*, copy this message and sign into the application at ${
+    )}'*.\n\n*To complete your details*, copy this whatsapp message and sign into the application at ${
       window.location.origin
-    }\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application:\n\n${pdf_url}`;
+    }\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

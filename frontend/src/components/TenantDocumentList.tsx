@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { RootState } from '../redux/store/reducers';
 import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getTenantDocumentsThunk } from '../redux/documents/thunks';
-import { Pencil, FileText, Plus, ArrowRight, Undo2 } from 'lucide-react';
+import { Pencil, FileText, Plus, ArrowRight, Undo2, Share2 } from 'lucide-react';
 import { timeShortDisplay, formatDate } from 'utils/utils';
 import DocumentForm from './DocumentForm';
 import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
@@ -14,8 +14,6 @@ import { toast } from 'react-toastify';
  * This component is specifically designed for tenant use cases, where documents are organized by tenant ID.
  */
 class TenantDocumentList extends React.Component<DocumentListProps, DocumentListState> {
-  private fetchedTenantId: string | null = null;
-
   state: DocumentListState = {
     showForm: false,
     editMode: false,
@@ -29,7 +27,6 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   componentDidMount() {
     const { userId, getTenantDocumentsThunk } = this.props;
     if (userId) {
-      this.fetchedTenantId = userId;
       getTenantDocumentsThunk(userId);
     }
   }
@@ -42,32 +39,32 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     const { userId, getTenantDocumentsThunk } = this.props;
     // Fetch when userId becomes available or changes
     if (userId && (!prevProps.userId || userId !== prevProps.userId)) {
-      this.fetchedTenantId = userId;
       getTenantDocumentsThunk(userId);
     }
 
     // console.log(
-    //   `loading: ${this.props.loading}, prevProps.loading: ${prevProps.loading}, this.props.selectedDocument: ${this.props.selectedDocument}, this.props.documents.length: ${this.props.documents.length}`
+    //   `
+    //    this.State: ${JSON.stringify(this.state)},
+    //    loading: ${this.props.loading} <== ${prevProps.loading},
+    //    selectedDocument.Id: ${this.props.selectedDocument?.document_id} <== ${prevProps.selectedDocument?.document_id},
+    //    documents.length: ${this.props.documents.length} <== ${prevProps.documents.length}
+    //    `
     // );
 
-    if (!this.props.loading && prevProps.loading) {
-      // no documments yet - open the new document form:
+    if (this.props.selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument.document_id !== this.props.selectedDocument.document_id)) {
+      const template_fields = this.props.selectedDocument.template_fields;
+      // the selected document is either not linked yet or already linked to the current tenant:
+      if (!template_fields.tenantEmail || template_fields.tenantEmail.toLowerCase() === this.props.email.toLowerCase())
+        this.setState({ showDocumentIdInput: false, showForm: true });
+      else {
+        toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenantEmail}`);
+        this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
+      }
+    } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
+      // no documments yet - open the new document id form:
       if (this.props.documents.length === 0) {
         this.setState({ showDocumentIdInput: true });
       } // if selected document changed, update the edit mode:
-      else if (this.props.error) navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
-    } else if (!this.props.loading) {
-      if (this.props.selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument !== this.props.selectedDocument)) {
-        const template_fields = this.props.selectedDocument.template_fields;
-        // the selected document is either not linked yet or already linked to the current tenant:
-        if (!template_fields.tenantEmail || template_fields.tenantEmail.toLowerCase() === this.props.email.toLowerCase())
-          this.setState({ showDocumentIdInput: false, showForm: true });
-        else {
-          toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenantEmail}`);
-          navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
-          this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
-        }
-      }
     }
   }
 
@@ -134,19 +131,35 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                         onClick={async () => {
                           await this.props.getDocumentThunk(doc.document_id);
                           this.setState({ showForm: true, editMode: true });
-                        }}>
+                        }}
+                      >
                         <Pencil />
                       </button>
-                      <button
-                        className='action-button documents'
-                        title='Download PDF'
-                        onClick={async () => {
-                          const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
-                          if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error('Failed to generate PDF');
-                        }}>
-                        <FileText />
-                      </button>
+                      {!doc.template_fields['signature'] ? (
+                        <button
+                          className='action-button documents'
+                          title='Download PDF'
+                          onClick={async () => {
+                            const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
+                            if (pdfUrl) window.open(pdfUrl, '_blank');
+                            else toast.error('Failed to generate PDF');
+                          }}
+                        >
+                          <FileText />
+                        </button>
+                      ) : (
+                        <button
+                          className='action-button pdf'
+                          title='Share via WhatsApp'
+                          onClick={async () => {
+                            const pdf_url: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
+                            if (pdf_url) this.handleShareViaWhatsApp(doc.document_id, pdf_url);
+                            else toast.error('Failed to generate PDF');
+                          }}
+                        >
+                          <Share2 />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -221,6 +234,19 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     } catch (error) {
       toast.error('Failed to fetch document. Please check the ID and try again.');
     }
+  };
+
+  /**
+   * Shares document link via WhatsApp
+   * @param {string} documentId - ID of document to share
+   * @param {string} pdf_url - URL in CloudFront of the document to share
+   */
+  handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
+    const document = this.props.documents.find((d) => d.document_id === documentId);
+    const message = `\nPlease find below a link to the signed rental agreement: *'${getDocumentTitle(
+      document?.template_fields?.tenantName
+    )}'*:\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 }
 
