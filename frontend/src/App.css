@@ -256,7 +256,7 @@ body {
       font-size: 1rem;
       &.hidden {
         margin-top: 2rem;
-        animation: fade-in-from-30-percent 18s linear 1 forwards;
+        animation: fade-in-from-30-percent 8s linear 1 forwards;
       }
       &.visible {
         margin-top: 0;
@@ -726,33 +726,41 @@ body {
   color: #999 !important;
 }
 
-/* Document ID Input Container */
-.document-id-input-container {
-  display: grid;
-  grid-template-columns: minmax(12rem, 25rem) 2rem max-content;
-  padding: 1rem 0.2rem 1rem 0.5rem;
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin: 1rem 0;
-
-  .document-id-input {
-    flex: 1;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
-    font-size: 1rem;
-    max-width: 25rem;
-
-    &:focus {
-      outline: none;
-      border-color: #1976d2;
-      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
-    }
+.page#tenant-documents {
+  .pdf {
+    animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
+  }
+  .share {
+    animation: pulsate-brightness 1s ease-in-out 3 forwards 6s;
   }
 
-  .action-button {
-    scale: 1.2;
+  .document-id-input-container {
+    display: grid;
+    grid-template-columns: minmax(12rem, 25rem) 2rem max-content;
+    padding: 1rem 0.2rem 1rem 0.5rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 1rem 0;
+
+    .document-id-input {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+      font-size: 1rem;
+      max-width: 25rem;
+
+      &:focus {
+        outline: none;
+        border-color: #1976d2;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+      }
+    }
+
+    .action-button {
+      scale: 1.2;
+    }
   }
 }
 

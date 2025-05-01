@@ -43,7 +43,7 @@ The app is available online at https://d1qes2uy1amux4.cloudfront.net
 ## Architecture
 
 **API Gateway + Lambda**
-![Architecture diagram](https://lucid.app/publicSegments/view/11403d3e-caa3-4885-be91-b94764ebab83/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/e01a7c13-85cf-4b8d-b441-8a24d4e69668/image.jpeg)
 
 ### 1. **Backend**
 

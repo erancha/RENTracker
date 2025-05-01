@@ -170,9 +170,9 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     const document = this.props.documents.find((d) => d.document_id === documentId);
     const message = `\nPlease find below a link to your rental agreement: *'${getDocumentTitle(
       document?.template_fields?.tenantName
-    )}'*.\n\n*To complete your details*, copy this whatsapp message and sign into the application at ${
+    )}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at *${
       window.location.origin
-    }\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
+    }*\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 

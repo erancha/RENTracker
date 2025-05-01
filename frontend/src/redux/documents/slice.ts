@@ -106,7 +106,11 @@ const documentsSlice = createSlice({
       state.documents = state.documents.filter((doc) => doc.document_id !== action.payload.document_id);
       // Add updated document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
-      toast.success('Document updated successfully', { autoClose: 2000 });
+
+      const isDocumentSigned = action.payload.template_fields['signature'];
+      toast.success(`Document updated successfully${!isDocumentSigned ? '. Remember to sign and share via whatsapp ..' : ''}`, {
+        autoClose: isDocumentSigned ? 2000 : 5000,
+      });
     });
     builder.addCase(updateDocumentThunk.rejected, (state, action) => {
       state.loading = false;

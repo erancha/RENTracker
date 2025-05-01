@@ -77,7 +77,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     const { showForm, showDocumentIdInput, documentIdInput } = this.state;
 
     return (
-      <div className='page body-container'>
+      <div className='page body-container' id='tenant-documents'>
         <div className='header'>
           Tenant Rental Agreements
           <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
@@ -135,21 +135,21 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                       >
                         <Pencil />
                       </button>
-                      {!doc.template_fields['signature'] ? (
+
+                      <button
+                        className='action-button pdf'
+                        title='Download PDF'
+                        onClick={async () => {
+                          const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
+                          if (pdfUrl) window.open(pdfUrl, '_blank');
+                          else toast.error('Failed to generate PDF');
+                        }}
+                      >
+                        <FileText />
+                      </button>
+                      {doc.template_fields['signature'] && (
                         <button
-                          className='action-button documents'
-                          title='Download PDF'
-                          onClick={async () => {
-                            const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
-                            if (pdfUrl) window.open(pdfUrl, '_blank');
-                            else toast.error('Failed to generate PDF');
-                          }}
-                        >
-                          <FileText />
-                        </button>
-                      ) : (
-                        <button
-                          className='action-button pdf'
+                          className='action-button share'
                           title='Share via WhatsApp'
                           onClick={async () => {
                             const pdf_url: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);

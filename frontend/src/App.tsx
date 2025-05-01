@@ -33,7 +33,7 @@ class AppComponent extends React.Component<IAppProps> {
     setTimeout(() => {
       const { auth, toggleOverviewAction } = this.props;
       if (!auth.isAuthenticated) toggleOverviewAction(true);
-    }, 12000);
+    }, 8000);
   }
 
   componentWillUnmount() {
@@ -151,8 +151,8 @@ class AppComponent extends React.Component<IAppProps> {
           </div>
 
           <p className='diagram'>API Gateway + Lambda</p>
-          <a href='https://lucid.app/publicSegments/view/11403d3e-caa3-4885-be91-b94764ebab83/image.jpeg' target='_blank' rel='noopener noreferrer'>
-            <img src='https://lucid.app/publicSegments/view/11403d3e-caa3-4885-be91-b94764ebab83/image.jpeg' alt='**API Gateway + Lambda**' />
+          <a href='https://lucid.app/publicSegments/view/e01a7c13-85cf-4b8d-b441-8a24d4e69668/image.jpeg' target='_blank' rel='noopener noreferrer'>
+            <img src='https://lucid.app/publicSegments/view/e01a7c13-85cf-4b8d-b441-8a24d4e69668/image.jpeg' alt='**API Gateway + Lambda**' />
           </a>
         </div>
       </div>
