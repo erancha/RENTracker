@@ -3,17 +3,18 @@ const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand, DeleteC
 const { logMiddleware, isLandlordUser } = require('./utils');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 
-// Create DynamoDB client with X-Ray tracing. X-Ray automatically propagates the parent trace ID
-// from the Lambda context through the async context, so all DynamoDB operations made through
-// this client will be linked as subsegments to the parent trace without any manual context passing
-const ddbClient = captureAWSv3Client(new DynamoDBClient({ region: process.env.APP_AWS_REGION }));
-const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-
+const AWS_REGION = process.env.APP_AWS_REGION;
 // const LANDLORDS_TABLE_NAME = process.env.LANDLORDS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
 // const TENANTS_TABLE_NAME = process.env.TENANTS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
 const APARTMENTS_TABLE_NAME = process.env.APARTMENTS_TABLE_NAME;
 const DOCUMENTS_TABLE_NAME = process.env.DOCUMENTS_TABLE_NAME;
 const ACTIVITY_TABLE_NAME = process.env.ACTIVITY_TABLE_NAME;
+
+// Create DynamoDB client with X-Ray tracing. X-Ray automatically propagates the parent trace ID
+// from the Lambda context through the async context, so all DynamoDB operations made through
+// this client will be linked as subsegments to the parent trace without any manual context passing
+const ddbClient = captureAWSv3Client(new DynamoDBClient({ region: AWS_REGION }));
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 /**
  * Creates or updates a user in DynamoDB

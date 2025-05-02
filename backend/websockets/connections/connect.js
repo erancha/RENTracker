@@ -2,10 +2,11 @@ const jwt = require('jsonwebtoken');
 const AWSXRay = require('aws-xray-sdk');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { SQSClient } = require('@aws-sdk/client-sqs');
-const { collectConnectionsAndUsernames, insertMessageToSQS } = require('/opt/connections');
+const { collectConnectionsAndUsernames } = require('/opt/connections');
 const dbData = require('/opt/dbData');
 const { handleRead } = require('/opt/commandsHandlers');
-const { getRedisClient /*, disposeRedisClient*/ } = require('/opt/redisClient');
+const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
+
 const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;
@@ -128,7 +129,7 @@ exports.handler = async (event) => {
         currentUserId === ADMIN_USER_ID ? 'Admin' : dbData.isLandlordUser({ user_id: currentUserId, saas_tenant_id: SAAS_TENANT_ID }) ? 'Landlord' : 'Tenant';
       let response = {
         targetConnectionIds: [currentConnectionId],
-        message: { userType, connectionsAndUsernames },
+        message: { currentUserEmail, userType, connectionsAndUsernames },
       };
       if (['Admin', 'Landlord'].includes(userType)) {
         response.message = {
@@ -164,3 +165,7 @@ exports.handler = async (event) => {
     handlerSubsegment.close();
   }
 };
+
+//=============================================================================================================================================
+// Utilities
+//=============================================================================================================================================

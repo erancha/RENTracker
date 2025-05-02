@@ -1,6 +1,7 @@
 const { SQSClient } = require('@aws-sdk/client-sqs');
-const { collectConnectionsAndUsernames, insertMessageToSQS } = require('/opt/connections');
-const { getRedisClient /*, disposeRedisClient*/ } = require('/opt/redisClient');
+const { collectConnectionsAndUsernames } = require('/opt/connections');
+const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
+
 const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;

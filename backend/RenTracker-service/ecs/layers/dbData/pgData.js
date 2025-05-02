@@ -1,6 +1,8 @@
 const { Pool } = require('pg');
 const { logMiddleware } = require('./utils');
 
+const AWS_REGION = process.env.APP_AWS_REGION;
+
 const pgPoolParams = {
   host: process.env.RDS_ENDPOINT,
   database: process.env.DB_NAME,
@@ -200,7 +202,7 @@ const getApartmentActivity = logMiddleware('getApartmentActivity')(async (apartm
 });
 
 // SQS - queueing saved activity data
-const sqsClient = new SQSClient({ region: process.env.APP_AWS_REGION });
+const sqsClient = new SQSClient({ region: AWS_REGION });
 
 async function enqueueSavedActivity(messageBody) {
   const EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL = process.env.EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL;

@@ -1,9 +1,9 @@
 const AWSXRay = require('aws-xray-sdk-core');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { SQSClient } = require('@aws-sdk/client-sqs');
-const { insertMessageToSQS } = require('/opt/connections');
 const { handleCommand, determineTargetUsers } = require('/opt/commandsHandlers');
-const { getRedisClient /*, disposeRedisClient*/ } = require('/opt/redisClient');
+const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
+
 const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;

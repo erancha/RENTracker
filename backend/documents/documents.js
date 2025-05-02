@@ -4,11 +4,15 @@ const dbData = require('/opt/dbData');
 const { prepareS3DocumentFolderPrefix, prepareS3RentalAgreementKey } = require('/opt/prepareS3Keys');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const AWSXRay = require('aws-xray-sdk');
+const { SQSClient } = require('@aws-sdk/client-sqs');
+const { captureAWSv3Client } = require('aws-xray-sdk-core');
+const { insertMessageToSQS } = require('/opt/redisClient');
 
-const APP_AWS_REGION = process.env.APP_AWS_REGION;
+const AWS_REGION = process.env.APP_AWS_REGION;
 const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_CLOUDFRONT_DOMAIN = process.env.DOCUMENTS_CLOUDFRONT_DOMAIN;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
+const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 
 //=============================================================================================================================================
 // Main REST handler
@@ -156,6 +160,39 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
       saas_tenant_id: SAAS_TENANT_ID,
       tenant_user_id: tenantUserId,
     });
+    // console.log(JSON.stringify(document, null, 2));
+
+    const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+    await insertMessageToSQS(
+      JSON.stringify({
+        emailParams: {
+          toAddresses: [document.template_fields.tenantEmail, document.template_fields.landlordEmail],
+          subject: `Rental Agreement - ${document.template_fields.propertyAddress}`,
+          message: `
+            <h2>Rental Agreement Details</h2>
+            <p>Property: ${document.template_fields.propertyAddress}</p>
+            <p>Lease Period: ${document.template_fields.leasePeriod} months</p>
+            <p>Start Date: ${document.template_fields.startDate}</p>
+            <p>End Date: ${document.template_fields.endDate}</p>
+            <p>Monthly Rent: ₪${document.template_fields.rentAmount}</p>
+            <br/>
+            <h3>Tenant Details:</h3>
+            <p>Name: ${document.template_fields.tenantName}</p>
+            <p>Phone: ${document.template_fields.tenantPhone}</p>
+            <p>Email: ${document.template_fields.tenantEmail}</p>
+            <br/>
+            <h3>Landlord Details:</h3>
+            <p>Name: ${document.template_fields.landlordName}</p>
+            <p>Phone: ${document.template_fields.landlordPhone}</p>
+            <p>Email: ${document.template_fields.landlordEmail}</p>
+            <br/>
+            <p>The rental agreement has been updated in the system.</p>
+          `,
+        },
+      }),
+      sqsClient,
+      SQS_MESSAGES_TO_CLIENTS_Q_URL
+    );
 
     subsegment.close();
     return {
@@ -406,7 +443,7 @@ const handleFileUpload = async ({ event, corsHeaders, parentSegment }) => {
       throw new Error('File content could not be extracted');
     }
 
-    const s3Client = new S3Client({ region: APP_AWS_REGION });
+    const s3Client = new S3Client({ region: AWS_REGION });
     const s3UploadedFileKey = `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${fileName}`;
     const command = new PutObjectCommand({
       Bucket: DOCUMENTS_BUCKET_NAME,
@@ -449,7 +486,7 @@ const handleFileUpload = async ({ event, corsHeaders, parentSegment }) => {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 
-const s3Client = new S3Client({ region: APP_AWS_REGION });
+const s3Client = new S3Client({ region: AWS_REGION });
 
 /**
  * Prepare a document URL presigned through CloudFront.
@@ -469,7 +506,7 @@ async function preparePresignedUrl(documentId, fileName) {
   });
 
   // Replace S3 domain with CloudFront domain
-  const cloudfrontPresignedUrl = s3PresignedUrl.replace(`${DOCUMENTS_BUCKET_NAME}.s3.${APP_AWS_REGION}.amazonaws.com`, DOCUMENTS_CLOUDFRONT_DOMAIN);
+  const cloudfrontPresignedUrl = s3PresignedUrl.replace(`${DOCUMENTS_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com`, DOCUMENTS_CLOUDFRONT_DOMAIN);
   // console.log({ s3PresignedUrl, cloudfrontPresignedUrl });
 
   return cloudfrontPresignedUrl;

@@ -187,7 +187,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       <div
         className='network-container'
         title={isWsConnected ? `Connected, last connections update on ${lastConnectionsTimestamp}` : 'Disconnected'}
-        onClick={() => this.props.toggleConnectionsAction(!showConnections)}>
+        onClick={() => this.props.toggleConnectionsAction(!showConnections)}
+      >
         <div className='left-column'>
           <Network size={20} className={`network-icon ${isWsConnected ? 'connected' : 'disconnected'}`} />
           <span className='last-connections-timestamp'>{lastConnectionsTimestamp}</span>
@@ -274,6 +275,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (parsedEventData.userType) {
       this.props.setUserTypeAction(parsedEventData.userType);
       if (parsedEventData.userType === UserType.Admin) this.props.toggleConnectionsAction(true);
+      if (parsedEventData.pendingEmailVerification)
+        toast.info('Email verification pending. Please verify your email address to continue using the application.', { autoClose: 10000 });
     }
 
     // CRUD: event containing Created data

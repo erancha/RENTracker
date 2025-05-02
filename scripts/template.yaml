@@ -487,7 +487,7 @@ Resources:
         - '/'
         - ['integrations', !Ref WebsocketCommandsHandlerIntegration]
 
-  WebSocketLambdaElasticacheSQSPolicy:
+  ElasticacheSQSPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -506,7 +506,7 @@ Resources:
       AssumeRolePolicyDocument: *lambdaTrustPolicy
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
-        - !Ref WebSocketLambdaElasticacheSQSPolicy
+        - !Ref ElasticacheSQSPolicy
 
   WebSocketConnectLambdaRole:
     Type: AWS::IAM::Role
@@ -515,7 +515,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
         - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
-        - !Ref WebSocketLambdaElasticacheSQSPolicy
+        - !Ref ElasticacheSQSPolicy
       Policies:
         - PolicyName: DDBAccessPolicy
           PolicyDocument:
@@ -555,7 +555,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
         - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
-        - !Ref WebSocketLambdaElasticacheSQSPolicy
+        - !Ref ElasticacheSQSPolicy
       Policies:
         - PolicyName: DDBAccessPolicy
           PolicyDocument:
@@ -776,7 +776,6 @@ Resources:
         - !Ref AwsSdkV3Layer
       Environment:
         Variables:
-          NODE_ENV: production
           STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
@@ -792,6 +791,7 @@ Resources:
           # DB_NAME: !Ref CrudDatabaseName
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
           # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
+          SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
       Role: !GetAtt DocumentsRestFunctionExecutionRole.Arn
       Events:
         CreateDocument:
@@ -863,6 +863,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
         - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+        - !Ref ElasticacheSQSPolicy
       Policies:
         - PolicyName: DocumentsTableAccessPolicy
           PolicyDocument:
@@ -1267,6 +1268,8 @@ Resources:
           STACK_NAME: !Ref AWS::StackName
           SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ENABLE_ENHANCED_LOGGING: true
+          SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
+          SES_SOURCE_EMAIL: 'webcharm.tech@gmail.com'
       Role: !GetAtt WebsocketEventsHandlerExecutionRole.Arn
       Events: # event source mapping
         SQSTrigger:
@@ -1312,6 +1315,24 @@ Resources:
                 Action:
                   - events:PutEvents
                 Resource: !GetAtt CommandsEventBus.Arn
+        - PolicyName: SESEmailVerificationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:GetEmailIdentity
+                  - ses:CreateEmailIdentity
+                Resource: !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*'
+        - PolicyName: SESEmailSendingPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: '*'
 
   #==========================================================================================================================================================
   # EventBridge Resources
