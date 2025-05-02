@@ -166,7 +166,7 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
     await insertMessageToSQS(
       JSON.stringify({
         emailParams: {
-          toAddresses: [document.template_fields.tenantEmail, document.template_fields.landlordEmail],
+          toAddresses: [document.template_fields.landlordEmail, ...(document.template_fields.tenantEmail ? [document.template_fields.tenantEmail] : [])],
           subject: `Rental Agreement - ${document.template_fields.propertyAddress}`,
           message: `
             <h2>Rental Agreement Details</h2>
