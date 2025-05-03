@@ -1342,7 +1342,7 @@ Resources:
     Properties:
       Name: !Sub '${AWS::StackName}-commands-event-bus'
 
-  ApartmentUpdateCommandEventRule:
+  EventBridgeRules:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref CommandsEventBus
@@ -1354,7 +1354,7 @@ Resources:
         detail: # This rule will trigger the target Lambda when:
           # 1. The event source is 'RENTracker-service'
           # 2. The detail-type is 'command-executed'
-          # 3. The event detail matches either dataUpdated OR dataCreated conditions
+          # 3. The event detail matches either conditions:
           $or:
             - dataUpdated:
                 apartments:
@@ -1375,7 +1375,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref TargetChattyLambdaArn
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt ApartmentUpdateCommandEventRule.Arn
+      SourceArn: !GetAtt EventBridgeRules.Arn
 
   # ------------------------------------------------------------------------------
   # S3 web site and cloudfront

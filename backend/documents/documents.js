@@ -180,6 +180,7 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
             <p>Name: ${document.template_fields.tenantName}</p>
             <p>Phone: ${document.template_fields.tenantPhone}</p>
             <p>Email: ${document.template_fields.tenantEmail}</p>
+            <p>${document.template_fields.signature ? 'Signed' : 'Not signed'}</p>
             <br/>
             <h3>Landlord Details:</h3>
             <p>Name: ${document.template_fields.landlordName}</p>

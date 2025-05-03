@@ -243,7 +243,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    */
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
-    const message = `\nPlease find below a link to the signed rental agreement: *'${getDocumentTitle(
+    const message = `\nPlease find below a link to the *signed* rental agreement: *'${getDocumentTitle(
       document?.template_fields?.tenantName
     )}'*:\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
