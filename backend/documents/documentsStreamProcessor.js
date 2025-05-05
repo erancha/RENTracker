@@ -83,18 +83,22 @@ async function handleCreate(record) {
   const templateName = newImage.template_name.S;
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
 
-  // Signature for interpolation as the tenant's signature
-  const noSignaturePlaceholder = '. '.repeat(5);
-  let signatureUrl = '';
-  try {
-    signatureUrl = await getDocumentImageAsDataUrl(newImage.document_id.S, 'signature');
-    templateFields.tenantSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
-  } catch (error) {
-    console.log('No signature found, using placeholder:', error);
-    templateFields.tenantSignatureImage = noSignaturePlaceholder;
-  }
+  // Tenant and landlord signatures:
+  const getSignatureImage = async (type) => {
+    try {
+      return getDocumentImageAsDataUrl(newImage.document_id.S, `${type}Signature`);
+    } catch (error) {
+      console.log(`No ${type} signature found, using placeholder:`, error);
+      return '. '.repeat(5);
+    }
+  };
+
+  let signatureUrl = await getSignatureImage('landlord');
+  templateFields.landlordSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
+  signatureUrl = await getSignatureImage('tenant');
+  templateFields.tenantSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
+
   templateFields.signatureUnderline = '_'.repeat(50);
-  templateFields.landlordSignatureImage = noSignaturePlaceholder;
 
   const template = loadTemplate(templateName);
   const interpolated = interpolateTemplate(template, templateFields);

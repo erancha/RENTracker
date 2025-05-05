@@ -180,12 +180,13 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
             <p>Name: ${document.template_fields.tenant1Name}</p>
             <p>Phone: ${document.template_fields.tenant1Phone}</p>
             <p>Email: ${document.template_fields.tenant1Email}</p>
-            <p>${document.template_fields.signature ? 'Signed' : 'Not signed'}</p>
+            <p>${document.template_fields.tenantSignature ? 'Signed by tenant' : 'Not signed by tenant'}</p>
             <br/>
             <h3>Landlord Details:</h3>
             <p>Name: ${document.template_fields.landlordName}</p>
             <p>Phone: ${document.template_fields.landlordPhone}</p>
             <p>Email: ${document.template_fields.landlordEmail}</p>
+            <p>${document.template_fields.landlordSignature ? 'Signed by landlord' : 'Not signed by landlord'}</p>
             <br/>
             <p>The rental agreement has been updated in the system.</p>
           `,

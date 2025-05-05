@@ -433,7 +433,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 <SignatureMaker
                   onSave={(imageData) => {
                     this.handleSignatureUpload(imageData);
-                    this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
+                    this.handleSubmit(new Event('dummy') as any);
                   }}
                   onCancel={() => this.handleAccordionChange('signature')(new Event('dummy') as any, false)} // collapses the current section.
                 />
@@ -874,9 +874,13 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   };
 
   private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    this.setState((prevState) => ({
-      expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
-    }));
+    // console.log(this.state);
+    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
+      toast.warning('Please have the tenant sign first');
+    else
+      this.setState((prevState) => ({
+        expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
+      }));
   };
 
   /**
@@ -1042,7 +1046,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   private handleSignatureUpload = async (imageData: string) => {
     try {
       const documentId = this.props.documentId;
-      const fileName = 'signature';
+      const fileName = `${this.props.userType === 'Tenant' ? 'tenant' : 'landlord'}Signature`;
 
       /*const { message, fileKey } =*/ await uploadContent({
         JWT: this.props.auth.JWT as string,
@@ -1058,8 +1062,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           [fileName]: fileName,
         },
       }));
-
-      toast.success('Signature saved successfully!', { autoClose: 1000 });
     } catch (error) {
       console.error('Error saving signature:', error);
       toast.error('Failed to save signature. Please try again.');

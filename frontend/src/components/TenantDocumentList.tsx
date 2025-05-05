@@ -147,7 +147,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                       >
                         <FileText />
                       </button>
-                      {doc.template_fields['signature'] && (
+                      {doc.template_fields['tenantSignature'] && (
                         <button
                           className='action-button share'
                           title='Share via WhatsApp'
