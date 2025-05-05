@@ -161,6 +161,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       initialFormData: templateFields, // Store the initial populated fields
       showImagesViewer: false,
       showSecondTenant: !!templateFields.tenant2Name,
+      expandSecondTenant: false,
     };
   }
 
@@ -340,7 +341,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             handleAccordionChange={this.handleAccordionChange}
             presignedUrls={this.props.selectedDocument?.presignedUrls}
             onImageViewerClose={() => this.setState({ showImagesViewer: false })}
-            on2ndTenantToggle={() => this.setState({ showSecondTenant: !this.state.showSecondTenant })}
+            on2ndTenantToggle={() => this.setState({ showSecondTenant: !this.state.showSecondTenant, expandSecondTenant: true })}
           />
 
           {/* Tenant2 (optional) Details */}
@@ -443,9 +444,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {
             /* To avoid closing the form unintentionally instead of the signature accordion */ !this.state.expandedSections.includes('signature') && (
               <div className='actions'>
-                <button type='submit' className='action-button save' title={this.props.documentId ? 'Update' : 'Create'}>
-                  <Save />
-                </button>
+                {(!this.props.documentId || this.hasUnsavedChanges()) && (
+                  <button type='submit' className='action-button save' title={this.props.documentId ? 'Update' : 'Create'}>
+                    <Save />
+                  </button>
+                )}
                 <button type='button' className='action-button cancel' title='Cancel' onClick={this.handleCancel}>
                   <Undo2 />
                 </button>
@@ -1096,11 +1099,11 @@ const TenantSection: React.FC<TenantSectionProps> = ({
 
   return (
     <Accordion
-      expanded={state.expandedSections.includes(sectionId) || state.expandedSections.includes(attachmentsId)}
+      expanded={state.expandSecondTenant || state.expandedSections.includes(sectionId) || state.expandedSections.includes(attachmentsId)}
       onChange={handleAccordionChange(sectionId)}
     >
       <AccordionSummary expandIcon={<ExpandMore />}>
-        <Typography className='section-header'>פרטי שוכר{prefix === 'tenant2' ? ' 2' : ''}</Typography>
+        <Typography className='section-header'>פרטי שוכר{prefix === 'tenant2' ? ' 2' : state.showSecondTenant ? ' 1' : ''}</Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Grid container spacing={2}>
@@ -1228,6 +1231,7 @@ interface DocumentFormState {
   initialFormData: Record<string, any>;
   showImagesViewer: boolean;
   showSecondTenant: boolean;
+  expandSecondTenant: boolean;
 }
 
 const mapStateToProps = (state: RootState) => ({

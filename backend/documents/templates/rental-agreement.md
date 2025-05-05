@@ -2,7 +2,7 @@
 
 שנערך ונחתם ביום {{date}}
 
-**בין:** {{tenantDetails}} (להלן: "השוכר") **מצד אחד**
+**בין:** {{tenant1Name}} ת.ז. {{tenant1Id}} נייד {{tenant1Phone}} מייל {{tenant1Email}} ו- {{tenant2Name}} ת.ז. {{tenant2Id}} נייד {{tenant2Phone}} (להלן: "השוכר") **מצד אחד**
 **ובין:** {{landlordName}} ת.ז. {{landlordId}} נייד {{landlordPhone}} מייל {{landlordEmail}} מרחוב {{landlordAddress}} (להלן: "המשכיר") **מצד שני**
 
 ### הואיל:

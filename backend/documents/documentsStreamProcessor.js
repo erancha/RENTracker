@@ -356,23 +356,6 @@ const interpolateTemplate = (template, fields) => {
   }
   fields.includedInPayment = includedItems.join(', ');
 
-  // Compose tenant details text
-  const tenantDetails = [];
-  if (fields.tenant1Name) {
-    tenantDetails.push(`${fields.tenant1Name} ת.ז ${fields.tenant1Id} נייד ${fields.tenant1Phone} מייל ${fields.tenant1Email}`);
-  }
-  if (fields.tenant2Name) {
-    const tenant2Fields = [];
-    if (fields.tenant2Name) tenant2Fields.push(`${fields.tenant2Name}`);
-    if (fields.tenant2Id) tenant2Fields.push(`ת.ז ${fields.tenant2Id}`);
-    if (fields.tenant2Phone) tenant2Fields.push(`נייד ${fields.tenant2Phone}`);
-    if (fields.tenant2Email) tenant2Fields.push(`מייל ${fields.tenant2Email}`);
-    if (tenant2Fields.length > 0) {
-      tenantDetails.push(tenant2Fields.join(' '));
-    }
-  }
-  fields.tenantDetails = tenantDetails.join(' ו- ');
-
   // Format dates before interpolation
   if (fields.date) fields.date = formatDate(fields.date);
   if (fields.startDate) fields.startDate = formatDate(fields.startDate);
@@ -392,7 +375,7 @@ const interpolateTemplate = (template, fields) => {
       ? value || ''
       : value !== undefined && value !== ''
       ? `<mark><i>${value}</i></mark>`
-      : '?'.repeat(5);
+      : '_'.repeat(3);
   });
 
   // Log any remaining uninterpolated placeholders
