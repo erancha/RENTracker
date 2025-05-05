@@ -562,6 +562,10 @@ body {
     gap: 2px;
   }
 
+  .MuiCollapse-root .action-button {
+    margin-top: 2rem;
+  }
+
   .section-header {
     font-size: 1.1rem;
     font-weight: 700;

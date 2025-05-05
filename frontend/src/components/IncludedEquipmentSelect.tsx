@@ -11,12 +11,16 @@ interface IncludedEquipmentSelectProps {
 const EQUIPMENT_OPTIONS = [
   { value: 'מקרר', label: 'מקרר' },
   { value: 'תנור', label: 'תנור' },
+  { value: 'כיריים', label: 'כיריים' },
   { value: 'מיקרוגל', label: 'מיקרוגל' },
-  { value: 'ספה + שולחן קפה', label: 'ספה + שולחן קפה' },
-  { value: 'שולחן פ"א + כסאות', label: 'שולחן פ"א + כסאות' },
   { value: 'מכונת כביסה', label: 'מכונת כביסה' },
   { value: 'מייבש', label: 'מייבש' },
-  { value: 'מזגן', label: 'מזגן' },
+  { value: 'טלויזיה 1', label: 'טלויזיה 1' },
+  { value: 'טלויזיה 2', label: 'טלויזיה 2' },
+  { value: 'ספה + שולחן קפה', label: 'ספה + שולחן קפה' },
+  { value: 'שולחן פ"א + כסאות', label: 'שולחן פ"א + כסאות' },
+  { value: 'מזגן 1', label: 'מזגן 1' },
+  { value: 'מזגן 2', label: 'מזגן 2' },
   { value: 'מיטה', label: 'מיטה' },
   { value: 'מזרון', label: 'מזרון' },
   { value: 'ארון קיר', label: 'ארון קיר' },
@@ -37,10 +41,21 @@ export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = (
   return (
     <FormControl error={!!error} fullWidth margin='normal'>
       <FormLabel component='legend'>ציוד כלול</FormLabel>
-      <FormGroup>
+      <FormGroup
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: 'repeat(2, 1fr)', // 2 columns on mobile
+            sm: 'repeat(3, 1fr)', // 3 columns on tablet
+            md: 'repeat(5, 1fr)', // 4 columns on desktop
+          },
+          gap: 2,
+        }}
+      >
         {EQUIPMENT_OPTIONS.map((option) => (
           <FormControlLabel
             key={option.value}
+            sx={{ minWidth: 0 }}
             control={
               <Checkbox
                 checked={selectedEquipment.includes(option.value)}

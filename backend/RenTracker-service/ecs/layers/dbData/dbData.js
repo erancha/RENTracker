@@ -393,9 +393,25 @@ function validateHttpUrl(url, fieldName) {
 
 function validateRentalAgreementFields(fields) {
   const requiredFields = {
-    // Basic Information
-    city: { type: 'string', required: true },
+    // Property Details
+    room_count: { type: 'number', required: true, min: 1, max: 20 },
+    property_address: { type: 'string', required: true },
+    included_equipment: { type: 'string', required: false },
+    included_services: { type: 'string', required: false },
+
+    // Lease Terms
     date: { type: 'string', required: true, format: 'date' },
+    lease_period: { type: 'number', required: true, min: 1 },
+    rent_amount: { type: 'number', required: true, min: 0 },
+    start_date: { type: 'string', required: true, format: 'date' },
+    end_date: { type: 'string', required: true, format: 'date' },
+    initial_payment_months: { type: 'string', required: true, min: 1 },
+    payment_day: { type: 'number', required: true, min: 1, max: 31 },
+    standing_order_start: { type: 'string', required: true, format: 'date' },
+
+    // Utility Limits
+    water_limit: { type: 'number', required: false, min: 0 },
+    electricity_limit: { type: 'number', required: false, min: 0 },
 
     // Landlord Details
     landlord_name: { type: 'string', required: true },
@@ -409,27 +425,6 @@ function validateRentalAgreementFields(fields) {
     tenant_address: { type: 'string', required: true },
     tenant_phone: { type: 'string', required: true, format: 'israeli-phone' },
     tenant_email: { type: 'string', required: true, format: 'email' },
-
-    // Property Details
-    room_count: { type: 'number', required: true, min: 1, max: 20 },
-    property_address: { type: 'string', required: true },
-    included_equipment: { type: 'string', required: false },
-    included_services: { type: 'string', required: false },
-
-    // Lease Terms
-    lease_period: { type: 'number', required: true, min: 1 },
-    start_date: { type: 'string', required: true, format: 'date' },
-    end_date: { type: 'string', required: true, format: 'date' },
-
-    // Financial Terms
-    rent_amount: { type: 'number', required: true, min: 0 },
-    payment_day: { type: 'number', required: true, min: 1, max: 31 },
-    initial_payment_months: { type: 'string', required: true, min: 1 },
-    standing_order_start: { type: 'string', required: true, format: 'date' },
-
-    // Utility Limits
-    water_limit: { type: 'number', required: false, min: 0 },
-    electricity_limit: { type: 'number', required: false, min: 0 },
 
     // Security and Guarantees
     security_deposit: { type: 'number', required: true, min: 0 },

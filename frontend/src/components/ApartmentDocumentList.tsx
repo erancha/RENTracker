@@ -102,7 +102,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
                     <div className='name' data-title='Name' title={`Document ${document.document_id}`}>
-                      '{getDocumentTitle(document.template_fields?.tenantName)}'
+                      '{getDocumentTitle(document.template_fields?.tenant1Name)}'
                     </div>
                     <div className='period' data-title='Period'>
                       {formatDate(document.template_fields?.startDate)} - {formatDate(document.template_fields?.endDate)}
@@ -169,7 +169,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
     const message = `\nPlease find below a link to your rental agreement: *'${getDocumentTitle(
-      document?.template_fields?.tenantName
+      document?.template_fields?.tenant1Name
     )}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at *${
       window.location.origin
     }*\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
@@ -197,7 +197,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     templateFields['startDate'] = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1, 12).toISOString().split('T')[0]; // + 12 hours to normalize the time zone.
 
     // Determine which sections need to be expanded based on reset fields
-    const sectionsToExpand = new Set(['basic', 'leaseTerms']); // These sections contain the reset fields
+    const sectionsToExpand = new Set(['leaseTerms']); // These sections contain the reset fields
 
     // Show the form with duplicated fields
     this.setState({
@@ -212,7 +212,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * Handles document deletion after user confirmation
    */
   handleDeleteDocument = async (document: IDocument) => {
-    if (window.confirm(`Are you sure you want to delete document '${getDocumentTitle(document.template_fields?.tenantName)}'?`)) {
+    if (window.confirm(`Are you sure you want to delete document '${getDocumentTitle(document.template_fields?.tenant1Name)}'?`)) {
       try {
         await this.props.deleteDocumentThunk(document.document_id);
         toast.success('Document deleted successfully');

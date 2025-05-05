@@ -11,12 +11,13 @@ import {
   InputAdornment,
   FormControlLabel,
   Checkbox,
+  Tooltip,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ExpandMore } from '@mui/icons-material';
-import { Save, Undo2 } from 'lucide-react';
+import { Save, Undo2, Plus } from 'lucide-react';
 import { connect } from 'react-redux';
 import { toast } from 'react-toastify';
 import { ThunkDispatch } from 'redux-thunk';
@@ -58,14 +59,14 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     landlordEmail: '',
     landlordAddress: '',
     landlordPhone: '',
-    tenantName: '',
-    tenantId: '',
-    tenantPhone: '',
-    tenantEmail: '',
-    tenantAddress: '',
-    idCard: '',
-    salary1: '',
-    salary2: '',
+    tenant1Name: '',
+    tenant1Id: '',
+    tenant1Phone: '',
+    tenant1Email: '',
+    tenant1Address: '',
+    tenant1IdCard: '',
+    tenant1Salary1: '',
+    tenant1Salary2: '',
     propertyAddress: '',
     roomCount: '',
     leasePeriod: '12',
@@ -78,7 +79,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     waterLimit: '150',
     electricityLimit: '250',
     includedServices: 'יס וקו אינטרנט',
-    includedEquipment: 'מקרר, מכונת כביסה, מייבש, מזגן',
+    includedEquipment: 'מקרר, מכונת כביסה, מייבש',
     securityRequired: false,
     securityDeposit: '',
     guarantorRequired: false,
@@ -97,7 +98,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     'landlordEmail',
     'landlordAddress',
     // Tenant fields are only required for tenants
-    ...(this.props.userType === UserType.Tenant ? ['tenantName', 'tenantId', 'tenantPhone', 'tenantEmail', 'idCard', 'salary1', 'salary2'] : []),
+    ...(this.props.userType === UserType.Tenant
+      ? ['tenant1Name', 'tenant1Id', 'tenant1Phone', 'tenant1Email', 'tenant1IdCard', 'tenant1Salary1', 'tenant1Salary2']
+      : []),
     'roomCount',
     'propertyAddress',
     'includedEquipment',
@@ -125,8 +128,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     if (!fields.landlordEmail && userType === UserType.Landlord) {
       fields.landlordEmail = email || '';
     }
-    if (!fields.tenantEmail && userType === UserType.Tenant) {
-      fields.tenantEmail = email || '';
+    if (!fields.tenant1Email && userType === UserType.Tenant) {
+      fields.tenant1Email = email || '';
     }
     return fields;
   };
@@ -154,9 +157,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     this.state = {
       formData: templateFields,
       errors: {},
-      expandedSections: props.expandedSections || (props.userType === UserType.Tenant ? ['tenantDetails'] : []),
+      expandedSections: props.expandedSections || (props.userType === UserType.Tenant ? ['tenant1Details', 'tenant2Details'] : []),
       initialFormData: templateFields, // Store the initial populated fields
       showImagesViewer: false,
+      showSecondTenant: !!templateFields.tenant2Name,
     };
   }
 
@@ -178,7 +182,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.userName as string, auth.email as string);
       this.setState({
         formData: templateFields,
-        expandedSections: userType === UserType.Tenant ? ['tenantDetails'] : [],
+        expandedSections: userType === UserType.Tenant ? ['tenant1Details', 'tenant2Details'] : [],
       });
     } else if (!documentId) {
       // Create mode - use defaults and populate user name and emails if needed
@@ -201,7 +205,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       this.setState({
         formData: templateFields,
         // Only auto-expand for tenants
-        expandedSections: userType === UserType.Tenant ? ['tenantDetails'] : [],
+        expandedSections: userType === UserType.Tenant ? ['tenant1Details', 'tenant2Details'] : [],
       });
     }
   }
@@ -212,99 +216,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         <form onSubmit={this.handleSubmit} noValidate>
           <Box sx={{ mb: 2 }}>
             <Typography variant='h5' gutterBottom>
-              {getDocumentTitle(this.state.formData?.tenantName)}
+              {getDocumentTitle(this.state.formData?.tenant1Name)}
             </Typography>
           </Box>
-
-          {/* Basic Information */}
-          <Accordion expanded={this.state.expandedSections.includes('basic')} onChange={this.handleAccordionChange('basic')}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטים בסיסיים</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  {this.renderDateField('date', 'תאריך ההסכם')}
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Landlord Details */}
-          <Accordion expanded={this.state.expandedSections.includes('landlordDetails')} onChange={this.handleAccordionChange('landlordDetails')}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטי משכיר</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  {this.renderTextField('landlordName', 'שם מלא')}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('landlordId', 'תעודת זהות', { isIsraeliId: true })}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('landlordPhone', 'טלפון', { isPhoneNumber: true })}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderTextField('landlordEmail', 'דוא״ל', { type: 'email', isDisabled: true })}
-                </Grid>
-                <Grid item xs={12}>
-                  {this.renderTextField('landlordAddress', 'כתובת')}
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Tenant Details */}
-          <Accordion expanded={this.state.expandedSections.includes('tenantDetails')} onChange={this.handleAccordionChange('tenantDetails')}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטי שוכר</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  {this.renderTextField('tenantName', 'שם מלא')}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('tenantId', 'תעודת זהות', { isIsraeliId: true })}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('tenantPhone', 'טלפון', { isPhoneNumber: true })}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderTextField('tenantEmail', 'דוא״ל', { type: 'email', isDisabled: this.props.userType === UserType.Tenant })}
-                </Grid>
-                <Grid item xs={12}>
-                  {this.renderTextField('tenantAddress', 'כתובת')}
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Attachments */}
-          <Accordion expanded={this.state.expandedSections.includes('attachments')} onChange={this.handleAccordionChange('attachments')}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>קבצים מצורפים</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  {this.renderFileField('idCard', 'צילום ת.ז')}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderFileField('salary1', 'צילום משכורת 1')}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderFileField('salary2', 'צילום משכורת 2')}
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-
-            {this.props.selectedDocument?.presignedUrls && this.state.showImagesViewer && (
-              <ImagesViewer presignedUrls={this.props.selectedDocument?.presignedUrls || {}} onClose={() => this.setState({ showImagesViewer: false })} />
-            )}
-          </Accordion>
 
           {/* Property Details */}
           <Accordion expanded={this.state.expandedSections.includes('propertyDetails')} onChange={this.handleAccordionChange('propertyDetails')}>
@@ -313,10 +227,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid item xs={8} sm={5} md={4}>
                   {this.renderTextField('propertyAddress', 'כתובת הנכס', { isDisabled: true })}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={4} sm={3} md={1}>
                   {this.renderNumberField('roomCount', 'מספר חדרים', { min: 1, max: 20, step: '0.5', isDisabled: true })}
                 </Grid>
                 <Grid item xs={12}>
@@ -341,27 +255,32 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('leasePeriod', 'תקופת שכירות', { min: 1, adornment: 'חודשים' })}
+                <Grid item xs={6} sm={6} md={4}>
+                  {this.renderDateField('date', 'תאריך ההסכם')}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+              </Grid>
+              <Grid container spacing={2}>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderNumberField('rentAmount', 'דמי שכירות', { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6} md={4}>
+                  {this.renderNumberField('leasePeriod', 'תקופת שכירות', { min: 1, adornment: 'חודשים' })}
+                </Grid>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderDateField('startDate', 'תאריך תחילה')}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderDateField('endDate', 'תאריך סיום')}
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderNumberField('initialPaymentMonths', 'מספר חודשים בתשלום מראש', { min: 0.5, max: 12, step: '0.5' })}
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('paymentDay', 'יום תשלום בחודש', { min: 1, max: 31 })}
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderDateField('standingOrderStart', 'תחילת תשלום חודשי')}
+                </Grid>
+                <Grid item xs={6} sm={6} md={4}>
+                  {this.renderNumberField('paymentDay', 'יום תשלום בחודש', { min: 1, max: 31 })}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -373,16 +292,70 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
               <Typography className='section-header'>מגבלות צריכה</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              <p>שימו לב: אם תקבעו ערך 0 לאחד מהסעיפים הבאים, הסעיף לא יופיע בהסכם.</p>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={6} md={4}>
                   {this.renderNumberField('waterLimit', 'מגבלת מים', { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  {this.renderNumberField('electricityLimit', 'מגבלת חשמל', { min: 0, adornment: '₪' })}
+                <Grid item xs={6} sm={6} md={4}>
+                  {this.renderNumberField('electricityLimit', 'מגבלת חשמל', { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
               </Grid>
             </AccordionDetails>
           </Accordion>
+
+          {/* Landlord Details */}
+          <Accordion expanded={this.state.expandedSections.includes('landlordDetails')} onChange={this.handleAccordionChange('landlordDetails')}>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography className='section-header'>פרטי משכיר</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                <Grid item xs={7} sm={6} md={2}>
+                  {this.renderTextField('landlordName', 'שם מלא')}
+                </Grid>
+                <Grid item xs={5} sm={6} md={2}>
+                  {this.renderNumberField('landlordId', 'תעודת זהות', { isIsraeliId: true })}
+                </Grid>
+                <Grid item xs={7} sm={6} md={3}>
+                  {this.renderTextField('landlordEmail', 'דוא״ל', { type: 'email', isDisabled: true })}
+                </Grid>
+                <Grid item xs={5} sm={6} md={2}>
+                  {this.renderNumberField('landlordPhone', 'טלפון', { isPhoneNumber: true })}
+                </Grid>
+                <Grid item xs={12} sm={12} md={3}>
+                  {this.renderTextField('landlordAddress', 'כתובת')}
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Tenant1 Details */}
+          <TenantSection
+            prefix='tenant1'
+            renderTextField={this.renderTextField}
+            renderNumberField={this.renderNumberField}
+            renderFileField={this.renderFileField}
+            state={this.state}
+            handleAccordionChange={this.handleAccordionChange}
+            presignedUrls={this.props.selectedDocument?.presignedUrls}
+            onImageViewerClose={() => this.setState({ showImagesViewer: false })}
+            on2ndTenantToggle={() => this.setState({ showSecondTenant: !this.state.showSecondTenant })}
+          />
+
+          {/* Tenant2 (optional) Details */}
+          {this.state.showSecondTenant && (
+            <TenantSection
+              prefix='tenant2'
+              renderTextField={this.renderTextField}
+              renderNumberField={this.renderNumberField}
+              renderFileField={this.renderFileField}
+              state={this.state}
+              handleAccordionChange={this.handleAccordionChange}
+              presignedUrls={this.props.selectedDocument?.presignedUrls}
+              onImageViewerClose={() => this.setState({ showImagesViewer: false })}
+            />
+          )}
 
           {/* Security Details */}
           <Accordion expanded={this.state.expandedSections.includes('securityDetails')} onChange={this.handleAccordionChange('securityDetails')}>
@@ -403,7 +376,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     label='דרוש פיקדון בטחון'
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={6} sm={3} md={2}>
                   {this.renderNumberField('securityDeposit', 'סכום פיקדון', { min: 0, adornment: '₪', isDisabled: this.props.userType === UserType.Tenant })}
                 </Grid>
               </Grid>
@@ -429,16 +402,20 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     label='דרוש ערב'
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+
+                <Grid item xs={7} sm={6} md={2}>
                   {this.renderTextField('guarantorName', 'שם מלא')}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={5} sm={6} md={2}>
                   {this.renderNumberField('guarantorId', 'תעודת זהות', { isIsraeliId: true })}
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={7} sm={6} md={3}>
+                  {this.renderTextField('guarantorEmail', 'דוא״ל', { type: 'email', isDisabled: true })}
+                </Grid>
+                <Grid item xs={5} sm={6} md={2}>
                   {this.renderNumberField('guarantorPhone', 'טלפון', { isPhoneNumber: true })}
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={12} md={3}>
                   {this.renderTextField('guarantorAddress', 'כתובת')}
                 </Grid>
               </Grid>
@@ -537,12 +514,12 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
     // Format validation for non-empty fields
     if (value && stringValue.trim()) {
-      if (field === 'landlordId' || field === 'tenantId' || field === 'guarantorId') {
+      if (field === 'landlordId' || field === 'tenant1Id' || field === 'tenant2Id' || field === 'guarantorId') {
         //TODO: get the indication as a parameter to the function rather than asking about field names.
         if (!this.validateIsraeliId(stringValue)) {
           return 'מספר תעודת זהות לא תקין';
         }
-      } else if (field === 'landlordPhone' || field === 'tenantPhone' || field === 'guarantorPhone') {
+      } else if (field === 'landlordPhone' || field === 'tenant1Phone' || field === 'tenant2Phone' || field === 'guarantorPhone') {
         //TODO: get the indication as a parameter to the function rather than asking about field names.
         const digits = stringValue.replace(/\D/g, '');
         if (!digits.startsWith('0')) {
@@ -555,10 +532,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           return 'יותר מדי ספרות';
         } else if (!this.validateIsraeliPhone(stringValue)) {
           return 'מספר טלפון לא תקין';
-        }
-      } else if (field === 'landlordEmail' || field === 'tenantEmail') {
-        if (!this.validateEmail(stringValue)) {
-          return 'כתובת דוא״ל לא תקינה';
         }
       }
 
@@ -609,11 +582,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     }
 
     return '';
-  };
-
-  private validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   };
 
   /**
@@ -689,10 +657,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private isFieldDisabled = (field: string) => {
     const section = fieldToSection[field];
+    // console.log({ field, section });
     const allowedSections =
       this.props.userType === UserType.Landlord
-        ? ['basic', 'landlordDetails', 'tenantDetails', 'propertyDetails', 'leaseTerms', 'utilityLimits']
-        : ['tenantDetails'];
+        ? ['landlordDetails', 'tenant1Details', 'tenant2Details', 'propertyDetails', 'leaseTerms', 'utilityLimits']
+        : ['tenant1Details', 'tenant1Attachments', 'tenant2Details', 'tenant2Attachments'];
 
     if (this.state.formData.securityRequired) {
       allowedSections.push('securityDetails');
@@ -871,7 +840,13 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           </Typography>
         )}
 
-        <input type='file' accept='image/*' onChange={(e) => this.handleFileUpload(e.target.files, field)} disabled={!this.props.documentId} />
+        <input
+          type='file'
+          accept='image/*'
+          onChange={(e) => this.handleFileUpload(e.target.files, field)}
+          disabled={!this.props.documentId || this.isFieldDisabled(field)}
+        />
+
         {error && (
           <Typography variant='body2' color='error'>
             {error}
@@ -1003,6 +978,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     return Object.keys(this.state.formData).some((field) => {
       const currentValue = this.state.formData[field];
       const initialValue = this.state.initialFormData[field] || '';
+      // console.log({ field, currentValue, initialValue });
 
       // Handle special case for dates to normalize format
       if (['startDate', 'endDate', 'standingOrderStart', 'date'].includes(field)) {
@@ -1086,7 +1062,96 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       toast.error('Failed to save signature. Please try again.');
     }
   };
+
+  toggleSecondTenant = () => {
+    this.setState((prevState) => ({ showSecondTenant: !prevState.showSecondTenant }));
+  };
 }
+
+interface TenantSectionProps {
+  prefix: string;
+  renderTextField: (name: string, label: string, options?: any) => React.ReactNode;
+  renderNumberField: (name: string, label: string, options?: any) => React.ReactNode;
+  renderFileField: (name: string, label: string) => React.ReactNode;
+  state: DocumentFormState;
+  handleAccordionChange: (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => void;
+  presignedUrls?: Record<string, string>;
+  onImageViewerClose: () => void;
+  on2ndTenantToggle?: () => void;
+}
+
+const TenantSection: React.FC<TenantSectionProps> = ({
+  prefix,
+  renderTextField,
+  renderNumberField,
+  renderFileField,
+  state,
+  handleAccordionChange,
+  presignedUrls,
+  onImageViewerClose,
+  on2ndTenantToggle,
+}) => {
+  const sectionId = `${prefix}Details`;
+  const attachmentsId = `${prefix}Attachments`;
+
+  return (
+    <Accordion
+      expanded={state.expandedSections.includes(sectionId) || state.expandedSections.includes(attachmentsId)}
+      onChange={handleAccordionChange(sectionId)}
+    >
+      <AccordionSummary expandIcon={<ExpandMore />}>
+        <Typography className='section-header'>פרטי שוכר{prefix === 'tenant2' ? ' 2' : ''}</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Grid container spacing={2}>
+          <Grid item xs={7} sm={6} md={2}>
+            {renderTextField(`${prefix}Name`, 'שם מלא')}
+          </Grid>
+          <Grid item xs={5} sm={6} md={2}>
+            {renderNumberField(`${prefix}Id`, 'תעודת זהות', { isIsraeliId: true })}
+          </Grid>
+          <Grid item xs={7} sm={6} md={3}>
+            {renderTextField(`${prefix}Email`, 'דוא״ל', { type: 'email', isDisabled: true })}
+          </Grid>
+          <Grid item xs={5} sm={6} md={2}>
+            {renderNumberField(`${prefix}Phone`, 'טלפון', { isPhoneNumber: true })}
+          </Grid>
+          <Grid item xs={12} sm={12} md={3}>
+            {renderTextField(`${prefix}Address`, 'כתובת')}
+          </Grid>
+        </Grid>
+
+        {/* Tenant Attachments */}
+        <Accordion expanded={state.expandedSections.includes(attachmentsId)} onChange={handleAccordionChange(attachmentsId)}>
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Typography className='section-header'>קבצים מצורפים</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={4}>
+                {renderFileField(`${prefix}IdCard`, 'צילום ת.ז')}
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                {renderFileField(`${prefix}Salary1`, 'צילום משכורת 1')}
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                {renderFileField(`${prefix}Salary2`, 'צילום משכורת 2')}
+              </Grid>
+            </Grid>
+          </AccordionDetails>
+
+          {presignedUrls && state.showImagesViewer && <ImagesViewer presignedUrls={presignedUrls} onClose={onImageViewerClose} />}
+        </Accordion>
+
+        {state.expandedSections.includes(sectionId) && on2ndTenantToggle && (
+          <Tooltip title='Add second tenant'>
+            <Plus id='plus-icon' className='action-button' onClick={on2ndTenantToggle} />
+          </Tooltip>
+        )}
+      </AccordionDetails>
+    </Accordion>
+  );
+};
 
 /**
  * Base interface for document payloads
@@ -1162,6 +1227,7 @@ interface DocumentFormState {
   expandedSections: string[];
   initialFormData: Record<string, any>;
   showImagesViewer: boolean;
+  showSecondTenant: boolean;
 }
 
 const mapStateToProps = (state: RootState) => ({

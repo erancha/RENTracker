@@ -54,10 +54,10 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     if (this.props.selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument.document_id !== this.props.selectedDocument.document_id)) {
       const template_fields = this.props.selectedDocument.template_fields;
       // the selected document is either not linked yet or already linked to the current tenant:
-      if (!template_fields.tenantEmail || template_fields.tenantEmail.toLowerCase() === this.props.email.toLowerCase())
+      if (!template_fields.tenant1Email || template_fields.tenant1Email.toLowerCase() === this.props.email.toLowerCase())
         this.setState({ showDocumentIdInput: false, showForm: true });
       else {
-        toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenantEmail}`);
+        toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenant1Email}`);
         this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
       }
     } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
@@ -119,7 +119,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                       {timeShortDisplay(new Date(doc.updated_at))}
                     </div>
                     <div className='name' data-title='Name'>
-                      '{getDocumentTitle(doc.template_fields?.tenantName)}'
+                      '{getDocumentTitle(doc.template_fields?.tenant1Name)}'
                     </div>
                     <div className='period' data-title='Period'>
                       {formatDate(doc.template_fields?.startDate)} - {formatDate(doc.template_fields?.endDate)}
@@ -244,7 +244,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
     const message = `\nPlease find below a link to the *signed* rental agreement: *'${getDocumentTitle(
-      document?.template_fields?.tenantName
+      document?.template_fields?.tenant1Name
     )}'*:\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };

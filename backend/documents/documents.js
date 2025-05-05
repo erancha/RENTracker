@@ -166,7 +166,7 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
     await insertMessageToSQS(
       JSON.stringify({
         emailParams: {
-          toAddresses: [document.template_fields.landlordEmail, ...(document.template_fields.tenantEmail ? [document.template_fields.tenantEmail] : [])],
+          toAddresses: [document.template_fields.landlordEmail, ...(document.template_fields.tenant1Email ? [document.template_fields.tenant1Email] : [])],
           subject: `Rental Agreement - ${document.template_fields.propertyAddress}`,
           message: `
             <h2>Rental Agreement Details</h2>
@@ -177,9 +177,9 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
             <p>Monthly Rent: ₪${document.template_fields.rentAmount}</p>
             <br/>
             <h3>Tenant Details:</h3>
-            <p>Name: ${document.template_fields.tenantName}</p>
-            <p>Phone: ${document.template_fields.tenantPhone}</p>
-            <p>Email: ${document.template_fields.tenantEmail}</p>
+            <p>Name: ${document.template_fields.tenant1Name}</p>
+            <p>Phone: ${document.template_fields.tenant1Phone}</p>
+            <p>Email: ${document.template_fields.tenant1Email}</p>
             <p>${document.template_fields.signature ? 'Signed' : 'Not signed'}</p>
             <br/>
             <h3>Landlord Details:</h3>
@@ -553,11 +553,18 @@ const extractFileContentFromMultipart = (base64Body, contentType) => {
  * @returns {Promise<Object>} An object containing presigned URLs for idCard, salary1, and salary2.
  */
 async function prepareAttachmentsPresignedUrls(documentId, templateFields) {
-  const presignedUrls = {};
+  const prepareTenantAttachmentsUrls = async (documentId, templateFields, tenantPrefix) => {
+    const urls = {};
+    if (templateFields[`${tenantPrefix}IdCard`]) urls[`${tenantPrefix}IdCard`] = await preparePresignedUrl(documentId, `${tenantPrefix}IdCard`);
+    if (templateFields[`${tenantPrefix}Salary1`]) urls[`${tenantPrefix}Salary1`] = await preparePresignedUrl(documentId, `${tenantPrefix}Salary1`);
+    if (templateFields[`${tenantPrefix}Salary2`]) urls[`${tenantPrefix}Salary2`] = await preparePresignedUrl(documentId, `${tenantPrefix}Salary2`);
+    return urls;
+  };
 
-  if (templateFields.idCard) presignedUrls.idCard = await preparePresignedUrl(documentId, 'idCard');
-  if (templateFields.salary1) presignedUrls.salary1 = await preparePresignedUrl(documentId, 'salary1');
-  if (templateFields.salary2) presignedUrls.salary2 = await preparePresignedUrl(documentId, 'salary2');
+  const presignedUrls = {
+    ...(await prepareTenantAttachmentsUrls(documentId, templateFields, 'tenant1')),
+    ...(await prepareTenantAttachmentsUrls(documentId, templateFields, 'tenant2')),
+  };
 
   return presignedUrls;
 }

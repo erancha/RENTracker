@@ -294,9 +294,6 @@ const interpolateTemplate = (template, fields) => {
     result = result.replace(/^12\.3.*$/m, '~~$&~~');
     result = result.replace(/<!-- guarantorDetails-start -->[\s\S]*?<!-- guarantorDetails-end -->/m, '');
   }
-  // if (!fields.securityRequired && !fields.guarantorRequired) {
-  //   result = result.replace(/^## 12.*$/m, '~~$&~~\n\n');
-  // }
 
   // Pre-calculate derived values
   if (fields.initialPaymentMonths && fields.rentAmount) {
@@ -346,6 +343,36 @@ const interpolateTemplate = (template, fields) => {
     );
   }
 
+  // Compose included in payment text
+  const includedItems = [];
+  if (fields.waterLimit && fields.waterLimit !== '0') {
+    includedItems.push(`מים (מוגבל לעד ${formatNumber(fields.waterLimit, true)} לחודש)`);
+  }
+  if (fields.electricityLimit && fields.electricityLimit !== '0') {
+    includedItems.push(`חשמל (מוגבל לעד ${formatNumber(fields.electricityLimit, true)} לחודש)`);
+  }
+  if (fields.includedServices) {
+    includedItems.push(fields.includedServices);
+  }
+  fields.includedInPayment = includedItems.join(', ');
+
+  // Compose tenant details text
+  const tenantDetails = [];
+  if (fields.tenant1Name) {
+    tenantDetails.push(`${fields.tenant1Name} ת.ז ${fields.tenant1Id} נייד ${fields.tenant1Phone} מייל ${fields.tenant1Email}`);
+  }
+  if (fields.tenant2Name) {
+    const tenant2Fields = [];
+    if (fields.tenant2Name) tenant2Fields.push(`${fields.tenant2Name}`);
+    if (fields.tenant2Id) tenant2Fields.push(`ת.ז ${fields.tenant2Id}`);
+    if (fields.tenant2Phone) tenant2Fields.push(`נייד ${fields.tenant2Phone}`);
+    if (fields.tenant2Email) tenant2Fields.push(`מייל ${fields.tenant2Email}`);
+    if (tenant2Fields.length > 0) {
+      tenantDetails.push(tenant2Fields.join(' '));
+    }
+  }
+  fields.tenantDetails = tenantDetails.join(' ו- ');
+
   // Format dates before interpolation
   if (fields.date) fields.date = formatDate(fields.date);
   if (fields.startDate) fields.startDate = formatDate(fields.startDate);
@@ -356,8 +383,6 @@ const interpolateTemplate = (template, fields) => {
   if (fields.rentAmount) fields.rentAmount = formatNumber(fields.rentAmount, true);
   if (fields.initialPayment) fields.initialPayment = formatNumber(fields.initialPayment, true);
   if (fields.securityDeposit) fields.securityDeposit = formatNumber(fields.securityDeposit, true);
-  if (fields.waterLimit) fields.waterLimit = formatNumber(fields.waterLimit, true);
-  if (fields.electricityLimit) fields.electricityLimit = formatNumber(fields.electricityLimit, true);
 
   // Handle standard {{key}} replacements with highlighting and italics
   result = result.replace(/\{\{([^}]+)\}\}/g, (match, field) => {

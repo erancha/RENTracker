@@ -32,7 +32,7 @@ export const handlePdfGeneration = async (documentId: string, JWT: string | null
 
 /**
  * Generates a title for a rental agreement document
- * @param tenantName - Optional name of the tenant to include in the title
- * @returns A string in the format "הסכם שכירות - {tenantName}" or just "הסכם שכירות" if no tenant name provided
+ * @param tenant1Name - Optional name of the tenant to include in the title
+ * @returns A string in the format "הסכם שכירות - {tenant1Name}" or just "הסכם שכירות" if no tenant name provided
  */
-export const getDocumentTitle = (tenantName?: string) => `הסכם שכירות${tenantName ? ` - ${tenantName}` : ''}`;
+export const getDocumentTitle = (tenant1Name?: string) => `הסכם שכירות${tenant1Name ? ` - ${tenant1Name}` : ''}`;
