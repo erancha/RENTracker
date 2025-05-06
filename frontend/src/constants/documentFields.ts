@@ -51,6 +51,7 @@ export const fieldToSection: Record<string, string> = {
  */
 export const fieldsToResetOnDuplicate = [
   'date',
+  'landlordSignature',
   'tenant1Name',
   'tenant1Id',
   'tenant1Phone',
@@ -67,6 +68,7 @@ export const fieldsToResetOnDuplicate = [
   'tenant2IdCard',
   'tenant2Salary1',
   'tenant2Salary2',
+  'tenantSignature',
   'startDate',
   'endDate',
   'initialPaymentMonths',

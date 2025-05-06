@@ -433,7 +433,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 <SignatureMaker
                   onSave={(imageData) => {
                     this.handleSignatureUpload(imageData);
-                    this.handleSubmit(new Event('dummy') as any);
+                    this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
                   }}
                   onCancel={() => this.handleAccordionChange('signature')(new Event('dummy') as any, false)} // collapses the current section.
                 />
@@ -445,7 +445,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             /* To avoid closing the form unintentionally instead of the signature accordion */ !this.state.expandedSections.includes('signature') && (
               <div className='actions'>
                 {(!this.props.documentId || this.hasUnsavedChanges()) && (
-                  <button type='submit' className='action-button save' title={this.props.documentId ? 'Update' : 'Create'}>
+                  <button
+                    type='submit'
+                    className={`action-button save${this.hasUnsavedChanges() ? ' has-changes' : ''}`}
+                    title={this.props.documentId ? 'Update' : 'Create'}
+                  >
                     <Save />
                   </button>
                 )}
@@ -1059,7 +1063,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       this.setState((prevState) => ({
         formData: {
           ...prevState.formData,
-          [fileName]: fileName,
+          [fileName]: `${fileName}-${new Date().toISOString()}`,
         },
       }));
     } catch (error) {

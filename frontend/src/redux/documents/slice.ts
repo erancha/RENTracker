@@ -108,9 +108,7 @@ const documentsSlice = createSlice({
       state.documents.unshift(action.payload);
 
       const isDocumentSigned = action.payload.template_fields['tenantSignature'];
-      toast.success(`Document updated successfully${!isDocumentSigned ? '. Remember to sign and share via whatsapp ..' : ''}`, {
-        autoClose: isDocumentSigned ? 2000 : 5000,
-      });
+      toast.success('Document updated successfully', { autoClose: isDocumentSigned ? 2000 : 5000 });
     });
     builder.addCase(updateDocumentThunk.rejected, (state, action) => {
       state.loading = false;

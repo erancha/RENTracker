@@ -84,19 +84,23 @@ async function handleCreate(record) {
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
 
   // Tenant and landlord signatures:
-  const getSignatureImage = async (type) => {
+  const getSignatureImageUrl = async (type) => {
+    let imageUrl;
     try {
-      return getDocumentImageAsDataUrl(newImage.document_id.S, `${type}Signature`);
+      const signatureKey = `${type}Signature`;
+      imageUrl = templateFields[signatureKey] ? await getDocumentImageAsDataUrl(newImage.document_id.S, signatureKey) : '';
     } catch (error) {
       console.log(`No ${type} signature found, using placeholder:`, error);
-      return '. '.repeat(5);
+      imageUrl = '. '.repeat(5);
     }
+    // console.log({ type, imageUrl });
+    return imageUrl;
   };
 
-  let signatureUrl = await getSignatureImage('landlord');
-  templateFields.landlordSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
-  signatureUrl = await getSignatureImage('tenant');
-  templateFields.tenantSignatureImage = `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`;
+  let signatureUrl = await getSignatureImageUrl('landlord');
+  templateFields.landlordSignatureImage = signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />` : '';
+  signatureUrl = await getSignatureImageUrl('tenant');
+  templateFields.tenantSignatureImage = signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />` : '';
 
   templateFields.signatureUnderline = '_'.repeat(50);
 

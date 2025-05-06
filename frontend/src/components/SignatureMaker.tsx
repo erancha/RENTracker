@@ -97,7 +97,7 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
 
       <div className='actions' style={{ marginTop: '10px' }}>
         {hasChanges && (
-          <button type='button' className='action-button save' title='Save' onClick={handleSave}>
+          <button type='button' className='action-button save has-changes' title='Save' onClick={handleSave}>
             <Check />
           </button>
         )}
