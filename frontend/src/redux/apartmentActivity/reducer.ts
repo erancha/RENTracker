@@ -59,7 +59,7 @@ export const apartmentActivityReducer = (state: IApartmentActivityState = initia
       };
     }
 
-    // Set activity as onroute
+    // Set activity as no longer on route
     case SET_APARTMENT_ACTIVITY_CONFIRMED_BY_BACKEND: {
       const { apartmentId, activityId } = action.payload;
       return {

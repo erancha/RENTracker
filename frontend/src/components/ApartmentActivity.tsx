@@ -4,7 +4,6 @@ import { IAppState } from '../redux/store/types';
 import { IApartment } from '../redux/apartments/types';
 import { IApartmentActivity, INewApartmentActivity } from '../redux/apartmentActivity/types';
 import { timeShortDisplay, getApartment } from '../utils/utils';
-import { setWSConnectedAction } from 'redux/websockets/actions';
 import {
   prepareCreateApartmentActivityCommandAction,
   addApartmentActivityAction,
@@ -86,7 +85,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
                 emptyActivity: this.createInitialActivity(),
               });
             }}
-            className='action-button add'>
+            className='action-button add'
+          >
             <Plus />
           </button>
         </div>
@@ -94,7 +94,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
           <div className='table-header activity'>
             <div className='saved-at'>Saved At</div>
             <div className='description'>Description</div>
-            <div className='pending-confirmation'>Wait for confirmation</div>
+            {/* <div className='pending-confirmation'>Wait for confirmation</div> */}
           </div>
 
           <div className='data-container activity-list'>
@@ -197,7 +197,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
     return (
       <>
         <div className='saved-at'>{isSaved ? timeShortDisplay(new Date(activity.created_at!)) : ''}</div>
-        <div className='description'>
+        <div className='description' data-title='Description'>
           {isSaved ? (
             activity.description
           ) : (
@@ -212,7 +212,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
             />
           )}
         </div>
-        <div className='pending-confirmation'>
+        {/* <div className='pending-confirmation' data-title='Pending Confirmation'>
           {isSaved ? (
             activity.pending_confirmation ? (
               'Waiting'
@@ -228,7 +228,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
               }}
             />
           )}
-        </div>
+        </div> */}
         {!isSaved ? (
           <div className='actions'>
             <button onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)} className='action-button save' title='Save' disabled={!isValid}>
@@ -244,7 +244,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
               <button
                 onClick={() => this.handleDeleteActivity(activity.activity_id as string, activity.description as string)}
                 className='action-button delete'
-                title='Delete'>
+                title='Delete'
+              >
                 <Trash2 />
               </button>
             </div>
@@ -274,7 +275,6 @@ interface IApartmentActivityProps {
   activity: IApartmentActivity[]; // List of activity activity
   apartments: IApartment[]; // List of all apartments
   currentApartment: IApartment | undefined; // Currently selected apartment
-  setWSConnectedAction: typeof setWSConnectedAction; // Action to set WebSocket connection status
   prepareCreateApartmentActivityCommandAction: typeof prepareCreateApartmentActivityCommandAction; // Action to prepare a new activity
   addApartmentActivityAction: typeof addApartmentActivityAction; // Action to add a new activity
   prepareDeleteApartmentActivityCommandAction: typeof prepareDeleteApartmentActivityCommandAction; // Action to prepare a delete activity command
@@ -297,7 +297,6 @@ const mapStateToProps = (state: IAppState) => ({
 
 // Map Redux actions to component props
 const mapDispatchToProps = {
-  setWSConnectedAction,
   prepareCreateApartmentActivityCommandAction,
   addApartmentActivityAction,
   prepareDeleteApartmentActivityCommandAction,

@@ -2,7 +2,7 @@ import React from 'react';
 import { bindActionCreators, Dispatch } from 'redux';
 import { connect } from 'react-redux';
 import { IAppState } from '../redux/store/types';
-import { USERS_VIEW, ANALYTICS_VIEW } from '../redux/menu/types';
+import { SAAS_TENANTS_VIEW, ANALYTICS_VIEW } from '../redux/menu/types';
 import { toggleMenuAction, setAnchorElAction, setMenuSelectedPageAction } from '../redux/menu/actions';
 import { loginWithGoogleAction, checkAuthStatusAction, logoutUserAction } from '../redux/auth/actions';
 import { UserType } from '../redux/auth/types';
@@ -129,14 +129,14 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
 
                     <MenuItem
                       onClick={() => {
-                        this.props.setMenuSelectedPageAction(USERS_VIEW);
+                        this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
                         this.handleMenuClose();
                       }}
                     >
                       <ListItemIcon>
                         <UserCircle />
                       </ListItemIcon>
-                      Users
+                      SaaS Tenants
                     </MenuItem>
                   </>
                   // ) : (TODO: Evaluate the need for this view

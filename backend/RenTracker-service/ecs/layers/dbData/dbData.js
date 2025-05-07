@@ -12,35 +12,9 @@ const healthCheck = logMiddleware('healthCheck')(async () => {
   return await gwData.healthCheck();
 });
 
-/**
- * Creates or updates a user in the system
- * @param {Object} params
- * @param {string} params.user_id - User's unique identifier
- * @param {string} params.user_name - User's display name
- * @param {string} params.email - User's email address
- * @param {string} params.phone_number - User's phone number
- * @param {string} params.saas_tenant_id - SaaS tenant identifier
- * @returns {Promise<Object>} Created/updated user data
- */
-const upsertUser = logMiddleware('upsertUser')(async ({ user_id, user_name, email, phone_number, saas_tenant_id }) => {
-  validateUUID(user_id, 'user_id');
-  validateNonEmptyString(user_name, 'user_name');
-  validateEmail(email);
-  validatePhoneNumber(phone_number);
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await gwData.upsertUser({ user_id, user_name, email, phone_number, saas_tenant_id });
-});
-
-/**
- * Retrieves all users for a given SaaS tenant
- * @param {Object} params
- * @param {string} params.saas_tenant_id - SaaS tenant identifier
- * @returns {Promise<Array>} List of users
- */
-const getAllUsers = logMiddleware('getAllUsers')(async ({ saas_tenant_id }) => {
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await gwData.getAllUsers({ saas_tenant_id });
-});
+// ============================================================================================
+// Apartments Management Functions
+// ============================================================================================
 
 /**
  * Creates or updates an apartment in the system
@@ -50,32 +24,15 @@ const getAllUsers = logMiddleware('getAllUsers')(async ({ saas_tenant_id }) => {
  * @param {string} params.unit_number - Apartment's unit number
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {string} params.rent_amount - Apartment's rent amount
- * @param {string} params.landlord_id - Landlord's unique identifier
  * @param {string} params.saas_tenant_id - SaaS tenant identifier
  * @returns {Promise<Object>} Created/updated apartment data
  */
-const createApartment = logMiddleware('createApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id }) => {
-    validateUUID(apartment_id, 'apartment_id');
-    validatePositiveInteger(rent_amount);
-    validateRoomsCount(rooms_count);
-    validateUUID(landlord_id, 'user_id');
-    validateUUID(saas_tenant_id, 'saas_tenant_id');
-    return await gwData.createApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id });
-  }
-);
-
-/**
- * Retrieves all apartments owned by a specific user
- * @param {Object} params
- * @param {string} params.user_id - User's unique identifier
- * @param {string} params.saas_tenant_id - SaaS tenant identifier
- * @returns {Promise<Array>} List of apartments
- */
-const getApartmentsOfLandlord = logMiddleware('getApartmentsOfLandlord')(async ({ user_id, saas_tenant_id }) => {
-  validateUUID(user_id, 'user_id');
+const createApartment = logMiddleware('createApartment')(async ({ apartment_id, address, unit_number, rooms_count, rent_amount, saas_tenant_id }) => {
+  validateUUID(apartment_id, 'apartment_id');
+  validatePositiveInteger(rent_amount);
+  validateRoomsCount(rooms_count);
   validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await gwData.getApartmentsOfLandlord({ user_id, saas_tenant_id });
+  return await gwData.createApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, created_at: new Date().toISOString(), saas_tenant_id });
 });
 
 /**
@@ -108,7 +65,16 @@ const updateApartment = logMiddleware('updateApartment')(
     validatePositiveInteger(rent_amount);
     validateBoolean(is_disabled, 'is_disabled');
     validateUUID(saas_tenant_id, 'saas_tenant_id');
-    return await gwData.updateApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id });
+    return await gwData.updateApartment({
+      apartment_id,
+      address,
+      unit_number,
+      rooms_count,
+      rent_amount,
+      is_disabled,
+      updated_at: new Date().toISOString(),
+      saas_tenant_id,
+    });
   }
 );
 
@@ -125,7 +91,9 @@ const deleteApartment = logMiddleware('deleteApartment')(async ({ apartment_id, 
   return await gwData.deleteApartment({ apartment_id, saas_tenant_id });
 });
 
-// Document Management Functions
+// ============================================================================================
+// Documents Management Functions
+// ============================================================================================
 
 /**
  * Create a new document
@@ -144,7 +112,7 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
   validateTemplateFields(template_fields);
   validateUUID(saas_tenant_id, 'saas_tenant_id');
 
-  return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, saas_tenant_id });
+  return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, created_at: new Date().toISOString(), saas_tenant_id });
 };
 
 /**
@@ -190,7 +158,7 @@ const updateDocument = async ({ document_id, template_fields, saas_tenant_id, te
   validateUUID(saas_tenant_id, 'saas_tenant_id');
   if (tenant_user_id) validateUUID(tenant_user_id, 'user_id');
 
-  const updateParams = { document_id, template_fields, saas_tenant_id };
+  const updateParams = { document_id, template_fields, updated_at: new Date().toISOString(), saas_tenant_id };
   if (tenant_user_id) updateParams.tenant_user_id = tenant_user_id;
   return await gwData.updateDocument(updateParams);
 };
@@ -208,6 +176,10 @@ const deleteDocument = async ({ document_id, saas_tenant_id }) => {
 
   return await gwData.deleteDocument({ document_id, saas_tenant_id });
 };
+
+// ============================================================================================
+// Apartment activity Management Functions
+// ============================================================================================
 
 /**
  * Creates a new activity in the system
@@ -251,16 +223,63 @@ const deleteApartmentActivity = logMiddleware('deleteApartmentActivity')(async (
   return await gwData.deleteApartmentActivity({ activity_id, saas_tenant_id });
 });
 
-// Cache wrapper functions
-const cache_getAllUsers = async ({ saas_tenant_id }) => {
+// ============================================================================================
+// SaaS Tenant Management Functions
+// ============================================================================================
+
+/**
+ * Creates a new SaaS tenant in the system
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - Unique identifier for the tenant
+ * @param {boolean} params.is_disabled - Whether the tenant is disabled
+ * @returns {Promise<Object>} Created tenant data
+ */
+const createSaasTenant = async ({ saas_tenant_id, is_disabled }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await cache.get('getAllUsers()', () => getAllUsers({ saas_tenant_id }));
+  validateBoolean(is_disabled, 'is_disabled');
+
+  return await gwData.createSaasTenant({
+    saas_tenant_id,
+    is_disabled,
+    created_at: new Date().toISOString(),
+  });
 };
 
-const cache_getApartmentsOfLandlord = async ({ user_id, saas_tenant_id }) => {
-  validateUUID(user_id, 'user_id');
+/**
+ * Updates a SaaS tenant in the system
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - ID of the tenant to update
+ * @param {boolean} params.is_disabled - New disabled status
+ * @returns {Promise<Object>} Updated tenant data
+ */
+const updateSaasTenant = async ({ saas_tenant_id, is_disabled }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await cache.get(`getApartmentsOfLandlord(${user_id})`, () => getApartmentsOfLandlord({ user_id, saas_tenant_id }));
+  validateBoolean(is_disabled, 'is_disabled');
+
+  return await gwData.updateSaasTenant({
+    saas_tenant_id,
+    is_disabled,
+    updated_at: new Date().toISOString(),
+  });
+};
+
+/**
+ * Deletes a SaaS tenant from the system
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - ID of the tenant to delete
+ * @returns {Promise<Object>} Deleted tenant data
+ */
+const deleteSaasTenant = async ({ saas_tenant_id }) => {
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
+  return await gwData.deleteSaasTenant({ saas_tenant_id });
+};
+
+// ============================================================================================
+// Cache wrapper functions
+// ============================================================================================
+const cache_getApartmentsOfLandlord = async ({ saas_tenant_id }) => {
+  validateUUID(saas_tenant_id, 'saas_tenant_id');
+  return await cache.get(`getApartmentsOfLandlord(${saas_tenant_id})`, () => gwData.getApartmentsOfLandlord({ saas_tenant_id }));
 };
 
 const cache_getApartmentActivity = async ({ apartment_id, saas_tenant_id }) => {
@@ -275,15 +294,16 @@ const cache_getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => 
   return await cache.get(`getApartmentDocuments(${apartment_id})`, () => gwData.getApartmentDocuments({ apartment_id, saas_tenant_id }));
 };
 
+const cache_getSaasTenants = async () => {
+  return await cache.get(`getSaasTenants()`, () => gwData.getSaasTenants());
+};
+
 module.exports = {
   isLandlordUser,
   healthCheck,
-  upsertUser,
-  getAllUsers,
   createApartment,
   updateApartment,
   deleteApartment,
-  getApartmentsOfLandlord,
   getAllApartments,
   createDocument,
   getDocument,
@@ -292,20 +312,19 @@ module.exports = {
   deleteDocument,
   createApartmentActivity,
   deleteApartmentActivity,
-
-  // Cache interface
+  createSaasTenant,
+  updateSaasTenant,
+  deleteSaasTenant,
   cache: {
-    getAllUsers: cache_getAllUsers,
     getApartmentsOfLandlord: cache_getApartmentsOfLandlord,
     getApartmentActivity: cache_getApartmentActivity,
     getApartmentDocuments: cache_getApartmentDocuments,
+    getSaasTenants: cache_getSaasTenants,
     invalidation: {
-      // TODO: It's asymmetric that the cache functions do receive the saas_tenant_id and the invalidation functions don't ..
-      getAllUsers: () => cache.invalidateGet('getAllUsers()'),
-      getApartmentsOfLandlord: (user_id) =>
-        user_id
-          ? cache.invalidateGet(`getApartmentsOfLandlord(${user_id})`)
-          : console.warn('user_id is undefined, cannot invalidate cache for getApartmentsOfLandlord()'),
+      getApartmentsOfLandlord: (saas_tenant_id) =>
+        saas_tenant_id
+          ? cache.invalidateGet(`getApartmentsOfLandlord(${saas_tenant_id})`)
+          : console.warn('saas_tenant_id is undefined, cannot invalidate cache for getApartmentsOfLandlord()'),
       getApartmentDocuments: (apartment_id) =>
         apartment_id
           ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
@@ -314,10 +333,7 @@ module.exports = {
         apartment_id
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
           : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
-      getApartmentDocuments: (apartment_id) =>
-        apartment_id
-          ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
-          : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentDocuments()'),
+      getSaasTenants: () => cache.invalidateGet('getSaasTenants()'),
     },
   },
 };
@@ -412,12 +428,6 @@ function validateRentalAgreementFields(fields) {
     // Utility Limits
     water_limit: { type: 'number', required: false, min: 0 },
     electricity_limit: { type: 'number', required: false, min: 0 },
-
-    // Landlord Details
-    landlord_name: { type: 'string', required: true },
-    landlord_id: { type: 'string', required: true, format: 'israeli-id' },
-    landlord_address: { type: 'string', required: true },
-    landlord_phone: { type: 'string', required: true, format: 'israeli-phone' },
 
     // Tenant Details
     tenant_name: { type: 'string', required: true },

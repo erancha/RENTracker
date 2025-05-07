@@ -7,7 +7,7 @@ Parameters:
     Description: 'User id of the admin'
     Type: String
     Default: '53b408f2-d071-70e2-f4da-24618fa52c03'
-  SaaSTenantUserId:
+  SaasTenantUserId:
     Type: String
     Description: 'User id of the SaaS tenant (acts as a landlord)'
     Default: '23743842-4061-709b-44f8-4ef9a527509d' # erancha@gmail.com
@@ -391,10 +391,9 @@ Resources:
           STACK_NAME: !Ref AWS::StackName
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          SAAS_TENANT_ID: !Ref SaasTenantUserId
           ADMIN_USER_ID: !Ref AdminUserId
-          # LANDLORDS_TABLE_NAME: !Ref LandlordsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
-          # TENANTS_TABLE_NAME: !Ref TenantsTable # LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
+          # SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
           ACTIVITY_TABLE_NAME: !Ref ActivityTable
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
@@ -452,10 +451,10 @@ Resources:
           STACK_NAME: !Ref AWS::StackName
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ADMIN_USER_ID: !Ref AdminUserId
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
           ACTIVITY_TABLE_NAME: !Ref ActivityTable
+          SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
           # DB_NAME: !Ref CrudDatabaseName
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
@@ -525,8 +524,7 @@ Resources:
               #   Action:
               #     - dynamodb:PutItem
               #   Resource:
-              #     - !GetAtt LandlordsTable.Arn
-              #     - !GetAtt TenantsTable.Arn
+              #     - !GetAtt SaaSTenantsTable.Arn
               - Effect: Allow
                 Action:
                   - dynamodb:Query
@@ -569,11 +567,17 @@ Resources:
                 Resource:
                   - !GetAtt ApartmentsTable.Arn
                   - !GetAtt ActivityTable.Arn
+                  - !GetAtt SaaSTenantsTable.Arn
               - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
                   - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt SaaSTenantsTable.Arn
       # - PolicyName: LambdaRDSAccessPolicy
       #   PolicyDocument:
       #     Version: '2012-10-17'
@@ -724,41 +728,6 @@ Resources:
     Properties:
       RestApiId: !Ref RestApi
 
-  # UsersRestFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub 'UsersRestFunction-${AWS::StackName}'
-  #     CodeUri: ../backend/rest/
-  #     Handler: users.handler
-  #     Runtime: nodejs20.x
-  #     Layers:
-  #       - 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
-  #       - !Ref DbDataLayer
-  #       - !Ref RedisClientLayer
-  #     Environment:
-  #       Variables:
-  #         SAAS_TENANT_ID: !Ref SaaSTenantUserId
-  #         ALLOWED_ORIGIN: !If
-  #           - AllowOnlyCloudfrontOriginCondition
-  #           - !Sub 'https://${FrontendDistribution.DomainName}'
-  #           - !Ref ApiGatewayCorsAllowedOrigins
-  #         # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-  #         # DB_NAME: !Ref CrudDatabaseName
-  #         # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-  #         # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-  #     Events:
-  #       GetUsers:
-  #         Type: Api
-  #         Properties:
-  #           RestApiId: !Ref RestApi
-  #           Path: /users
-  #           Method: GET
-  #           Auth:
-  #             Authorizer: CognitoAuthorizer
-  #     VpcConfig:
-  #       SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-  #       SecurityGroupIds: [!Ref ExistingAppSG]
-
   DocumentsRestFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -777,7 +746,7 @@ Resources:
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          SAAS_TENANT_ID: !Ref SaasTenantUserId
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           ALLOWED_ORIGIN: !If
             - AllowOnlyCloudfrontOriginCondition
@@ -934,7 +903,7 @@ Resources:
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
+          SAAS_TENANT_ID: !Ref SaasTenantUserId
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
@@ -1023,6 +992,18 @@ Resources:
   # DynamoDB Tables.
   # ------------------------------------------------------------------------------
 
+  SaaSTenantsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'SaaSTenants-${AWS::StackName}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: saas_tenant_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: saas_tenant_id
+          KeyType: HASH # Partition key
+
   ApartmentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1049,48 +1030,6 @@ Resources:
               KeyType: RANGE # Sort key
           Projection:
             ProjectionType: ALL
-
-  # LandlordsTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     TableName: !Sub 'Apartments-${AWS::StackName}'
-  #     BillingMode: PAY_PER_REQUEST
-  #     AttributeDefinitions:
-  #       - AttributeName: landlord_id
-  #         AttributeType: S
-  #       - AttributeName: saas_tenant_id
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: landlord_id
-  #         KeyType: HASH # Partition key
-  #     GlobalSecondaryIndexes:
-  #       - IndexName: SaaSTenantIndex
-  #         KeySchema:
-  #           - AttributeName: saas_tenant_id
-  #             KeyType: HASH # Partition key
-  #         Projection:
-  #           ProjectionType: ALL
-
-  # TenantsTable:
-  #   Type: AWS::DynamoDB::Table
-  #   Properties:
-  #     TableName: !Sub 'Tenants-${AWS::StackName}'
-  #     BillingMode: PAY_PER_REQUEST
-  #     AttributeDefinitions:
-  #       - AttributeName: tenant_id
-  #         AttributeType: S
-  #       - AttributeName: saas_tenant_id
-  #         AttributeType: S
-  #     KeySchema:
-  #       - AttributeName: tenant_id
-  #         KeyType: HASH # Partition key
-  #     GlobalSecondaryIndexes:
-  #       - IndexName: SaaSTenantIndex
-  #         KeySchema:
-  #           - AttributeName: saas_tenant_id
-  #             KeyType: HASH # Partition key
-  #         Projection:
-  #           ProjectionType: ALL
 
   DocumentsTable:
     Type: AWS::DynamoDB::Table
@@ -1229,7 +1168,7 @@ Resources:
   #         DB_NAME: !Ref CrudDatabaseName
   #         DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
   #         DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-  #         SAAS_TENANT_ID: !Ref SaaSTenantUserId
+  #         SAAS_TENANT_ID: !Ref SaasTenantUserId
   #     VpcConfig:
   #       SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
   #       SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
@@ -1266,7 +1205,6 @@ Resources:
           WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
-          SAAS_TENANT_ID: !Ref SaaSTenantUserId
           ENABLE_ENHANCED_LOGGING: true
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           SES_SOURCE_EMAIL: 'webcharm.tech@gmail.com'

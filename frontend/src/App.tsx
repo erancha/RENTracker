@@ -7,15 +7,15 @@ import { loginWithGoogleAction, checkAuthStatusAction } from './redux/auth/actio
 import { AuthContextProps, useAuth } from 'react-oidc-context';
 import { toggleOverviewAction, setMenuSelectedPageAction } from './redux/menu/actions';
 import Spinner from './components/Spinner';
+import SaaSTenants from './components/SaaSTenants';
 import Apartments from './components/Apartments';
 import Analytics from './components/Analytics';
-import Users from './components/Users';
 import WebSocketService from './components/WebSocketService';
 import Menu from './components/Menu';
 import appConfigData from './appConfig.json';
 import { ToastContainer } from 'react-toastify';
 import { Undo2 } from 'lucide-react';
-import { DOCUMENTS_VIEW, ANALYTICS_VIEW, USERS_VIEW } from './redux/menu/types';
+import { DOCUMENTS_VIEW, ANALYTICS_VIEW, SAAS_TENANTS_VIEW } from './redux/menu/types';
 import { UserType } from './redux/auth/types';
 import './App.css';
 import { IApartment } from 'redux/apartments/types';
@@ -90,12 +90,12 @@ class AppComponent extends React.Component<IAppProps> {
         </button>
         <Analytics />
       </div>
-    ) : menuSelectedPage === USERS_VIEW ? (
+    ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
       <div className='users-container'>
         <button onClick={handleUndo} className='action-button'>
           <Undo2 />
         </button>
-        <Users />
+        <SaaSTenants />
       </div>
     ) : this.props.userType === UserType.Tenant ? (
       <TenantDocumentList />

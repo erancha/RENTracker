@@ -23,7 +23,9 @@ const logTaskMessage = (type, data) => {
   console.log(`Task ${CURRENT_TASK_ID}: ${type} ${formattedData}.`);
 };
 
+//============================================================================================================================
 // Main command handler
+//============================================================================================================================
 const handleCommand = logMiddleware('handleCommand')(async function ({ commandType, commandParams, connectedUserId }) {
   let response;
 
@@ -39,11 +41,11 @@ const handleCommand = logMiddleware('handleCommand')(async function ({ commandTy
       break;
 
     case 'update':
-      response = await handleUpdate({ commandParams });
+      response = await handleUpdate({ commandParams, connectedUserId });
       break;
 
     case 'delete':
-      response = await handleDelete({ commandParams });
+      response = await handleDelete({ commandParams, connectedUserId });
       break;
 
     default:
@@ -55,13 +57,14 @@ const handleCommand = logMiddleware('handleCommand')(async function ({ commandTy
   return response;
 });
 
-// Command handler to create a record
+//============================================================================================================================
+// Command sub-handler to create a record
+//============================================================================================================================
 async function handleCreate({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
     const { apartment_id, address, unit_number, rooms_count, rent_amount } = commandParams.apartments;
-    const landlord_id = connectedUserId;
     response = {
       apartments: (
         await dbData.createApartment({
@@ -70,12 +73,11 @@ async function handleCreate({ commandParams, connectedUserId }) {
           unit_number,
           rooms_count,
           rent_amount,
-          landlord_id,
-          saas_tenant_id: process.env.SAAS_TENANT_ID,
+          saas_tenant_id: connectedUserId,
         })
       ).data,
     };
-    await dbData.cache.invalidation.getApartmentsOfLandlord(landlord_id);
+    await dbData.cache.invalidation.getApartmentsOfLandlord(connectedUserId);
   } else if (commandParams.activity) {
     const { activity_id, description, apartment_id, pending_confirmation } = commandParams.activity;
     response = {
@@ -84,24 +86,27 @@ async function handleCreate({ commandParams, connectedUserId }) {
         apartment_id,
         description,
         pending_confirmation,
-        saas_tenant_id: process.env.SAAS_TENANT_ID,
+        saas_tenant_id: connectedUserId,
       }),
     };
     await dbData.cache.invalidation.getApartmentActivity(apartment_id);
+  } else if (commandParams.saasTenants) {
+    const { saas_tenant_id, is_disabled } = commandParams.saasTenants;
+    response = { saasTenants: await dbData.createSaasTenant({ saas_tenant_id, is_disabled }) };
+    await dbData.cache.invalidation.getSaasTenants();
   }
 
   if (response) return { dataCreated: response };
 }
 
-// Command handler to read records
+//============================================================================================================================
+// Command sub-handler to read records
+//============================================================================================================================
 const handleRead = logMiddleware('handleRead')(async function ({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
-    const dbResult = await dbData.cache.getApartmentsOfLandlord({
-      user_id: connectedUserId,
-      saas_tenant_id: process.env.SAAS_TENANT_ID,
-    }); /* handle pagination */
+    const dbResult = await dbData.cache.getApartmentsOfLandlord({ saas_tenant_id: connectedUserId }); /* handle pagination */
     response = { apartments: dbResult || [] };
   }
   if (commandParams.activity) {
@@ -110,15 +115,20 @@ const handleRead = logMiddleware('handleRead')(async function ({ commandParams, 
     if (apartment_id)
       response = {
         ...response,
-        activity: await dbData.cache.getApartmentActivity({ apartment_id, saas_tenant_id: process.env.SAAS_TENANT_ID }),
+        activity: await dbData.cache.getApartmentActivity({ apartment_id, saas_tenant_id: connectedUserId }),
       };
+  }
+  if (commandParams.saasTenants) {
+    response = { ...response, saasTenants: await dbData.cache.getSaasTenants() };
   }
 
   if (response) return { dataRead: { ...response } };
 });
 
-// Command handler to update a record
-async function handleUpdate({ commandParams }) {
+//============================================================================================================================
+// Command sub-handler to update a record
+//============================================================================================================================
+async function handleUpdate({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
@@ -131,32 +141,46 @@ async function handleUpdate({ commandParams }) {
         rooms_count,
         rent_amount,
         is_disabled,
-        saas_tenant_id: process.env.SAAS_TENANT_ID,
+        saas_tenant_id: connectedUserId,
       }),
     };
-    await dbData.cache.invalidation.getApartmentsOfLandlord(response.apartments.landlord_id);
+    await dbData.cache.invalidation.getApartmentsOfLandlord(connectedUserId);
+  } else if (commandParams.saasTenants) {
+    const { saas_tenant_id, is_disabled } = commandParams.saasTenants;
+    response = { saasTenants: await dbData.updateSaasTenant({ saas_tenant_id, is_disabled }) };
+    await dbData.cache.invalidation.getSaasTenants();
   }
 
   if (response) return { dataUpdated: response };
 }
 
-// Command handler to delete a record
-async function handleDelete({ commandParams }) {
+//============================================================================================================================
+// Command sub-handler to delete a record
+//============================================================================================================================
+async function handleDelete({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
     const { apartment_id } = commandParams.apartments;
-    response = { apartments: await dbData.deleteApartment({ apartment_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
-    await dbData.cache.invalidation.getApartmentsOfLandlord(response.apartments.landlord_id);
+    response = { apartments: await dbData.deleteApartment({ apartment_id, saas_tenant_id: connectedUserId }) };
+    await dbData.cache.invalidation.getApartmentsOfLandlord(connectedUserId);
     await dbData.cache.invalidation.getApartmentActivity(response.apartments.apartment_id);
   } else if (commandParams.activity) {
     const { activity_id } = commandParams.activity;
-    response = { activity: await dbData.deleteApartmentActivity({ activity_id, saas_tenant_id: process.env.SAAS_TENANT_ID }) };
+    response = { activity: await dbData.deleteApartmentActivity({ activity_id, saas_tenant_id: connectedUserId }) };
     await dbData.cache.invalidation.getApartmentActivity(response.activity.apartment_id);
+  } else if (commandParams.saasTenants) {
+    const { saas_tenant_id } = commandParams.saasTenants;
+    response = { saasTenants: await dbData.deleteSaasTenant({ saas_tenant_id }) };
+    await dbData.cache.invalidation.getSaasTenants();
   }
 
   if (response) return { dataDeleted: response };
 }
+
+//============================================================================================================================
+// Utilities
+//============================================================================================================================
 
 // Helper function to determine target users based on command type and parameters
 function determineTargetUsers({ commandType, commandParams, response, connectedUserId }) {
@@ -166,26 +190,28 @@ function determineTargetUsers({ commandType, commandParams, response, connectedU
     if (commandParams.apartments) {
       switch (commandType) {
         case 'create':
-          targetUserIds.push(process.env.ADMIN_USER_ID, connectedUserId);
-          break;
         case 'update':
-          targetUserIds.push(response.dataUpdated.apartments.user_id);
-          break;
         case 'delete':
-          targetUserIds.push(response.dataDeleted.apartments.user_id);
+          // targetUserIds.push(process.env.ADMIN_USER_ID, connectedUserId);
+          targetUserIds.push(connectedUserId);
           break;
       }
     } else if (commandParams.activity) {
       switch (commandType) {
         case 'create':
-          targetUserIds.push(connectedUserId);
-          // if (response.dataCreated.activity) { //TODO
-          //   targetUserIds.push(response.dataCreated.activity.apartment.user_id);
-          // }
-          break;
         case 'read':
+        case 'delete':
           targetUserIds.push(connectedUserId);
           break;
+        default:
+          console.log('Not implemented!');
+          break;
+      }
+    } else if (commandParams.saasTenants) {
+      switch (commandType) {
+        case 'create':
+        case 'read':
+        case 'update':
         case 'delete':
           targetUserIds.push(connectedUserId);
           break;
@@ -199,19 +225,7 @@ function determineTargetUsers({ commandType, commandParams, response, connectedU
   } catch (error) {
     console.error('Error in determineTargetUsers:');
     console.error('Stack:', error.stack);
-    console.error(
-      'Parameters:',
-      JSON.stringify(
-        {
-          commandType,
-          commandParams,
-          response,
-          connectedUserId,
-        },
-        null,
-        2
-      )
-    );
+    console.error('Parameters:', JSON.stringify({ commandType, commandParams, response, connectedUserId }, null, 2));
     throw error;
   }
 }

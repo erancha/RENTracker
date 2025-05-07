@@ -49,10 +49,8 @@ const initialState: IAppState = {
     activity: {},
   },
   // analyticsData: [],
-  users: {
-    list: [],
-    loading: false,
-    error: null,
+  saasTenants: {
+    saasTenants: [],
   },
   documents: {
     documents: [],

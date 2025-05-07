@@ -15,6 +15,7 @@ body {
 .error-message {
   color: red;
   font-size: 10px;
+  font-weight: 400;
   margin-top: 5px;
 }
 
@@ -451,6 +452,11 @@ body {
   color: darkblue;
   font-weight: 500;
 
+  &.current {
+    background-color: #e3f2fd;
+    border-left: 4px solid #1976d2;
+  }
+
   > .apartment-id {
     font-size: 0.6rem;
     background-color: whitesmoke;
@@ -470,15 +476,6 @@ body {
 
   & > div > p {
     margin: 2px;
-  }
-
-  &.closed {
-    cursor: not-allowed;
-    opacity: 0.3;
-
-    & > * {
-      opacity: 0.8;
-    }
   }
 
   &.current {
@@ -511,27 +508,51 @@ body {
   }
 }
 
-/* Table Row */
+/* Table Header and Row */
+.table-header,
 .table-row {
+  display: grid;
   background-color: whitesmoke;
-  gap: 5px;
-  padding: 5px;
+}
+
+.table-row {
+  gap: 2px;
+  padding: 2px;
+  color: darkblue;
+  font-weight: 500;
+
+  > * {
+    padding: 0;
+    background-color: initial;
+  }
 
   > div {
     background-color: white;
-    padding: 5px;
-    border-radius: 5px;
-    padding-top: 20px;
+    padding: 0 5px;
+  }
 
-    &:not(.actions)::before {
-      content: attr(data-title);
-    }
+  > div,
+  > div > * {
+    width: 100%;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    align-content: center;
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  > div > p {
+    margin: 2px;
+    background-color: white;
+    font-size: 0.8rem;
+  }
+
+  .action-button {
+    padding: 1px;
   }
 }
 
-/* Table Header */
 .table-header {
-  background-color: whitesmoke;
   padding: 3px;
   border-radius: 8px;
   font-weight: bold;
@@ -576,9 +597,8 @@ body {
   }
 }
 
-/* Table Row Document */
+/* Table Row / Document */
 .table-row.document {
-  display: grid;
   grid-template-columns: 3fr 5fr 5fr minmax(12rem, 2fr);
   border-radius: 0.5rem;
   column-gap: 0.5rem;
@@ -592,15 +612,33 @@ body {
   }
 }
 
-/* Table Row Activity */
+/* Table Header and Row / Activity */
 .table-header.activity,
 .table-row.activity {
-  display: grid;
-  grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);
-  border-radius: 0.5rem;
+  grid-template-columns: 70px 5fr /*2fr*/ 80px;
 
+  .saved-at,
   .pending-confirmation {
     text-align: center;
+  }
+}
+
+.table-row.activity {
+  .saved-at {
+    font-size: x-small;
+  }
+
+  .saved-at,
+  .description {
+    align-content: center;
+  }
+
+  > div {
+    padding: 0 5px;
+  }
+
+  .action-button {
+    scale: 0.6;
   }
 }
 
@@ -614,7 +652,7 @@ body {
   .activity-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 2px;
   }
 }
 
@@ -709,7 +747,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-evenly;
+    justify-content: space-between;
+    align-content: start;
+    flex-wrap: wrap;
   }
 
   > *:not(.actions)::before {
@@ -927,52 +967,19 @@ body {
 }
 
 /* Table Row Activity Styles */
-.table-row.activity {
-  color: darkblue;
-  font-weight: 500;
-  padding: 0 0 0 5px;
+.table-row.activity .input {
+  grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);
 
-  &.closed {
-    border-color: red;
-  }
+  > .description {
+    grid-column: span 2;
 
-  > * {
-    padding: 0;
-    background-color: initial;
-  }
-
-  &.input {
-    grid-template-columns: minmax(60px, 1fr) 5fr 2fr minmax(60px, 1fr);
-
-    > .description {
-      grid-column: span 2;
-
-      > * {
-        height: 100%;
-        padding: 2px 0 2px 5px;
-        border: 1px solid darkblue;
-        border-radius: 5px;
-        animation: pulsate-and-rotate-border 2s ease-in-out 1;
-      }
+    > * {
+      height: 100%;
+      padding: 2px 0 2px 5px;
+      border: 1px solid darkblue;
+      border-radius: 5px;
+      animation: pulsate-and-rotate-border 2s ease-in-out 1;
     }
-    > .saved-at {
-      display: none;
-    }
-  }
-
-  > div,
-  > div > * {
-    width: 100%;
-    font-size: 0.8rem;
-    align-content: center;
-    transition: background-color 0.2s ease;
-    box-sizing: border-box;
-  }
-
-  > div > p {
-    margin: 2px;
-    background-color: white;
-    font-size: 0.8rem;
   }
 }
 
@@ -980,7 +987,6 @@ body {
 .card.apartment > div:not(.details, .input-and-error-container)::before,
 .table-row.document > div::before,
 .table-row.activity > div::before {
-  position: absolute;
   left: 5px;
   top: 2px;
   font-size: 0.7rem;
@@ -993,32 +999,46 @@ body {
 }
 
 /* Card Apartment States */
-.card.apartment.onroute,
-.table-row.activity.onroute {
-  color: darkred;
-  > div,
-  > div > p,
-  > div > select,
-  > div > button,
-  > div > * > svg {
-    background-color: lightgoldenrodyellow;
-    font-weight: 400;
-  }
-}
-
-.card.apartment {
-  &.current {
-    background-color: #e3f2fd;
-    border-left: 4px solid #1976d2;
+.card,
+.table-row {
+  &.onroute {
+    color: darkred;
+    > div,
+    > div > p,
+    > div > select,
+    > div > button,
+    > div > * > svg {
+      background-color: lightgoldenrodyellow;
+      font-weight: 400;
+    }
   }
 
-  &.closed {
+  &.is_disabled:not(.onroute) {
     cursor: not-allowed;
     opacity: 0.3;
 
-    > * {
+    & > * {
       opacity: 0.8;
     }
+  }
+}
+
+/* SaaS Tenants Component */
+.page.saas-tenants {
+  max-width: 550px;
+  background-color: white;
+
+  .header {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.table-header.saas-tenant,
+.table-row.saas-tenant {
+  grid-template-columns: minmax(100px, 1fr) 3fr 60px minmax(80px, 1fr);
+
+  > .disabled {
+    text-align: center;
   }
 }
 
@@ -1041,24 +1061,22 @@ body {
 }
 
 @media (max-width: 900px) {
+  .table-row {
+    border: 1px solid #d3d3d3;
+    border-radius: 0.5rem;
+
+    &.activity .actions {
+      gap: 1px;
+    }
+  }
+
   .card.apartment {
     grid-template-columns: repeat(2, 1fr);
     border: 1px solid lightgray;
     border-radius: 0.5rem;
-  }
 
-  .table-row {
-    border: 1px solid #d3d3d3;
-    border-radius: 0.5rem;
-  }
-
-  .table-row.activity {
-    > div {
-      position: relative;
-    }
-
-    .actions {
-      gap: 1px;
+    > .actions {
+      padding: 0.5rem;
     }
   }
 
@@ -1072,12 +1090,26 @@ body {
     text-transform: capitalize;
   }
 
-  .card.apartment > .actions {
-    padding: 0.5rem;
+  .saas-tenants-container {
+    .table-header {
+      display: none !important;
+    }
+
+    .table-row > div:not(.actions)::before {
+      content: attr(data-title);
+      display: flex;
+      margin-bottom: 5px;
+      flex-direction: column;
+      font-size: smaller;
+      color: gray;
+    }
   }
 
-  .table-header {
-    display: none !important;
+  .table-row > div {
+    background-color: white;
+    padding: 5px;
+    border-radius: 5px;
+    align-content: start;
   }
 
   .apartments-list {
@@ -1094,14 +1126,6 @@ body {
       grid-template-columns: repeat(2, 1fr);
     }
   }
-
-  .apartment-selector .apartment-option {
-    font-size: 0.6rem;
-  }
-
-  .action-button {
-    scale: 0.8 !important;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1115,9 +1139,10 @@ body {
 
   .network-container {
     column-gap: 2px;
-  }
-  .network-container .right-column {
-    font-size: xx-small;
+
+    .right-column {
+      font-size: xx-small;
+    }
   }
 
   .apartments-container {
@@ -1127,13 +1152,20 @@ body {
   .table-row.document {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .table-row.activity:not(.input) {
-    grid-template-columns: minmax(80px, 2fr) 10fr 3fr minmax(60px, 1fr);
-  }
 }
 
 @media (max-width: 600px) {
+  .main-container {
+    .header-container .header-title {
+      font-size: 1.4rem;
+    }
+
+    .header,
+    .page .header.m-n-relation {
+      font-size: 1.2rem;
+    }
+  }
+
   .menu-container {
     flex-direction: column;
     .action-button {
@@ -1148,6 +1180,13 @@ body {
   .documents-container {
     > .data-container .actions {
       grid-template-columns: repeat(5, 2rem);
+    }
+  }
+
+  .saas-tenants-container {
+    & .updated-at,
+    & .saas-tenant-id {
+      font-size: x-small;
     }
   }
 }

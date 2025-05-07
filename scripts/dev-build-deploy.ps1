@@ -73,8 +73,8 @@ try {
 
             if ($commonConstants.isMainBranch) {
                 $parameterOverrides += "StageName='prod'"
-                if ($commonConstants.SaaSTenantUserId) {
-                    $parameterOverrides += " SaaSTenantUserId='$($commonConstants.SaaSTenantUserId)'"
+                if ($commonConstants.saasTenantUserId) {
+                    $parameterOverrides += " SaasTenantUserId='$($commonConstants.saasTenantUserId)'"
                 }
             }
             else {

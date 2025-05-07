@@ -87,35 +87,6 @@ crudRouter.get('/health', async (req, res) => {
   }
 });
 
-// Create a user
-crudRouter.post('/user', async (req, res) => {
-  const { userId, userName, email, phoneNumber } = req.body;
-  if (!userId || !userName || !email) return res.status(400).json({ message: 'User ID, User Name, and Email are required' });
-
-  try {
-    // Insert the user (if not already inserted). // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
-    //     const result = await dbData.upsertUser(userId, userName, email, phoneNumber, process.env.SAAS_TENANT_ID);
-    res.status(201).json({
-      // message: `User ${result.operation} successfully`,
-      // payload: result,
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ message: 'Error creating user' });
-  }
-});
-
-// Get all users
-crudRouter.get('/users', async (req, res) => {
-  try {
-    const users = await dbData.getAllUsers(process.env.SAAS_TENANT_ID);
-    res.json({ status: 'OK', users });
-  } catch (error) {
-    console.error('Error getting users:', error);
-    res.status(500).json({ status: 'ERROR', message: 'Failed to retrieve users' });
-  }
-});
-
 // Create an apartment
 crudRouter.post('/apartment', async (req, res) => {
   const { apartmentId, initialBalance = 0, userId } = req.body;
@@ -158,7 +129,7 @@ crudRouter.get('/apartments/user', async (req, res) => {
   const { userId } = req.query;
 
   try {
-    const apartments = await dbData.getApartmentsOfLandlord(userId, process.env.SAAS_TENANT_ID);
+    const apartments = await dbData.cache.getApartmentsOfLandlord(userId, process.env.SAAS_TENANT_ID);
     res.json({
       message: 'Apartments retrieved successfully',
       payload: apartments,

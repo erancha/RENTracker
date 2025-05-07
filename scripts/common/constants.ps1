@@ -11,13 +11,13 @@ try {
         $stackName = $appName
 
         # Get tenant information from environment or use defaults
-        $SaaSTenantUserId = $env:SAAS_TENANT_USER_ID
-        $SaaSTenantShortName = $env:SAAS_TENANT_SHORT_NAME
-        if ($SaaSTenantUserId) {
-            if (-not $SaaSTenantShortName) {
-                $SaaSTenantShortName = $SaaSTenantUserId
+        $saasTenantUserId = $env:SAAS_TENANT_USER_ID
+        $saasTenantShortName = $env:SAAS_TENANT_SHORT_NAME
+        if ($saasTenantUserId) {
+            if (-not $saasTenantShortName) {
+                $saasTenantShortName = $saasTenantUserId
             }
-            $stackName = "$stackName-$SaaSTenantShortName"
+            $stackName = "$stackName-$saasTenantShortName"
         }
     }
     else {
@@ -30,8 +30,7 @@ try {
         isMainBranch          = $isMainBranch
         stackName             = $stackName
         stackNameMain         = $stackNameMain
-        SaaSTenantUserId      = $SaaSTenantUserId
-        SaaSTenantShortName   = $SaaSTenantShortName
+        saasTenantUserId      = $saasTenantUserId
         configFilePath        = "${appFolder}/frontend/src/appConfig.json"
         lastDevConfigFilePath = "${appFolder}/frontend/appConfigDev.json"
         region                = "eu-central-1" # aws configure get region

@@ -13,25 +13,25 @@ import {
   ICreateApartmentActivityParams,
   IClearApartmentActivityAction,
 } from './types';
-import { CommandType } from '../crud/types';
+import { CommandSubject } from '../crud/types';
 import { prepareCreateCommandAction, prepareReadCommandAction, prepareDeleteCommandAction } from '../crud/actions';
 
 // CRUD operations
 export const prepareCreateApartmentActivityCommandAction = (activity: INewApartmentActivity) =>
   prepareCreateCommandAction({
-    type: 'apartmentActivity' as CommandType,
+    type: 'apartmentActivity' as CommandSubject,
     params: activity as ICreateApartmentActivityParams,
   });
 
 export const prepareReadApartmentActivityCommandAction = (apartment_id: string) =>
   prepareReadCommandAction({
-    type: 'apartmentActivity' as CommandType,
+    type: 'apartmentActivity' as CommandSubject,
     params: { apartment_id },
   });
 
 export const prepareDeleteApartmentActivityCommandAction = (activity_id: string) =>
   prepareDeleteCommandAction({
-    type: 'apartmentActivity' as CommandType,
+    type: 'apartmentActivity' as CommandSubject,
     params: { activity_id },
   });
 

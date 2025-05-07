@@ -1,5 +1,5 @@
 // Generic CRUD command types
-export type CommandType = 'apartments' | 'apartmentActivity' | 'analytics';
+export type CommandSubject = 'apartments' | 'apartmentActivity' | 'saasTenants' | 'analytics';
 
 // Base command interface
 export interface IBaseCommand<T = any, P = any> {
@@ -8,10 +8,10 @@ export interface IBaseCommand<T = any, P = any> {
 }
 
 // Generic CRUD commands
-export interface ICreateCommand<P = any> extends IBaseCommand<CommandType, P> {}
-export interface IReadCommand<P = any> extends IBaseCommand<CommandType, P> {}
-export interface IUpdateCommand<P = any> extends IBaseCommand<CommandType, P> {}
-export interface IDeleteCommand<P = any> extends IBaseCommand<CommandType, P> {}
+export interface ICreateCommand<P = any> extends IBaseCommand<CommandSubject, P> {}
+export interface IReadCommand<P = any> extends IBaseCommand<CommandSubject, P> {}
+export interface IUpdateCommand<P = any> extends IBaseCommand<CommandSubject, P> {}
+export interface IDeleteCommand<P = any> extends IBaseCommand<CommandSubject, P> {}
 
 // Generic action types
 export const PREPARE_CREATE_COMMAND = 'PREPARE_CREATE_COMMAND';

@@ -30,55 +30,6 @@ const healthCheck = logMiddleware('healthCheck')(async () => {
   }
 });
 
-// Internal implementation of upsertUser for PostgreSQL
-const upsertUser = logMiddleware('pg_upsertUser')(async (userId, userName, email, phoneNumber, saasTenantId) => {
-  let pgClient;
-  try {
-    pgClient = await pgPool.connect();
-    const result = await pgClient.query(
-      `WITH operation AS (
-        INSERT INTO users (user_id, user_name, email_address, phone_number, tenant_id) 
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (user_id) DO UPDATE 
-        SET user_name = $2, email_address = $3, phone_number = $4, tenant_id = $5
-        RETURNING user_id, user_name, email_address, phone_number, tenant_id,
-          (xmax = 0) as is_insert
-      )
-      SELECT *, 
-        CASE WHEN is_insert THEN 'created' ELSE 'updated' END as operation
-      FROM operation`,
-      [userId, userName, email, phoneNumber || '', saasTenantId]
-    );
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error in pg_upsertUser:', error);
-    throw error;
-  } finally {
-    if (pgClient) pgClient.release();
-  }
-});
-
-// Internal implementation of getAllUsers for PostgreSQL
-const getAllUsers = logMiddleware('pg_getAllUsers')(async (saasTenantId) => {
-  let pgClient;
-  try {
-    pgClient = await pgPool.connect();
-    const result = await pgClient.query(
-      `SELECT user_id, user_name, email_address, is_disabled, created_at
-       FROM users 
-       WHERE tenant_id = $1 
-       ORDER BY user_name`,
-      [saasTenantId]
-    );
-    return result.rows;
-  } catch (error) {
-    console.error('Error in pg_getAllUsers:', error);
-    throw error;
-  } finally {
-    if (pgClient) pgClient.release();
-  }
-});
-
 // Dispose the database client
 const disposeClient = async () => {
   await pgPool.end();
@@ -223,8 +174,6 @@ async function enqueueSavedActivity(messageBody) {
 
 module.exports = {
   healthCheck,
-  upsertUser,
-  getAllUsers,
   createApartment,
   updateApartment,
   deleteApartment,

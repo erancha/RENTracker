@@ -121,9 +121,6 @@ exports.handler = async (event) => {
     const MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS = 5000;
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
-      // Insert the user (if not already inserted). // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
-      // await dbData.upsertUser({ user_id: currentUserId, user_name: currentUserName, email: currentUserEmail, phone_number: currentUserPhoneNumber, saas_tenant_id: SAAS_TENANT_ID });
-
       // Read and send data to the frontend:
       const userType =
         currentUserId === ADMIN_USER_ID ? 'Admin' : dbData.isLandlordUser({ user_id: currentUserId, saas_tenant_id: SAAS_TENANT_ID }) ? 'Landlord' : 'Tenant';

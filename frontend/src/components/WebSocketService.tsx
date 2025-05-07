@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { IAppState } from '../redux/store/types';
-import { ICreateCommand, IReadCommand, IUpdateCommand, IDeleteCommand, CommandType } from '../redux/crud/types';
+import { ICreateCommand, IReadCommand, IUpdateCommand, IDeleteCommand, CommandSubject } from '../redux/crud/types';
 import { IApartment, IUpdateApartmentParams } from '../redux/apartments/types';
 import { IReadApartmentActivityParams } from '../redux/apartmentActivity/types';
 import { IReadAnalyticsParams } from '../redux/analytics/types';
@@ -18,12 +18,14 @@ import {
   setApartmentConfirmedByBackendAction,
 } from '../redux/apartments/actions';
 import { setApartmentActivityAction, addApartmentActivityAction, setApartmentActivityConfirmedByBackendAction } from '../redux/apartmentActivity/actions';
+import { setSaasTenantsAction, addSaasTenantAction, setSaasTenantConfirmedByBackendAction } from '../redux/saasTenants/actions';
 import appConfigData from '../appConfig.json';
 import { Network } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { IConnectionAndUsername } from 'redux/websockets/types';
 import { UserType } from '../redux/auth/types';
+import { ISaasTenant } from 'redux/saasTenants/types';
 
 class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> {
   private webSocket: WebSocket | null = null;
@@ -99,12 +101,19 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     // CRUD: Commands to Create data:
     //-----------------------------------------
     if (createCommand && createCommand !== prevProps.createCommand) {
+      const type = 'create';
       switch (createCommand.type) {
-        case 'apartments' as CommandType:
-          upload({ command: { type: 'create', params: { apartments: createCommand.params } } });
+        case 'apartments' as CommandSubject:
+          upload({ command: { type, params: { apartments: createCommand.params } } });
           break;
-        case 'apartmentActivity' as CommandType:
-          upload({ command: { type: 'create', params: { activity: createCommand.params } } });
+        case 'apartmentActivity' as CommandSubject:
+          upload({ command: { type, params: { activity: createCommand.params } } });
+          break;
+        case 'saasTenants' as CommandSubject:
+          upload({ command: { type, params: { saasTenants: createCommand.params } } });
+          break;
+        default:
+          console.warn(`Unknown create command type: ${createCommand.type}`);
           break;
       }
     }
@@ -112,14 +121,21 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     // CRUD: Commands to Read data:
     //-----------------------------------------
     if (readCommand && readCommand !== prevProps.readCommand) {
+      const type = 'read';
       switch (readCommand.type) {
-        case 'apartmentActivity' as CommandType:
+        case 'apartmentActivity' as CommandSubject:
           const activityParams = readCommand.params as IReadApartmentActivityParams;
-          upload({ command: { type: 'read', params: { activity: { apartment_id: activityParams.apartment_id } } } });
+          upload({ command: { type, params: { activity: { apartment_id: activityParams.apartment_id } } } });
           break;
         case 'analytics':
           const analyticsParams = readCommand.params as IReadAnalyticsParams;
-          upload({ command: { type: 'read', params: { menuSelectedPage: analyticsParams.menuSelectedPage } } });
+          upload({ command: { type, params: { menuSelectedPage: analyticsParams.menuSelectedPage } } });
+          break;
+        case 'saasTenants' as CommandSubject:
+          upload({ command: { type, params: { saasTenants: readCommand.params } } });
+          break;
+        default:
+          console.warn(`Unknown read command type: ${readCommand.type}`);
           break;
       }
     }
@@ -127,46 +143,35 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     // CRUD: Commands to Update data:
     //-----------------------------------------
     if (updateCommand && updateCommand !== prevProps.updateCommand) {
+      const type = 'update';
       switch (updateCommand.type) {
-        case 'apartments' as CommandType: {
+        case 'apartments' as CommandSubject:
           const updateApartmentParams = updateCommand.params as IUpdateApartmentParams;
-          upload({
-            command: {
-              type: 'update',
-              params: { apartments: updateApartmentParams },
-            },
-          });
+          upload({ command: { type, params: { apartments: updateApartmentParams } } });
           break;
-        }
-        default: {
+        case 'saasTenants' as CommandSubject:
+          upload({ command: { type, params: { saasTenants: updateCommand.params } } });
+          break;
+        default:
           console.warn(`Unknown update command type: ${updateCommand.type}`);
           break;
-        }
       }
     }
 
     // CRUD: Commands to Delete data:
     //-----------------------------------------
     if (deleteCommand && deleteCommand !== prevProps.deleteCommand) {
+      const type = 'delete';
       switch (deleteCommand.type) {
-        case 'apartments' as CommandType: {
-          upload({
-            command: {
-              type: 'delete',
-              params: { apartments: { apartment_id: deleteCommand.params.apartment_id } },
-            },
-          });
+        case 'apartments' as CommandSubject:
+          upload({ command: { type, params: { apartments: { apartment_id: deleteCommand.params.apartment_id } } } });
           break;
-        }
-        case 'apartmentActivity' as CommandType: {
-          upload({
-            command: {
-              type: 'delete',
-              params: { activity: { activity_id: deleteCommand.params.activity_id } },
-            },
-          });
+        case 'apartmentActivity' as CommandSubject:
+          upload({ command: { type, params: { activity: { activity_id: deleteCommand.params.activity_id } } } });
           break;
-        }
+        case 'saasTenants' as CommandSubject:
+          upload({ command: { type, params: { saasTenants: deleteCommand.params } } });
+          break;
         default: {
           console.warn(`Unknown delete command type: ${deleteCommand.type}`);
           break;
@@ -319,6 +324,11 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       const isNewActivity = !this.props.activity.find((activity) => activity.activity_id === newReceivedActivity.activity_id);
       if (isNewActivity) this.props.addApartmentActivityAction(newReceivedActivity);
       else this.props.setApartmentActivityConfirmedByBackendAction(newReceivedActivity.apartment_id, newReceivedActivity.activity_id);
+    } else if (dataCreated.saasTenants) {
+      const newReceivedSaasTenant = dataCreated.saasTenants;
+      const isNewnewSaasTenant = !this.props.saasTenants.find((saasTenant) => saasTenant.saas_tenant_id === newReceivedSaasTenant.saas_tenant_id);
+      if (isNewnewSaasTenant) this.props.addSaasTenantAction(newReceivedSaasTenant);
+      else this.props.setSaasTenantConfirmedByBackendAction(newReceivedSaasTenant.saas_tenant_id, newReceivedSaasTenant.updated_at);
     }
   }
 
@@ -326,6 +336,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
   private handleDataRead(dataRead: any) {
     if (dataRead.apartments) this.props.setApartmentsAction(dataRead.apartments);
     if (dataRead.activity?.length > 0) this.props.setApartmentActivityAction(dataRead.activity[0].apartment_id, dataRead.activity);
+    if (dataRead.saasTenants?.length > 0) this.props.setSaasTenantsAction(dataRead.saasTenants);
   }
 
   // CRUD: event containing Updated data
@@ -334,6 +345,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       this.props.setApartmentStateAction(dataUpdated.apartments);
       this.props.setApartmentConfirmedByBackendAction(dataUpdated.apartments.apartment_id, dataUpdated.apartments.updated_at as string);
       if (!dataUpdated.apartments.is_disabled) this.props.setCurrentApartmentAction(dataUpdated.apartments.apartment_id);
+    } else if (dataUpdated.saasTenants) {
+      this.props.setSaasTenantConfirmedByBackendAction(dataUpdated.saasTenants.saas_tenant_id, dataUpdated.saasTenants.updated_at as string);
     }
   }
 
@@ -343,7 +356,9 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       this.props.deleteApartmentAction(dataDeleted.apartments.apartment_id);
       toast(`Apartment ${dataDeleted.apartments.apartment_id} was deleted.`);
     } else if (dataDeleted.activity) {
-      // console.log(dataDeleted.activity); TODO
+      // console.log(dataDeleted.activity); //TODO
+    } else if (dataDeleted.saasTenants) {
+      // console.log(dataDeleted.saasTenants); //TODO
     }
   }
 
@@ -391,6 +406,10 @@ interface IWebSocketProps {
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   currentApartmentId: string | null;
   toggleMenuAction: typeof toggleMenuAction;
+  saasTenants: ISaasTenant[];
+  setSaasTenantsAction: typeof setSaasTenantsAction;
+  addSaasTenantAction: typeof addSaasTenantAction;
+  setSaasTenantConfirmedByBackendAction: typeof setSaasTenantConfirmedByBackendAction;
 }
 
 interface WebSocketState {
@@ -416,6 +435,7 @@ const mapStateToProps = (state: IAppState) => ({
   currentApartmentId: state.apartments.currentApartmentId,
   activity: state.apartmentActivity.activity[state.apartments.currentApartmentId as string],
   menuSelectedPage: state.menu.menuSelectedPage, // TODO
+  saasTenants: state.saasTenants.saasTenants,
 });
 
 // Map Redux actions to component props
@@ -440,6 +460,9 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       loginWithGoogleAction,
       setMenuSelectedPageAction,
       toggleMenuAction,
+      setSaasTenantsAction,
+      addSaasTenantAction,
+      setSaasTenantConfirmedByBackendAction,
     },
     dispatch
   );

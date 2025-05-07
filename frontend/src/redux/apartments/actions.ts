@@ -1,7 +1,7 @@
 import { Dispatch } from 'redux';
 import { IApartment } from './types';
-import { CommandType } from '../crud/types';
-import { prepareCreateCommandAction, prepareReadCommandAction, prepareUpdateCommandAction, prepareDeleteCommandAction } from '../crud/actions';
+import { CommandSubject } from '../crud/types';
+import { prepareCreateCommandAction, /*prepareReadCommandAction,*/ prepareUpdateCommandAction, prepareDeleteCommandAction } from '../crud/actions';
 import {
   SET_NO_APARTMENTS_NOTIFIED,
   ADD_APARTMENT,
@@ -36,7 +36,7 @@ export const setNoApartmentsNotifiedAction = (notified: boolean): ISetNoApartmen
 // Apartment-specific action creators
 export const prepareCreateApartmentCommandAction = (apartment_id: string, address: string, unit_number: string, rooms_count: number, rent_amount: number) =>
   prepareCreateCommandAction({
-    type: 'apartments' as CommandType,
+    type: 'apartments' as CommandSubject,
     params: {
       apartment_id,
       address,
@@ -51,11 +51,11 @@ export const addApartmentAction = (apartment: IApartment): IAddApartmentAction =
   payload: apartment,
 });
 
-export const prepareReadApartmentsCommandAction = () =>
-  prepareReadCommandAction({
-    type: 'apartments' as CommandType,
-    params: {},
-  });
+// export const prepareReadApartmentsCommandAction = () =>
+//   prepareReadCommandAction({
+//     type: 'apartments' as CommandSubject,
+//     params: {},
+//   });
 
 export const setApartmentsAction = (apartments: IApartment[]): ISetApartmentsAction => ({
   type: SET_APARTMENTS,
@@ -78,7 +78,7 @@ export const setApartmentConfirmedByBackendAction = (apartment_id: string, updat
 
 export const prepareUpdateApartmentCommandAction = (apartment_id: string, updates: Partial<IApartment>) =>
   prepareUpdateCommandAction({
-    type: 'apartments' as CommandType,
+    type: 'apartments' as CommandSubject,
     params: {
       apartment_id: apartment_id,
       ...updates,
@@ -92,7 +92,7 @@ export const setApartmentStateAction = (update: Partial<IApartment> & { apartmen
 
 export const prepareDeleteApartmentCommandAction = (apartment_id: string) =>
   prepareDeleteCommandAction({
-    type: 'apartments' as CommandType,
+    type: 'apartments' as CommandSubject,
     params: { apartment_id: apartment_id },
   });
 

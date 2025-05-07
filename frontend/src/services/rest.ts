@@ -1,4 +1,3 @@
-import { IUser } from 'redux/users/types';
 import { IDocument } from '../redux/documents/types';
 import appConfigData from '../appConfig.json';
 
@@ -26,29 +25,6 @@ const makeJsonRequest = async <T>(url: string, method: string, JWT: string, body
 
   const data: IApiResponse<T> = await response.json();
   return data.payload;
-};
-
-/**
- * GET /users
- * Returns all users for the tenant
- *
- * Response:
- * {
- *   message: string,
- *   payload: {
- *     users: [{
- *       user_id: string,
- *       user_name: string,
- *       email_address: string,
- *       is_disabled: boolean,
- *       created_at: string
- *     }]
- *   }
- * }
- */
-export const getAllUsers = async (JWT: string): Promise<IUser[]> => {
-  const url = `${appConfigData.REST_API_URL}/users`;
-  return makeJsonRequest(url, 'GET', JWT);
 };
 
 /**

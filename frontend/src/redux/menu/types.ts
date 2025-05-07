@@ -6,5 +6,5 @@ export interface IMenuState {
 }
 
 export const DOCUMENTS_VIEW = 'Documents';
-export const USERS_VIEW = 'Users';
+export const SAAS_TENANTS_VIEW = 'SaaSTenants';
 export const ANALYTICS_VIEW = 'Analytics';

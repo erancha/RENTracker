@@ -120,11 +120,12 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
               filteredApartments.map((apartment) => (
                 <div
                   key={apartment.apartment_id}
-                  className={`card apartment${apartment.onroute ? ' onroute' : ''}${!apartment.is_disabled ? ' open' : ' closed'}${
+                  className={`card apartment${apartment.onroute ? ' onroute' : ''}${!apartment.is_disabled ? ' open' : ' is_disabled'}${
                     userType === UserType.Landlord ? ' isLandlord' : ''
                   }${apartment.apartment_id === currentApartmentId ? ' current' : ''}`}
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
-                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}>
+                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
+                >
                   <div className='apartment-id' title='apartment-id'>
                     {apartment.apartment_id}
                   </div>
@@ -190,7 +191,8 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     <button
       onClick={() => this.handleToggleDocumentsActivity(apartment_id)}
       className='action-button documents activity'
-      title={`Toggle from Apartment ${this.state.showDocuments ? 'Rental Agreements to Activity' : 'Activity to Rental Agreements'}`}>
+      title={`Toggle from Apartment ${this.state.showDocuments ? 'Rental Agreements to Activity' : 'Activity to Rental Agreements'}`}
+    >
       {this.state.showDocuments ? <FileText /> : <List />}
     </button>
   );

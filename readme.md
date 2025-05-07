@@ -17,24 +17,23 @@ The app is available online at https://d1qes2uy1amux4.cloudfront.net
 <!-- toc -->
 
 - [High-Level Design (HLD) Document for RENTracker](#high-level-design-hld-document-for-rentracker)
-  - [Architecture](#architecture)
-    - [1. **Backend**](#1-backend)
+  * [Architecture](#architecture)
+    + [1. **Backend**](#1-backend)
       - [**API Gateway + Lambda**](#api-gateway--lambda)
       - [Data Model:](#data-model)
-        - [1. Apartments Table](#1-apartments-table)
-        - ~~[2. Landlords Table](#2-landlords-table)~~
-        - ~~[3. Tenants Table](#3-tenants-table)~~
-        - [4. Documents Table](#4-documents-table)
-        - [5. ApartmentActivity Table](#5-apartmentActivity-table)
-        - [Example of Relationships](#example-of-relationships)
+        * [1. SaaS Tenants Table](#1-saas-tenants-table)
+        * [2. Apartments Table](#2-apartments-table)
+        * [3. Documents Table](#3-documents-table)
+        * [4. Apartment Activity Table](#4-apartment-activity-table)
+        * [Example of Relationships](#example-of-relationships)
       - [**SQS**](#sqs)
-    - [2. **Frontend**](#2-frontend)
-    - [3. **Security** Considerations](#3-security-considerations)
-    - [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
-    - [5. Flexible **Deployment**](#5-flexible-deployment)
-    - [6. **Monitoring** and **Logging**](#6-monitoring-and-logging)
+    + [2. **Frontend**](#2-frontend)
+    + [3. **Security** Considerations](#3-security-considerations)
+    + [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
+    + [5. **Deployment**](#5-deployment)
+    + [6. **Monitoring and Logging**](#6-monitoring-and-logging)
       - [6.1 **AWS X-Ray**](#61-aws-x-ray)
-  - [Summary](#summary)
+  * [Summary](#summary)
 
 <!-- tocstop -->
 
@@ -55,36 +54,21 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 
 #### Data Model:
 
-##### 1. Apartments Table
+##### 1. SaaS Tenants Table
+
+- **saas_tenant_id** (Partition Key) - Identifier for SaaS multi-tenancy.
+- **is_disabled** - If disabled, the landlord account is no longer active.
+
+##### 2. Apartments Table
 
 - **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.
 - **apartment_id** (Partition Key) - Unique identifier for each apartment/unit (e.g., UUID).
-- **landlord_id** - Identifier for the landlord who owns the apartment.
 - **address** - Physical address of the apartment building/house.
 - **rooms_count** - Number of rooms in the apartment.
 - **unit_number** - Identifier for the specific unit within the building/house (e.g., "Apt 2B", "Unit 101").
 - **rent_amount** - Monthly rent amount for the apartment.
 
-~~##### 2. Landlords Table~~
-
-~~- **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.~~
-~~- **landlord_id** (Partition Key) - Unique identifier for each landlord (e.g., UUID).~~
-~~- **full_name** - Landlord's full name.~~
-~~- **email** - Landlord's email address.~~
-~~- **phone** - Landlord's phone number.~~
-
-~~##### 3. Tenants Table~~
-
-~~- **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.~~
-~~- **tenant_id** (Partition Key) - Unique identifier for each tenant (e.g., UUID).~~
-~~- **full_name** - Tenant's full name.~~
-~~- **email** - Tenant's email address.~~
-~~- **phone** - Tenant's phone number.~~
-~~- **apartment_id** - Identifier for the apartment/unit the tenant occupies (could link to a separate Apartments table).~~
-~~- **lease_start_date** - The start date of the lease agreement.~~
-~~- **lease_end_date** - The end date of the lease agreement.~~
-
-##### 4. Documents Table
+##### 3. Documents Table
 
 - **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.
 - **document_id** (Partition Key) - Unique identifier for each document (e.g., UUID).
@@ -97,7 +81,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - **created_at** - Timestamp when the document was created.
 - **updated_at** - Timestamp when the document was last modified.
 
-##### 5. Apartment Activity Table
+##### 4. Apartment Activity Table
 
 - **saas_tenant_id** (GSI Partition Key) - Identifier for SaaS multi-tenancy.
 - **activity_id** (Partition Key) - Unique identifier for each activity (e.g., UUID).

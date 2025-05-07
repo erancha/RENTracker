@@ -6,7 +6,6 @@ const { handleCommand, handleRead, determineTargetUsers, setTaskId } = require('
 const dbData = require('./layers/dbData/dbData');
 
 const STACK_NAME = process.env.STACK_NAME;
-const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
 const ENABLE_ENHANCED_LOGGING = process.env.ENABLE_ENHANCED_LOGGING;
 
@@ -39,8 +38,6 @@ const onWebsocketConnect = async (socket, request) => {
   const currentUserName = decodedJwt.name;
   const currentUserEmail = decodedJwt.email;
   const currentUserPhoneNumber = decodedJwt.phone_number;
-
-  await dbData.upsertUser(currentUserId, currentUserName, currentUserEmail, currentUserPhoneNumber, SAAS_TENANT_ID);
 
   socket.userId = currentUserId;
   userIdSocketMap.set(currentUserId, socket);

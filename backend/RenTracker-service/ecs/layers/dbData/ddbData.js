@@ -1,11 +1,10 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand, DeleteCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand, DeleteCommand, GetCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { logMiddleware, isLandlordUser } = require('./utils');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 
 const AWS_REGION = process.env.APP_AWS_REGION;
-// const LANDLORDS_TABLE_NAME = process.env.LANDLORDS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
-// const TENANTS_TABLE_NAME = process.env.TENANTS_TABLE_NAME; // LandlordsTable and TenantsTable serve no purpose in the current stack-per-landlord model ..
+const SAAS_TENANTS_TABLE_NAME = process.env.SAAS_TENANTS_TABLE_NAME;
 const APARTMENTS_TABLE_NAME = process.env.APARTMENTS_TABLE_NAME;
 const DOCUMENTS_TABLE_NAME = process.env.DOCUMENTS_TABLE_NAME;
 const ACTIVITY_TABLE_NAME = process.env.ACTIVITY_TABLE_NAME;
@@ -16,42 +15,9 @@ const ACTIVITY_TABLE_NAME = process.env.ACTIVITY_TABLE_NAME;
 const ddbClient = captureAWSv3Client(new DynamoDBClient({ region: AWS_REGION }));
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
-/**
- * Creates or updates a user in DynamoDB
- * @param {string} user_id - User's unique identifier
- * @param {string} user_name - User's display name
- * @param {string} email - User's email address
- * @param {string} phone_number - User's phone number
- * @param {string} saas_tenant_id - SaaS tenant identifier
- * @returns {Promise<Object>} Created user data with operation status
- */
-const upsertUser = logMiddleware('ddb_upsertUser')(async ({ user_id, user_name, email, phone_number, saas_tenant_id }) => {
-  // const isLandlord = isLandlordUser({ user_id, saas_tenant_id });
-  // const userItem = {
-  //   saas_tenant_id,
-  //   ...(isLandlord ? { landlord_id: user_id } : { tenant_id: user_id }),
-  //   full_name: user_name,
-  //   email,
-  //   phone_number: phone_number || '',
-  //   created_at: new Date().toISOString(),
-  //   updated_at: new Date().toISOString(),
-  // };
-  // try {
-  //   await ddbDocClient.send(
-  //     new PutCommand({
-  //       TableName: isLandlord ? LANDLORDS_TABLE_NAME : TENANTS_TABLE_NAME,
-  //       Item: userItem,
-  //     })
-  //   );
-  //   return {
-  //     ...userItem,
-  //     operation: 'created', // DynamoDB PutItem always overwrites, so we consider it a creation
-  //   };
-  // } catch (error) {
-  //   console.error('Error in ddb_upsertUser:', error);
-  //   throw error;
-  // }
-});
+// ============================================================================================
+// Apartments Management Functions
+// ============================================================================================
 
 /**
  * Creates a new apartment in DynamoDB
@@ -61,23 +27,21 @@ const upsertUser = logMiddleware('ddb_upsertUser')(async ({ user_id, user_name, 
  * @param {string} params.unit_number - Unit number within the building
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {number} params.rent_amount - Monthly rent amount
- * @param {string} params.landlord_id - ID of the landlord
  * @param {string} params.saas_tenant_id - SaaS tenant identifier
  * @returns {Promise<Object>} Created apartment data
  */
 const createApartment = logMiddleware('ddb_createApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, landlord_id, saas_tenant_id }) => {
+  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, created_at, saas_tenant_id }) => {
     try {
       const item = {
         apartment_id,
         saas_tenant_id,
-        landlord_id,
         address,
         unit_number,
         rooms_count,
         rent_amount,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at,
+        updated_at: created_at,
       };
       await ddbDocClient.send(
         new PutCommand({
@@ -103,16 +67,14 @@ const createApartment = logMiddleware('ddb_createApartment')(
  * @param {string} saas_tenant_id - SaaS tenant identifier
  * @returns {Promise<Array>} List of apartments owned by the landlord
  */
-const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(async ({ user_id, saas_tenant_id }) => {
+const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(async ({ saas_tenant_id }) => {
   try {
     const { Items } = await ddbDocClient.send(
       new QueryCommand({
         TableName: APARTMENTS_TABLE_NAME,
         IndexName: 'SaaSTenantUpdatedIndex',
         KeyConditionExpression: 'saas_tenant_id = :saas_tenant_id',
-        FilterExpression: 'landlord_id = :user_id',
         ExpressionAttributeValues: {
-          ':user_id': user_id,
           ':saas_tenant_id': saas_tenant_id,
         },
         ScanIndexForward: false, // Sort in descending order by updated_at
@@ -138,15 +100,13 @@ const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(asy
  * @returns {Promise<Object>} Updated apartment data
  */
 const updateApartment = logMiddleware('ddb_updateApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id }) => {
+  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, updated_at, saas_tenant_id }) => {
     try {
       const command = new UpdateCommand({
         TableName: APARTMENTS_TABLE_NAME,
-        Key: {
-          apartment_id,
-        },
+        Key: { apartment_id },
         UpdateExpression:
-          'SET address = :address, unit_number = :unit_number, rooms_count = :rooms_count, rent_amount = :rent_amount, is_disabled = :is_disabled, updated_at = :now',
+          'SET address = :address, unit_number = :unit_number, rooms_count = :rooms_count, rent_amount = :rent_amount, is_disabled = :is_disabled, updated_at = :updated_at',
         ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
         ExpressionAttributeValues: {
           ':address': address,
@@ -154,7 +114,7 @@ const updateApartment = logMiddleware('ddb_updateApartment')(
           ':rooms_count': rooms_count,
           ':rent_amount': rent_amount,
           ':is_disabled': is_disabled,
-          ':now': new Date().toISOString(),
+          ':updated_at': updated_at,
           ':saas_tenant_id': saas_tenant_id,
         },
         ReturnValues: 'ALL_NEW',
@@ -190,13 +150,16 @@ const deleteApartment = logMiddleware('ddb_deleteApartment')(async ({ apartment_
 
     return {
       apartment_id: response.Attributes.apartment_id,
-      landlord_id: response.Attributes.landlord_id,
     };
   } catch (error) {
     console.error('Error in ddb_deleteApartment:', error);
     throw error;
   }
 });
+
+// ============================================================================================
+// Documents Management Functions
+// ============================================================================================
 
 /**
  * Create a new document in DynamoDB
@@ -207,29 +170,31 @@ const deleteApartment = logMiddleware('ddb_deleteApartment')(async ({ apartment_
  * @param {string} params.saas_tenant_id - SaaS tenant ID
  * @returns {Promise<Object>} Created document
  */
-const createDocument = logMiddleware('ddb_createDocument')(async ({ document_id, apartment_id, template_name, template_fields, saas_tenant_id }) => {
-  try {
-    const item = {
-      document_id,
-      apartment_id,
-      template_name,
-      template_fields,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      saas_tenant_id,
-    };
-    await ddbDocClient.send(
-      new PutCommand({
-        TableName: DOCUMENTS_TABLE_NAME,
-        Item: item,
-      })
-    );
-    return item;
-  } catch (error) {
-    console.error('Error in ddb_createDocument:', error);
-    throw error;
+const createDocument = logMiddleware('ddb_createDocument')(
+  async ({ document_id, apartment_id, template_name, template_fields, created_at, saas_tenant_id }) => {
+    try {
+      const item = {
+        document_id,
+        apartment_id,
+        template_name,
+        template_fields,
+        created_at,
+        updated_at: created_at,
+        saas_tenant_id,
+      };
+      await ddbDocClient.send(
+        new PutCommand({
+          TableName: DOCUMENTS_TABLE_NAME,
+          Item: item,
+        })
+      );
+      return item;
+    } catch (error) {
+      console.error('Error in ddb_createDocument:', error);
+      throw error;
+    }
   }
-});
+);
 
 /**
  * Get a document by ID from DynamoDB
@@ -322,13 +287,13 @@ const getTenantDocuments = logMiddleware('ddb_getTenantDocuments')(async ({ tena
  * @param {string} [params.tenant_user_id] - ID of the tenant that resides in the property
  * @returns {Promise<Object>} Updated document
  */
-const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
+const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, saas_tenant_id, updated_at, tenant_user_id }) => {
   try {
     // Dynamically build UpdateExpression and ExpressionAttributeValues
-    let updateExpr = 'SET template_fields = :fields, updated_at = :now';
+    let updateExpr = 'SET template_fields = :fields, updated_at = :updated_at';
     const exprAttrValues = {
       ':fields': template_fields,
-      ':now': new Date().toISOString(),
+      ':updated_at': updated_at,
       ':saas_tenant_id': saas_tenant_id,
     };
     if (tenant_user_id) {
@@ -338,9 +303,7 @@ const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id,
     const { Attributes } = await ddbDocClient.send(
       new UpdateCommand({
         TableName: DOCUMENTS_TABLE_NAME,
-        Key: {
-          document_id,
-        },
+        Key: { document_id },
         UpdateExpression: updateExpr,
         ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
         ExpressionAttributeValues: exprAttrValues,
@@ -379,6 +342,10 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
     throw error;
   }
 });
+
+// ============================================================================================
+// Apartment activity Management Functions
+// ============================================================================================
 
 /**
  * Creates a new activity item of an apartment in DynamoDB
@@ -475,8 +442,114 @@ const deleteApartmentActivity = logMiddleware('ddb_deleteApartmentActivity')(asy
   }
 });
 
+// ============================================================================================
+// SaaS Tenant Management Functions
+// ============================================================================================
+
+/**
+ * Creates a new SaaS tenant in DynamoDB
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - Unique identifier for the tenant
+ * @param {boolean} params.is_disabled - Whether the tenant is disabled
+ * @param {string} params.created_at - ISO timestamp of tenant creation
+ * @returns {Promise<Object>} Created tenant data
+ */
+const createSaasTenant = logMiddleware('ddb_createSaasTenant')(async ({ saas_tenant_id, is_disabled, created_at }) => {
+  try {
+    const item = {
+      saas_tenant_id,
+      is_disabled,
+      created_at,
+      updated_at: created_at,
+    };
+
+    await ddbDocClient.send(
+      new PutCommand({
+        TableName: SAAS_TENANTS_TABLE_NAME,
+        Item: item,
+      })
+    );
+
+    return item;
+  } catch (error) {
+    console.error('Error in ddb_createSaasTenant:', error);
+    throw error;
+  }
+});
+
+/**
+ * Updates a SaaS tenant in DynamoDB
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - ID of the tenant to update
+ * @param {boolean} params.is_disabled - New disabled status
+ * @returns {Promise<Object>} Updated tenant data
+ */
+const updateSaasTenant = logMiddleware('ddb_updateSaasTenant')(async ({ saas_tenant_id, is_disabled, updated_at }) => {
+  try {
+    const command = new UpdateCommand({
+      TableName: SAAS_TENANTS_TABLE_NAME,
+      Key: { saas_tenant_id },
+      UpdateExpression: 'SET is_disabled = :is_disabled, updated_at = :updated_at',
+      ExpressionAttributeValues: {
+        ':is_disabled': is_disabled,
+        ':updated_at': updated_at,
+      },
+      ReturnValues: 'ALL_NEW',
+    });
+
+    const response = await ddbDocClient.send(command);
+    if (!response.Attributes) throw new Error('Failed to update tenant');
+
+    return response.Attributes;
+  } catch (error) {
+    console.error('Error in ddb_updateSaasTenant:', error);
+    throw error;
+  }
+});
+
+/**
+ * Deletes a SaaS tenant from DynamoDB
+ * @param {Object} params
+ * @param {string} params.saas_tenant_id - ID of the tenant to delete
+ * @returns {Promise<Object>} Deleted tenant data
+ */
+const deleteSaasTenant = logMiddleware('ddb_deleteSaasTenant')(async ({ saas_tenant_id }) => {
+  try {
+    const command = new DeleteCommand({
+      TableName: SAAS_TENANTS_TABLE_NAME,
+      Key: { saas_tenant_id },
+      ReturnValues: 'ALL_OLD',
+    });
+
+    const response = await ddbDocClient.send(command);
+    if (!response.Attributes) throw new Error('Failed to delete tenant');
+
+    return response.Attributes;
+  } catch (error) {
+    console.error('Error in ddb_deleteSaasTenant:', error);
+    throw error;
+  }
+});
+
+/**
+ * Gets all SaaS tenants from DynamoDB
+ * @returns {Promise<Array>} List of tenants
+ */
+const getSaasTenants = logMiddleware('ddb_getSaasTenants')(async () => {
+  try {
+    const { Items } = await ddbDocClient.send(
+      new ScanCommand({
+        TableName: SAAS_TENANTS_TABLE_NAME,
+      })
+    );
+    return (Items || []).sort((a, b) => b.updated_at.localeCompare(a.updated_at)); // Sort by updated_at desc
+  } catch (error) {
+    console.error('Error in ddb_getSaasTenants:', error);
+    throw error;
+  }
+});
+
 module.exports = {
-  upsertUser,
   getApartmentsOfLandlord,
   createApartment,
   updateApartment,
@@ -490,4 +563,8 @@ module.exports = {
   createApartmentActivity,
   getApartmentActivity,
   deleteApartmentActivity,
+  createSaasTenant,
+  updateSaasTenant,
+  deleteSaasTenant,
+  getSaasTenants,
 };

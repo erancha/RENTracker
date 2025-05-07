@@ -48,7 +48,7 @@ export const apartmentsReducer = (state: IApartmentsState = initialState.apartme
       };
 
     case SET_APARTMENT_CONFIRMED_BY_BACKEND:
-      // Update apartment confirmation status
+      // Set apartment as no longer on route
       return {
         ...state,
         apartments: state.apartments.map((apartment) =>

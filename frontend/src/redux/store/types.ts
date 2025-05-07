@@ -9,7 +9,7 @@ import { ICrudState } from '../crud/types';
 import { IApartmentsState } from '../apartments/types';
 import { IApartmentActivityState } from '../apartmentActivity/types';
 import { IDocumentsState } from '../documents/types';
-import { IUsersState } from '../users/types';
+import { ISaasTenantsState } from '../saasTenants/types';
 
 /**
  * The root state type that combines all feature states.
@@ -23,5 +23,5 @@ export interface IAppState {
   apartments: IApartmentsState;
   apartmentActivity: IApartmentActivityState;
   documents: IDocumentsState;
-  users: IUsersState;
+  saasTenants: ISaasTenantsState;
 }

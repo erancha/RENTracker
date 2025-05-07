@@ -5,8 +5,8 @@ import { websocketsReducer } from '../websockets/reducer';
 import { crudReducer } from '../crud/reducer';
 import { apartmentsReducer } from '../apartments/reducer';
 import { apartmentActivityReducer } from '../apartmentActivity/reducer';
-import { usersReducer } from '../users/reducer';
 import documentsReducer from '../documents/slice';
+import { saasTenantsReducer } from '../saasTenants/reducer';
 
 const rootReducer = combineReducers({
   menu: mnuReducer,
@@ -15,8 +15,8 @@ const rootReducer = combineReducers({
   crud: crudReducer,
   apartments: apartmentsReducer,
   apartmentActivity: apartmentActivityReducer,
-  users: usersReducer,
   documents: documentsReducer,
+  saasTenants: saasTenantsReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
