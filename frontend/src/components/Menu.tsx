@@ -113,47 +113,29 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                 </Typography>
 
                 <hr />
+                <MenuItem
+                  onClick={() => {
+                    this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
+                    this.handleMenuClose();
+                  }}
+                >
+                  <ListItemIcon>
+                    <UserCircle />
+                  </ListItemIcon>
+                  SaaS Tenants
+                </MenuItem>
                 {userType === UserType.Admin && (
-                  <>
-                    <MenuItem
-                      onClick={() => {
-                        this.props.setMenuSelectedPageAction(this.props.menuSelectedPage ? null : ANALYTICS_VIEW);
-                        this.handleMenuClose();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <ChartNoAxesCombined />
-                      </ListItemIcon>
-                      Apartments Analytics
-                    </MenuItem>
-
-                    <MenuItem
-                      onClick={() => {
-                        this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
-                        this.handleMenuClose();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <UserCircle />
-                      </ListItemIcon>
-                      SaaS Tenants
-                    </MenuItem>
-                  </>
-                  // ) : (TODO: Evaluate the need for this view
-                  //   userType === UserType.Landlord && (
-                  //     <MenuItem
-                  //       onClick={() => {
-                  //         this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
-                  //         this.handleMenuClose();
-                  //       }}
-                  //     >
-                  //       <ListItemIcon>
-                  //         <ChartNoAxesCombined />
-                  //       </ListItemIcon>
-                  //       Rental Agreements
-                  //     </MenuItem>
-                  //   )
-                  //
+                  <MenuItem
+                    onClick={() => {
+                      this.props.setMenuSelectedPageAction(this.props.menuSelectedPage ? null : ANALYTICS_VIEW);
+                      this.handleMenuClose();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <ChartNoAxesCombined />
+                    </ListItemIcon>
+                    Apartments Analytics
+                  </MenuItem>
                 )}
               </>
             )}

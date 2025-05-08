@@ -411,11 +411,11 @@ body {
   margin-top: 1rem;
   display: grid;
   grid-template-columns: 2fr 1fr;
-  border: 4px solid darkslateblue;
   margin: 1rem;
 
   > div *:not(span):not(svg):not(label):not([type='checkbox']):not(.action-button) {
-    border-radius: 15px;
+    border: 1px solid gray;
+    border-radius: 10px;
     height: 1.5rem;
     padding: 0.2rem 0.4rem;
   }
@@ -452,11 +452,6 @@ body {
   color: darkblue;
   font-weight: 500;
 
-  &.current {
-    background-color: #e3f2fd;
-    border-left: 4px solid #1976d2;
-  }
-
   > .apartment-id {
     font-size: 0.6rem;
     background-color: whitesmoke;
@@ -479,7 +474,6 @@ body {
   }
 
   &.current {
-    background-color: #e3f2fd;
     border-left: 4px solid #1976d2;
 
     & .actions > .documents.activity {
@@ -518,12 +512,14 @@ body {
 .table-row {
   gap: 2px;
   padding: 2px;
+  align-items: center;
   color: darkblue;
   font-weight: 500;
 
   > * {
     padding: 0;
     background-color: initial;
+    height: 100%;
   }
 
   > div {
@@ -1025,7 +1021,6 @@ body {
 
 /* SaaS Tenants Component */
 .page.saas-tenants {
-  max-width: 550px;
   background-color: white;
 
   .header {
@@ -1035,7 +1030,14 @@ body {
 
 .table-header.saas-tenant,
 .table-row.saas-tenant {
-  grid-template-columns: minmax(100px, 1fr) 3fr 60px minmax(80px, 1fr);
+  grid-template-columns:
+    minmax(100px, 1fr) minmax(80px, 5fr) minmax(80px, 5fr) minmax(80px, 3fr)
+    minmax(100px, 3fr) minmax(80px, 3fr) minmax(120px, 5fr) minmax(120px, 1fr);
+
+  .actions {
+    grid-template-columns: repeat(3, 2rem);
+    align-content: center;
+  }
 
   > .disabled {
     text-align: center;
@@ -1055,6 +1057,26 @@ body {
       &,
       & > span {
         font-size: 1.1rem;
+      }
+    }
+  }
+
+  .saas-tenants-container {
+    .table-header {
+      display: none !important;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+
+      > div:not(.actions)::before {
+        content: attr(data-title);
+        display: flex;
+        margin-bottom: 5px;
+        flex-direction: column;
+        font-size: smaller;
+        color: gray;
       }
     }
   }
@@ -1090,26 +1112,10 @@ body {
     text-transform: capitalize;
   }
 
-  .saas-tenants-container {
-    .table-header {
-      display: none !important;
-    }
-
-    .table-row > div:not(.actions)::before {
-      content: attr(data-title);
-      display: flex;
-      margin-bottom: 5px;
-      flex-direction: column;
-      font-size: smaller;
-      color: gray;
-    }
-  }
-
   .table-row > div {
     background-color: white;
     padding: 5px;
     border-radius: 5px;
-    align-content: start;
   }
 
   .apartments-list {
@@ -1187,6 +1193,11 @@ body {
     & .updated-at,
     & .saas-tenant-id {
       font-size: x-small;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 }

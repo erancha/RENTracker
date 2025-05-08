@@ -1,6 +1,6 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand, UpdateCommand, DeleteCommand, GetCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
-const { logMiddleware, isLandlordUser } = require('./utils');
+const { logMiddleware } = require('./utils');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 
 const AWS_REGION = process.env.APP_AWS_REGION;
@@ -199,21 +199,17 @@ const createDocument = logMiddleware('ddb_createDocument')(
 /**
  * Get a document by ID from DynamoDB
  * @param {string} params.document_id - UUID of the document
- * @param {string} params.saas_tenant_id - SaaS tenant ID
+ * @param {string} params.senderUserId - The id of the user attempting the update.
  * @returns {Promise<Object>} Document data
  */
-const getDocument = logMiddleware('ddb_getDocument')(async ({ document_id, saas_tenant_id }) => {
+const getDocument = logMiddleware('ddb_getDocument')(async ({ document_id, senderUserId }) => {
   try {
     const { Item } = await ddbDocClient.send(
       new GetCommand({
         TableName: DOCUMENTS_TABLE_NAME,
-        Key: {
-          document_id,
-        },
-        ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
-        ExpressionAttributeValues: {
-          ':saas_tenant_id': saas_tenant_id,
-        },
+        Key: { document_id },
+        ConditionExpression: '(saas_tenant_id = :senderUserId) OR (attribute_not_exists(tenant_user_id)) OR (tenant_user_id = :senderUserId)', // either same SaaS tenant (the landlord), or before first-time apartment tenant, or same apartment tenant
+        ExpressionAttributeValues: { ':senderUserId': senderUserId },
       })
     );
     return Item;
@@ -254,21 +250,16 @@ const getApartmentDocuments = logMiddleware('ddb_getApartmentDocuments')(async (
 /**
  * Get all documents for a tenant from DynamoDB
  * @param {string} tenant_user_id - ID of the tenant to fetch documents for
- * @param {string} saas_tenant_id - SaaS tenant ID
  * @returns {Promise<Array>} List of documents sorted by updated_at in descending order
  */
-const getTenantDocuments = logMiddleware('ddb_getTenantDocuments')(async ({ tenant_user_id, saas_tenant_id }) => {
+const getTenantDocuments = logMiddleware('ddb_getTenantDocuments')(async ({ tenant_user_id }) => {
   try {
     const { Items } = await ddbDocClient.send(
       new QueryCommand({
         TableName: DOCUMENTS_TABLE_NAME,
         IndexName: 'TenantUpdatedIndex',
         KeyConditionExpression: 'tenant_user_id = :tenant_user_id',
-        ExpressionAttributeValues: {
-          ':tenant_user_id': tenant_user_id,
-          ':saas_tenant_id': saas_tenant_id,
-        },
-        FilterExpression: 'saas_tenant_id = :saas_tenant_id',
+        ExpressionAttributeValues: { ':tenant_user_id': tenant_user_id },
         ScanIndexForward: false, // Sort in descending order by updated_at
       })
     );
@@ -283,29 +274,35 @@ const getTenantDocuments = logMiddleware('ddb_getTenantDocuments')(async ({ tena
  * Updates a document with new template fields and optionally assigns a tenant user id
  * @param {string} params.document_id - Document ID to update
  * @param {Object} params.template_fields - Updated template fields
- * @param {string} params.saas_tenant_id - SaaS tenant ID
+ * @param {string} params.senderUserId - The id of the user attempting the update.
  * @param {string} [params.tenant_user_id] - ID of the tenant that resides in the property
  * @returns {Promise<Object>} Updated document
  */
-const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, saas_tenant_id, updated_at, tenant_user_id }) => {
+const updateDocument = logMiddleware('ddb_updateDocument')(async ({ document_id, template_fields, updated_at, senderUserId, tenantUserId }) => {
   try {
-    // Dynamically build UpdateExpression and ExpressionAttributeValues
+    // Dynamically build expressions and values
     let updateExpr = 'SET template_fields = :fields, updated_at = :updated_at';
     const exprAttrValues = {
       ':fields': template_fields,
       ':updated_at': updated_at,
-      ':saas_tenant_id': saas_tenant_id,
+      ':senderUserId': senderUserId,
     };
-    if (tenant_user_id) {
-      updateExpr += ', tenant_user_id = :tenant_user_id';
-      exprAttrValues[':tenant_user_id'] = tenant_user_id;
+
+    // Base condition: user must be the landlord or document must not be assigned to any tenant yet
+    let conditionExpr = '(saas_tenant_id = :senderUserId) OR (attribute_not_exists(tenant_user_id))';
+
+    if (tenantUserId) {
+      updateExpr += ', tenant_user_id = :tenantUserId';
+      exprAttrValues[':tenantUserId'] = tenantUserId;
+      conditionExpr += ' OR (tenant_user_id = :tenantUserId)';
     }
+
     const { Attributes } = await ddbDocClient.send(
       new UpdateCommand({
         TableName: DOCUMENTS_TABLE_NAME,
         Key: { document_id },
         UpdateExpression: updateExpr,
-        ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
+        ConditionExpression: conditionExpr, // either same SaaS tenant (landlord), or before first tenant assignment, or same apartment tenant
         ExpressionAttributeValues: exprAttrValues,
         ReturnValues: 'ALL_NEW',
       })
@@ -454,22 +451,10 @@ const deleteApartmentActivity = logMiddleware('ddb_deleteApartmentActivity')(asy
  * @param {string} params.created_at - ISO timestamp of tenant creation
  * @returns {Promise<Object>} Created tenant data
  */
-const createSaasTenant = logMiddleware('ddb_createSaasTenant')(async ({ saas_tenant_id, is_disabled, created_at }) => {
+const createSaasTenant = logMiddleware('ddb_createSaasTenant')(async ({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id, created_at }) => {
   try {
-    const item = {
-      saas_tenant_id,
-      is_disabled,
-      created_at,
-      updated_at: created_at,
-    };
-
-    await ddbDocClient.send(
-      new PutCommand({
-        TableName: SAAS_TENANTS_TABLE_NAME,
-        Item: item,
-      })
-    );
-
+    const item = { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id, created_at, updated_at: created_at };
+    await ddbDocClient.send(new PutCommand({ TableName: SAAS_TENANTS_TABLE_NAME, Item: item }));
     return item;
   } catch (error) {
     console.error('Error in ddb_createSaasTenant:', error);
@@ -484,14 +469,23 @@ const createSaasTenant = logMiddleware('ddb_createSaasTenant')(async ({ saas_ten
  * @param {boolean} params.is_disabled - New disabled status
  * @returns {Promise<Object>} Updated tenant data
  */
-const updateSaasTenant = logMiddleware('ddb_updateSaasTenant')(async ({ saas_tenant_id, is_disabled, updated_at }) => {
+const updateSaasTenant = logMiddleware('ddb_updateSaasTenant')(async ({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id, updated_at }) => {
   try {
     const command = new UpdateCommand({
       TableName: SAAS_TENANTS_TABLE_NAME,
       Key: { saas_tenant_id },
-      UpdateExpression: 'SET is_disabled = :is_disabled, updated_at = :updated_at',
+      UpdateExpression:
+        'SET is_disabled = :is_disabled, email = :email, #name = :name, phone = :phone, address = :address, israeli_id = :israeli_id, updated_at = :updated_at',
+      ExpressionAttributeNames: {
+        '#name': 'name',
+      },
       ExpressionAttributeValues: {
         ':is_disabled': is_disabled,
+        ':email': email,
+        ':name': name,
+        ':phone': phone,
+        ':address': address,
+        ':israeli_id': israeli_id,
         ':updated_at': updated_at,
       },
       ReturnValues: 'ALL_NEW',
@@ -549,6 +543,31 @@ const getSaasTenants = logMiddleware('ddb_getSaasTenants')(async () => {
   }
 });
 
+/**
+ * Checks if a user is a landlord by querying the SAAS_TENANTS_TABLE
+ * @param {Object} params
+ * @param {string} params.user_id - UUID of the user to check
+ * @returns {Promise<boolean>} True if user is a landlord, false otherwise
+ */
+const isLandlordUser = logMiddleware('ddb_isLandlordUser')(async ({ user_id }) => {
+  try {
+    const { Items } = await ddbDocClient.send(
+      new QueryCommand({
+        TableName: SAAS_TENANTS_TABLE_NAME,
+        KeyConditionExpression: 'saas_tenant_id = :user_id',
+        ExpressionAttributeValues: {
+          ':user_id': user_id,
+        },
+      })
+    );
+    // There can only be one record per user_id, and we need to check is_disabled
+    return Items?.[0] && !Items[0].is_disabled;
+  } catch (error) {
+    console.error('Error in ddb_isLandlordUser:', error);
+    throw error;
+  }
+});
+
 module.exports = {
   getApartmentsOfLandlord,
   createApartment,
@@ -567,4 +586,5 @@ module.exports = {
   updateSaasTenant,
   deleteSaasTenant,
   getSaasTenants,
+  isLandlordUser,
 };

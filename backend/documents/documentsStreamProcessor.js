@@ -10,7 +10,6 @@ const dbData = require('/opt/dbData');
 const AWSXRay = require('aws-xray-sdk');
 
 const STACK_NAME = process.env.STACK_NAME;
-const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
 const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
 
@@ -88,7 +87,7 @@ async function handleCreate(record) {
     let imageUrl;
     try {
       const signatureKey = `${type}Signature`;
-      imageUrl = templateFields[signatureKey] ? await getDocumentImageAsDataUrl(newImage.document_id.S, signatureKey) : '';
+      imageUrl = templateFields[signatureKey] ? await getDocumentImageAsDataUrl(newImage.document_id.S, newImage.saas_tenant_id.S, signatureKey) : '';
     } catch (error) {
       console.log(`No ${type} signature found, using placeholder:`, error);
       imageUrl = '. '.repeat(5);
@@ -111,7 +110,7 @@ async function handleCreate(record) {
   const styledHtml = createStyledHtml(html, signatureUrl); // Signature for the footer
   const pdfBuffer = await convertToPdf(styledHtml);
 
-  const s3Key = prepareS3RentalAgreementKey(newImage.document_id.S, SAAS_TENANT_ID);
+  const s3Key = prepareS3RentalAgreementKey(newImage.document_id.S, newImage.saas_tenant_id.S);
   try {
     await s3Client.send(
       new PutObjectCommand({
@@ -147,7 +146,8 @@ async function handleUpdate(record) {
  * @returns {Promise<void>}
  */
 async function handleDelete(record) {
-  const s3DocumentFolderPrefix = prepareS3DocumentFolderPrefix(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
+  const oldImage = record.dynamodb.OldImage;
+  const s3DocumentFolderPrefix = prepareS3DocumentFolderPrefix(oldImage.document_id.S, oldImage.saas_tenant_id.S);
 
   try {
     await dbData.cache.invalidation.getApartmentDocuments(record.dynamodb.OldImage.apartment_id.S);
@@ -185,7 +185,8 @@ async function handleDelete(record) {
 //TODO: Add yet another VPC endpoint for CloudFront invalidation.
 // async function handleInvalidate(record) {
 //   try {
-//     const s3Key = prepareS3RentalAgreementKey(record.dynamodb.OldImage.document_id.S, SAAS_TENANT_ID);
+//     const oldImage = record.dynamodb.OldImage;
+//     const s3Key = prepareS3RentalAgreementKey(oldImage.document_id.S, oldImage.saas_tenant_id.S);
 //     await cloudfront.send(
 //       new CreateInvalidationCommand({
 //         DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
@@ -581,12 +582,13 @@ const createStyledHtml = (content, footerImagePath) => {
 /**
  * Gets an image from S3 and returns it as a base64 data URL
  * @param {string} documentId - The document ID
+ * @param {string} saasTenantId - The user id of the SaaS tenant (AKA the landlord).
  * @param {string} imageType - Type of image (e.g., 'signature', 'footer')
  * @returns {Promise<string>} Base64 data URL of the image
  * @throws {Error} If the image cannot be retrieved from S3
  */
-async function getDocumentImageAsDataUrl(documentId, imageType) {
-  const s3Key = `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${imageType}`;
+async function getDocumentImageAsDataUrl(documentId, saasTenantId, imageType) {
+  const s3Key = `${prepareS3DocumentFolderPrefix(documentId, saasTenantId)}/${imageType}`;
   const response = await s3Client.send(
     new GetObjectCommand({
       Bucket: DOCUMENTS_BUCKET_NAME,

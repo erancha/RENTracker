@@ -91,8 +91,8 @@ async function handleCreate({ commandParams, connectedUserId }) {
     };
     await dbData.cache.invalidation.getApartmentActivity(apartment_id);
   } else if (commandParams.saasTenants) {
-    const { saas_tenant_id, is_disabled } = commandParams.saasTenants;
-    response = { saasTenants: await dbData.createSaasTenant({ saas_tenant_id, is_disabled }) };
+    const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
+    response = { saasTenants: await dbData.createSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
     await dbData.cache.invalidation.getSaasTenants();
   }
 
@@ -106,7 +106,7 @@ const handleRead = logMiddleware('handleRead')(async function ({ commandParams, 
   let response; // to the client socket
 
   if (commandParams.apartments) {
-    const dbResult = await dbData.cache.getApartmentsOfLandlord({ saas_tenant_id: connectedUserId }); /* handle pagination */
+    const dbResult = await dbData.cache.getApartmentsOfLandlord({ saas_tenant_id: connectedUserId }); /* TODO: handle pagination */
     response = { apartments: dbResult || [] };
   }
   if (commandParams.activity) {
@@ -146,8 +146,8 @@ async function handleUpdate({ commandParams, connectedUserId }) {
     };
     await dbData.cache.invalidation.getApartmentsOfLandlord(connectedUserId);
   } else if (commandParams.saasTenants) {
-    const { saas_tenant_id, is_disabled } = commandParams.saasTenants;
-    response = { saasTenants: await dbData.updateSaasTenant({ saas_tenant_id, is_disabled }) };
+    const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
+    response = { saasTenants: await dbData.updateSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
     await dbData.cache.invalidation.getSaasTenants();
   }
 

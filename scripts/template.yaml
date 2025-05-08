@@ -391,11 +391,10 @@ Resources:
           STACK_NAME: !Ref AWS::StackName
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
-          SAAS_TENANT_ID: !Ref SaasTenantUserId
-          ADMIN_USER_ID: !Ref AdminUserId
-          # SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
           ACTIVITY_TABLE_NAME: !Ref ActivityTable
+          SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
+          ADMIN_USER_ID: !Ref AdminUserId
           # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
           # DB_NAME: !Ref CrudDatabaseName
           # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
@@ -520,22 +519,13 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              # - Effect: Allow
-              #   Action:
-              #     - dynamodb:PutItem
-              #   Resource:
-              #     - !GetAtt SaaSTenantsTable.Arn
               - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
                   - !Sub '${ApartmentsTable.Arn}/index/SaaSTenantUpdatedIndex'
                   - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
-              - Effect: Allow
-                Action:
-                  - dynamodb:DeleteItem
-                Resource:
-                  - !GetAtt ActivityTable.Arn
+                  - !GetAtt SaaSTenantsTable.Arn
         # - PolicyName: LambdaRDSAccessPolicy
         #   PolicyDocument:
         #     Version: '2012-10-17'
@@ -746,7 +736,6 @@ Resources:
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          SAAS_TENANT_ID: !Ref SaasTenantUserId
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           ALLOWED_ORIGIN: !If
             - AllowOnlyCloudfrontOriginCondition
@@ -903,7 +892,6 @@ Resources:
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          SAAS_TENANT_ID: !Ref SaasTenantUserId
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution

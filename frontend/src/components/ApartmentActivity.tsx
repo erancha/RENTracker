@@ -33,7 +33,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
     activity_id: uuidv4(),
     apartment_id: this.props.currentApartment?.apartment_id || '',
     description: '',
-    pending_confirmation: false,
+    pending_confirmation: true,
   });
 
   constructor(props: IApartmentActivityProps) {

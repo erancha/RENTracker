@@ -7,6 +7,11 @@ import { IOnRoute } from '../crud/types';
 export interface INewSaasTenant {
   saas_tenant_id: string; // Unique identifier for the tenant
   is_disabled: boolean; // If disabled, the landlord account is no longer active
+  israeli_id: string;
+  email: string; // Israeli ID number
+  name: string; // Full name of the tenant
+  address: string; // Physical address
+  phone: string; // Phone number in Israeli format (05X-XXX-XXXX)
 }
 
 /**

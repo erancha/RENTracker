@@ -7,7 +7,7 @@ import { IApartment, IUpdateApartmentParams } from '../redux/apartments/types';
 import { IReadApartmentActivityParams } from '../redux/apartmentActivity/types';
 import { IReadAnalyticsParams } from '../redux/analytics/types';
 import { setMenuSelectedPageAction, toggleMenuAction } from '../redux/menu/actions';
-import { setUserTypeAction, logoutUserAction, loginWithGoogleAction } from '../redux/auth/actions';
+import { setUserTypeAction } from '../redux/auth/actions';
 import { setWSConnectedAction, setAppVisibleAction, setConnectionsAndUsernamesAction, toggleConnectionsAction } from '../redux/websockets/actions';
 import {
   addApartmentAction,
@@ -26,6 +26,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { IConnectionAndUsername } from 'redux/websockets/types';
 import { UserType } from '../redux/auth/types';
 import { ISaasTenant } from 'redux/saasTenants/types';
+import { DOCUMENTS_VIEW } from 'redux/menu/types';
 
 class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> {
   private webSocket: WebSocket | null = null;
@@ -347,6 +348,13 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       if (!dataUpdated.apartments.is_disabled) this.props.setCurrentApartmentAction(dataUpdated.apartments.apartment_id);
     } else if (dataUpdated.saasTenants) {
       this.props.setSaasTenantConfirmedByBackendAction(dataUpdated.saasTenants.saas_tenant_id, dataUpdated.saasTenants.updated_at as string);
+      if (dataUpdated.saasTenants.is_disabled && this.props.userType === UserType.Landlord) {
+        this.props.setUserTypeAction(UserType.Tenant);
+        this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
+      } else if (!dataUpdated.saasTenants.is_disabled && this.props.userType === UserType.Tenant) {
+        this.props.setUserTypeAction(UserType.Landlord);
+        this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
+      }
     }
   }
 
@@ -374,8 +382,6 @@ interface IWebSocketProps {
   JWT: string | null;
   userType: UserType;
   setUserTypeAction: typeof setUserTypeAction;
-  logoutUserAction: typeof logoutUserAction;
-  loginWithGoogleAction: typeof loginWithGoogleAction;
   userId: string | null;
   isWsConnected: boolean;
   setWSConnectedAction: typeof setWSConnectedAction;
@@ -456,8 +462,6 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setApartmentActivityAction,
       setApartmentActivityConfirmedByBackendAction,
       setUserTypeAction,
-      logoutUserAction,
-      loginWithGoogleAction,
       setMenuSelectedPageAction,
       toggleMenuAction,
       setSaasTenantsAction,

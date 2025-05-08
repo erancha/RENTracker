@@ -18,6 +18,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ExpandMore } from '@mui/icons-material';
 import { Save, Undo2, Plus } from 'lucide-react';
+import { validateIsraeliPhone, formatPhoneNumber, validateIsraeliId } from 'utils/utils';
 import { connect } from 'react-redux';
 import { toast } from 'react-toastify';
 import { ThunkDispatch } from 'redux-thunk';
@@ -34,6 +35,7 @@ import { IncludedEquipmentSelect } from './IncludedEquipmentSelect';
 import { uploadFile, uploadContent } from '../services/rest';
 import ImagesViewer from './ImagesViewer';
 import SignatureMaker from './SignatureMaker';
+import { ISaasTenant } from 'redux/saasTenants/types';
 
 /**
  * DocumentForm component for creating and editing rental agreements
@@ -117,20 +119,24 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   ];
 
   /**
-   * Populates user name and email fields based on user type if they are not already set
+   * Populates a few fields based on user type, from the current user and from the SaaSTenants saved details.
    * @private
    */
-  private populateCurrentUserFields = (templateFields: Record<string, any>, userType: UserType, userName: string, email: string): Record<string, any> => {
+  private populateCurrentUserFields = (templateFields: Record<string, any>, currentUserType: UserType, currentUserEmail: string): Record<string, any> => {
     const fields = { ...templateFields };
-    if (!fields.landlordName && userType === UserType.Landlord) {
-      fields.landlordName = userName || '';
+
+    if (currentUserType === UserType.Landlord) {
+      if (!fields.landlordEmail) fields.landlordEmail = currentUserEmail;
+
+      const saasTenant = this.props.saasTenants[0];
+      if (!fields.landlordName) fields.landlordName = saasTenant.name;
+      if (!fields.landlordId) fields.landlordId = saasTenant.israeli_id;
+      if (!fields.landlordPhone) fields.landlordPhone = saasTenant.phone;
+      if (!fields.landlordAddress) fields.landlordAddress = saasTenant.address;
+    } else if (currentUserType === UserType.Tenant) {
+      if (!fields.tenant1Email) fields.tenant1Email = currentUserEmail;
     }
-    if (!fields.landlordEmail && userType === UserType.Landlord) {
-      fields.landlordEmail = email || '';
-    }
-    if (!fields.tenant1Email && userType === UserType.Tenant) {
-      fields.tenant1Email = email || '';
-    }
+
     return fields;
   };
 
@@ -151,7 +157,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     let templateFields = props.selectedDocument?.template_fields || props.initialTemplateFields || this.defaultTemplateFields;
 
     // Create a new object to avoid mutating the source and populate user name and emails
-    templateFields = this.populateCurrentUserFields(templateFields, props.userType, props.auth.userName as string, props.auth.email as string);
+    templateFields = this.populateCurrentUserFields(templateFields, props.userType, props.auth.email as string);
 
     // Initialize state
     this.state = {
@@ -174,20 +180,20 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
     if (initialTemplateFields) {
       // Use duplicated fields and populate user name and emails if needed
-      const templateFields = this.populateCurrentUserFields(initialTemplateFields, userType, auth.userName as string, auth.email as string);
+      const templateFields = this.populateCurrentUserFields(initialTemplateFields, userType, auth.email as string);
       this.setState({
         formData: templateFields,
       });
     } else if (documentId && selectedDocument) {
       // Edit mode - use selected document fields and populate user name and emails if needed
-      const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.userName as string, auth.email as string);
+      const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.email as string);
       this.setState({
         formData: templateFields,
         expandedSections: userType === UserType.Tenant ? ['tenant1Details', 'tenant2Details'] : [],
       });
     } else if (!documentId) {
       // Create mode - use defaults and populate user name and emails if needed
-      const templateFields = this.populateCurrentUserFields(this.defaultTemplateFields, userType, auth.userName as string, auth.email as string);
+      const templateFields = this.populateCurrentUserFields(this.defaultTemplateFields, userType, auth.email as string);
       this.setState({ formData: templateFields });
     }
     // If documentId exists but no selectedDocument, wait for it in componentDidUpdate
@@ -202,7 +208,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // If we just received the document data
     if (selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument.document_id !== selectedDocument.document_id)) {
       // Update template fields and set populate user name and emails if needed
-      const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.userName as string, auth.email as string);
+      const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.email as string);
       this.setState({
         formData: templateFields,
         // Only auto-expand for tenants
@@ -523,7 +529,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     if (value && stringValue.trim()) {
       if (field === 'landlordId' || field === 'tenant1Id' || field === 'tenant2Id' || field === 'guarantorId') {
         //TODO: get the indication as a parameter to the function rather than asking about field names.
-        if (!this.validateIsraeliId(stringValue)) {
+        if (!validateIsraeliId(stringValue)) {
           return 'מספר תעודת זהות לא תקין';
         }
       } else if (field === 'landlordPhone' || field === 'tenant1Phone' || field === 'tenant2Phone' || field === 'guarantorPhone') {
@@ -537,7 +543,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           return 'חסרות ספרות';
         } else if (digits.length > 10) {
           return 'יותר מדי ספרות';
-        } else if (!this.validateIsraeliPhone(stringValue)) {
+        } else if (!validateIsraeliPhone(stringValue)) {
           return 'מספר טלפון לא תקין';
         }
       }
@@ -616,47 +622,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // Set to last day of the month
     const lastDay = new Date(end.getFullYear(), end.getMonth() + 1, 1);
     return lastDay.toISOString().split('T')[0];
-  };
-
-  /**
-   * Validates an Israeli ID number using the Luhn algorithm
-   */
-  private validateIsraeliId = (id: string): boolean => {
-    // Remove any non-digit characters
-    id = id.replace(/\D/g, '');
-    if (id.length !== 9) return false;
-
-    const digits = id.split('').map(Number);
-    let sum = 0;
-
-    for (let i = 0; i < 8; i++) {
-      let digit = digits[i] * ((i % 2) + 1);
-      digit = digit > 9 ? digit - 9 : digit;
-      sum += digit;
-    }
-
-    return (10 - (sum % 10)) % 10 === digits[8];
-  };
-
-  /**
-   * Validates an Israeli mobile phone number
-   */
-  private validateIsraeliPhone = (phone: string): boolean => {
-    const digits = phone.replace(/\D/g, '');
-    // Empty is valid (not required field)
-    if (digits.length === 0) return true;
-    // Must be exactly 10 digits starting with 05X
-    return /^05\d{8}$/.test(digits);
-  };
-
-  /**
-   * Formats a phone number
-   */
-  private formatPhoneNumber = (phone: string): string => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   };
 
   /**
@@ -740,7 +705,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           newValue = '0' + newValue.slice(1);
         }
         newValue = newValue.slice(0, 10);
-        this.handleFieldChange(field, this.formatPhoneNumber(newValue));
+        this.handleFieldChange(field, formatPhoneNumber(newValue));
         return;
       }
 
@@ -1211,6 +1176,7 @@ interface StateProps {
   userType: UserType;
   userId: string | null;
   auth: IAuthState;
+  saasTenants: ISaasTenant[];
 }
 
 /**
@@ -1244,8 +1210,8 @@ const mapStateToProps = (state: RootState) => ({
   selectedDocument: state.documents.selectedDocument,
   userType: state.auth.userType,
   userId: state.auth.userId,
-  email: state.auth.email,
   auth: state.auth,
+  saasTenants: state.saasTenants.saasTenants,
 });
 
 /**

@@ -91,7 +91,7 @@ class AppComponent extends React.Component<IAppProps> {
         <Analytics />
       </div>
     ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
-      <div className='users-container'>
+      <div className='saas-tenants-container'>
         <button onClick={handleUndo} className='action-button'>
           <Undo2 />
         </button>

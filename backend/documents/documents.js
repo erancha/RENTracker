@@ -9,7 +9,6 @@ const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { insertMessageToSQS } = require('/opt/redisClient');
 
 const AWS_REGION = process.env.APP_AWS_REGION;
-const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 const DOCUMENTS_CLOUDFRONT_DOMAIN = process.env.DOCUMENTS_CLOUDFRONT_DOMAIN;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
@@ -18,12 +17,13 @@ const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 // Main REST handler
 //=============================================================================================================================================
 exports.handler = async (event) => {
+  // console.log(JSON.stringify(event, null, 2));
   const segment = AWSXRay.getSegment();
-
-  const corsHeaders = prepareCorsHeaders(event.headers?.origin);
+  const { httpMethod, path, origin } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
 
   // Handle OPTIONS requests for CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
+  if (httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -43,33 +43,31 @@ exports.handler = async (event) => {
       };
     }
 
-    const { httpMethod, path } = event;
-
     // Route to appropriate handler based on method and path
     if (path === '/documents') {
       switch (httpMethod) {
         case 'POST':
-          return await handleCreateDocument({ event, corsHeaders, parentSegment: segment });
+          return await handleCreateDocument({ event, parentSegment: segment });
         case 'GET':
           return event.queryStringParameters?.tenantUserId
-            ? await handleGetTenantDocuments({ event, corsHeaders, parentSegment: segment })
-            : await handleGetApartmentDocuments({ event, corsHeaders, parentSegment: segment });
+            ? await handleGetTenantDocuments({ event, parentSegment: segment })
+            : await handleGetApartmentDocuments({ event, parentSegment: segment });
       }
     } else if (path.startsWith('/documents/')) {
       const documentId = path.split('/')[2];
       switch (httpMethod) {
         case 'GET':
           if (path.endsWith('/pdf')) {
-            return await handleGetDocumentPdf({ documentId, corsHeaders, parentSegment: segment });
+            return await handleGetDocumentPdf({ documentId, event, parentSegment: segment });
           }
-          return await handleGetDocument({ documentId, corsHeaders, parentSegment: segment });
+          return await handleGetDocument({ documentId, event, parentSegment: segment });
         case 'PUT':
-          return await handleUpdateDocument({ documentId, event, corsHeaders, parentSegment: segment });
+          return await handleUpdateDocument({ documentId, event, parentSegment: segment });
         case 'DELETE':
-          return await handleDeleteDocument({ documentId, corsHeaders, parentSegment: segment });
+          return await handleDeleteDocument({ documentId, event, parentSegment: segment });
       }
     } else if (path === '/upload' && httpMethod === 'POST') {
-      return await handleFileUpload({ event, corsHeaders, parentSegment: segment });
+      return await handleFileUpload({ event, parentSegment: segment });
     }
 
     return {
@@ -102,18 +100,20 @@ exports.handler = async (event) => {
  * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with created document
  */
-const handleCreateDocument = async ({ event, corsHeaders, parentSegment }) => {
+const handleCreateDocument = async ({ event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleCreateDocument');
   try {
     const documentId = uuidv4();
-    const { apartmentId, templateFields } = JSON.parse(event.body);
+    const { apartmentId, templateFields } = extractDocumentCreationValues(event.body);
 
     const document = await dbData.createDocument({
       document_id: documentId,
       apartment_id: apartmentId,
       template_name: 'rental-agreement',
       template_fields: templateFields,
-      saas_tenant_id: SAAS_TENANT_ID,
+      saas_tenant_id: senderUserId,
     });
 
     subsegment.close();
@@ -149,16 +149,18 @@ const handleCreateDocument = async ({ event, corsHeaders, parentSegment }) => {
  * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with updated document
  */
-const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegment }) => {
+const handleUpdateDocument = async ({ documentId, event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleUpdateDocument');
   try {
-    const { templateFields, tenantUserId } = JSON.parse(event.body);
+    const { templateFields, tenantUserId } = extractDocumentUpdateValues(event.body);
 
     const document = await dbData.updateDocument({
       document_id: documentId,
       template_fields: templateFields,
-      saas_tenant_id: SAAS_TENANT_ID,
-      tenant_user_id: tenantUserId,
+      senderUserId,
+      tenantUserId,
     });
     // console.log(JSON.stringify(document, null, 2));
 
@@ -225,17 +227,19 @@ const handleUpdateDocument = async ({ documentId, event, corsHeaders, parentSegm
  * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with document data
  */
-const handleGetDocument = async ({ documentId, corsHeaders, parentSegment }) => {
+const handleGetDocument = async ({ documentId, event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleGetDocument');
   try {
-    const document = await dbData.getDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    const document = await dbData.getDocument({ document_id: documentId, senderUserId });
     subsegment.close();
     return document
       ? {
           statusCode: 200,
           headers: corsHeaders,
           body: JSON.stringify({
-            payload: { ...document, presignedUrls: await prepareAttachmentsPresignedUrls(documentId, document.template_fields) },
+            payload: { ...document, presignedUrls: await prepareAttachmentsPresignedUrls(documentId, document.template_fields, document.saas_tenant_id) },
             message: 'Document retrieved successfully',
           }),
         }
@@ -269,10 +273,12 @@ const handleGetDocument = async ({ documentId, corsHeaders, parentSegment }) => 
  * @returns {Promise<Object>} Response object with list of documents
  * @throws {Object} 400 error if apartmentId is missing
  */
-const handleGetApartmentDocuments = async ({ event, corsHeaders, parentSegment }) => {
+const handleGetApartmentDocuments = async ({ event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleGetApartmentDocuments');
   try {
-    const { apartmentId } = event.queryStringParameters || {};
+    const { apartmentId } = extractDocumentQueryParams(extractEventValues(event).queryParams);
     if (!apartmentId) {
       subsegment.close();
       return {
@@ -282,7 +288,7 @@ const handleGetApartmentDocuments = async ({ event, corsHeaders, parentSegment }
       };
     }
 
-    const documents = await dbData.cache.getApartmentDocuments({ apartment_id: apartmentId, saas_tenant_id: SAAS_TENANT_ID });
+    const documents = await dbData.cache.getApartmentDocuments({ apartment_id: apartmentId, saas_tenant_id: senderUserId });
     subsegment.close();
     return {
       statusCode: 200,
@@ -305,7 +311,7 @@ const handleGetApartmentDocuments = async ({ event, corsHeaders, parentSegment }
 };
 
 /**
- * Get all documents for a tenant
+ * Get all documents for an apartment tenant (i.e. not SaaS tenant, which is the landlord)
  * @param {Object} params - Parameters object
  * @param {Object} params.event - Lambda event object
  * @param {Object} params.event.queryStringParameters - Query parameters
@@ -315,10 +321,12 @@ const handleGetApartmentDocuments = async ({ event, corsHeaders, parentSegment }
  * @returns {Promise<Object>} Response object with list of documents
  * @throws {Object} 400 error if tenantUserId is missing
  */
-const handleGetTenantDocuments = async ({ event, corsHeaders, parentSegment }) => {
+const handleGetTenantDocuments = async ({ event, parentSegment }) => {
+  const { origin } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleGetTenantDocuments');
   try {
-    const { tenantUserId } = event.queryStringParameters || {};
+    const { tenantUserId } = extractDocumentQueryParams(extractEventValues(event).queryParams);
     if (!tenantUserId) {
       subsegment.close();
       return {
@@ -328,7 +336,7 @@ const handleGetTenantDocuments = async ({ event, corsHeaders, parentSegment }) =
       };
     }
 
-    const documents = await dbData.getTenantDocuments({ tenant_user_id: tenantUserId, saas_tenant_id: SAAS_TENANT_ID });
+    const documents = await dbData.getTenantDocuments({ tenant_user_id: tenantUserId });
     subsegment.close();
     return {
       statusCode: 200,
@@ -359,16 +367,18 @@ const handleGetTenantDocuments = async ({ event, corsHeaders, parentSegment }) =
  * @returns {Promise<Object>} Response object with PDF URL
  * @throws {Object} 404 error if PDF not found
  */
-const handleGetDocumentPdf = async ({ documentId, corsHeaders, parentSegment }) => {
+const handleGetDocumentPdf = async ({ documentId, event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleGetDocumentPdf');
   try {
-    const document = await dbData.getDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    const document = await dbData.getDocument({ document_id: documentId, senderUserId });
     if (!document) {
       subsegment.close();
       return {
         statusCode: 404,
         headers: corsHeaders,
-        body: JSON.stringify({ message: 'PDF not found' }),
+        body: JSON.stringify({ message: 'Document not found' }),
       };
     }
 
@@ -378,7 +388,7 @@ const handleGetDocumentPdf = async ({ documentId, corsHeaders, parentSegment }) 
       headers: corsHeaders,
       body: JSON.stringify({
         message: 'PDF URL retrieved successfully',
-        pdf_url: await preparePresignedUrl(documentId),
+        pdf_url: await preparePresignedUrl({ documentId, saasTenantId: document.saas_tenant_id }),
       }),
     };
   } catch (error) {
@@ -402,10 +412,12 @@ const handleGetDocumentPdf = async ({ documentId, corsHeaders, parentSegment }) 
  * @returns {Promise<Object>} Response object with deleted document ID
  * @throws {Object} 404 error if document not found
  */
-const handleDeleteDocument = async ({ documentId, corsHeaders, parentSegment }) => {
+const handleDeleteDocument = async ({ documentId, event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleDeleteDocument');
   try {
-    const deletedDocumentId = await dbData.deleteDocument({ document_id: documentId, saas_tenant_id: SAAS_TENANT_ID });
+    const deletedDocumentId = await dbData.deleteDocument({ document_id: documentId, saas_tenant_id: senderUserId });
     subsegment.close();
     return {
       statusCode: 200,
@@ -432,21 +444,31 @@ const handleDeleteDocument = async ({ documentId, corsHeaders, parentSegment }) 
  * @param {Object} params.parentSegment - AWS X-Ray parent segment
  * @returns {Promise<Object>} Response object with upload status
  */
-const handleFileUpload = async ({ event, corsHeaders, parentSegment }) => {
+const handleFileUpload = async ({ event, parentSegment }) => {
+  const { origin, senderUserId } = extractEventValues(event);
+  const corsHeaders = prepareCorsHeaders(origin);
   const subsegment = parentSegment.addNewSubsegment('handleFileUpload');
   try {
-    const { documentId, fileName, fileType } = event.queryStringParameters;
+    const { documentId, fileName, fileType } = extractDocumentQueryParams(extractEventValues(event).queryParams);
     if (isInvalidValue(documentId) || isInvalidValue(fileName) || isInvalidValue(fileType)) {
       throw { statusCode: 400, message: 'documentId, fileName, and fileType are required for file upload' };
     }
 
     const fileContent = extractFileContentFromMultipart(event.body, event.headers['content-type']);
-    if (!fileContent) {
-      throw new Error('File content could not be extracted');
+    if (!fileContent) throw new Error('File content could not be extracted');
+
+    const document = await dbData.getDocument({ document_id: documentId, senderUserId });
+    if (!document) {
+      subsegment.close();
+      return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Document not found' }),
+      };
     }
 
     const s3Client = new S3Client({ region: AWS_REGION });
-    const s3UploadedFileKey = `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${fileName}`;
+    const s3UploadedFileKey = `${prepareS3DocumentFolderPrefix(documentId, document.saas_tenant_id)}/${fileName}`;
     const command = new PutObjectCommand({
       Bucket: DOCUMENTS_BUCKET_NAME,
       Key: s3UploadedFileKey,
@@ -485,6 +507,51 @@ const handleFileUpload = async ({ event, corsHeaders, parentSegment }) => {
 // Utilities
 //=============================================================================================================================================
 
+/**
+ * Extract common values from the event object
+ * @param {Object} event - Lambda event object
+ * @returns {Object} Object containing extracted values
+ */
+function extractEventValues(event) {
+  return {
+    httpMethod: event.httpMethod,
+    path: event.path,
+    senderUserId: event.requestContext.authorizer?.claims.sub,
+    origin: event.headers?.origin,
+    queryParams: event.queryStringParameters || {},
+  };
+}
+
+/**
+ * Extract document-related values from query parameters
+ * @param {Object} queryParams - Query parameters from the event
+ * @returns {Object} Object containing document-related values
+ */
+function extractDocumentQueryParams(queryParams) {
+  const { documentId, fileName, fileType, apartmentId, tenantUserId } = queryParams;
+  return { documentId, fileName, fileType, apartmentId, tenantUserId };
+}
+
+/**
+ * Extract document creation values from request body
+ * @param {string} body - Request body string
+ * @returns {Object} Object containing document creation values
+ */
+function extractDocumentCreationValues(body) {
+  const { apartmentId, templateFields } = JSON.parse(body);
+  return { apartmentId, templateFields };
+}
+
+/**
+ * Extract document update values from request body
+ * @param {string} body - Request body string
+ * @returns {Object} Object containing document update values
+ */
+function extractDocumentUpdateValues(body) {
+  const { templateFields, tenantUserId } = JSON.parse(body);
+  return { templateFields, tenantUserId };
+}
+
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 
@@ -494,12 +561,13 @@ const s3Client = new S3Client({ region: AWS_REGION });
  * Prepare a document URL presigned through CloudFront.
  * @param {string} documentId - The unique identifier for the document.
  * @param {string} fileName - The name of the file to be presigned. If not provided, defaults to 'rental-agreement.pdf'.
+ * @param {string} saasTenantId - The user id of the SaaS tenant (AKA the landlord).
  * @returns {Promise<string>} The generated presigned URL.
  */
-async function preparePresignedUrl(documentId, fileName) {
+async function preparePresignedUrl({ documentId, fileName, saasTenantId }) {
   const command = new GetObjectCommand({
     Bucket: DOCUMENTS_BUCKET_NAME,
-    Key: fileName ? `${prepareS3DocumentFolderPrefix(documentId, SAAS_TENANT_ID)}/${fileName}` : prepareS3RentalAgreementKey(documentId, SAAS_TENANT_ID),
+    Key: fileName ? `${prepareS3DocumentFolderPrefix(documentId, saasTenantId)}/${fileName}` : prepareS3RentalAgreementKey(documentId, saasTenantId),
   });
 
   // Get S3 presigned URL
@@ -551,14 +619,18 @@ const extractFileContentFromMultipart = (base64Body, contentType) => {
  * Prepare presigned URLs for specific fields in the document's template fields.
  * @param {string} documentId - The unique identifier for the document.
  * @param {Object} templateFields - The template fields containing file names for idCard, salary1, and salary2.
+ * @param {string} saasTenantId - The user id of the SaaS tenant (AKA the landlord).
  * @returns {Promise<Object>} An object containing presigned URLs for idCard, salary1, and salary2.
  */
-async function prepareAttachmentsPresignedUrls(documentId, templateFields) {
+async function prepareAttachmentsPresignedUrls(documentId, templateFields, saasTenantId) {
   const prepareTenantAttachmentsUrls = async (documentId, templateFields, tenantPrefix) => {
     const urls = {};
-    if (templateFields[`${tenantPrefix}IdCard`]) urls[`${tenantPrefix}IdCard`] = await preparePresignedUrl(documentId, `${tenantPrefix}IdCard`);
-    if (templateFields[`${tenantPrefix}Salary1`]) urls[`${tenantPrefix}Salary1`] = await preparePresignedUrl(documentId, `${tenantPrefix}Salary1`);
-    if (templateFields[`${tenantPrefix}Salary2`]) urls[`${tenantPrefix}Salary2`] = await preparePresignedUrl(documentId, `${tenantPrefix}Salary2`);
+    if (templateFields[`${tenantPrefix}IdCard`])
+      urls[`${tenantPrefix}IdCard`] = await preparePresignedUrl({ documentId, fileName: `${tenantPrefix}IdCard`, saasTenantId });
+    if (templateFields[`${tenantPrefix}Salary1`])
+      urls[`${tenantPrefix}Salary1`] = await preparePresignedUrl({ documentId, fileName: `${tenantPrefix}Salary1`, saasTenantId });
+    if (templateFields[`${tenantPrefix}Salary2`])
+      urls[`${tenantPrefix}Salary2`] = await preparePresignedUrl({ documentId, fileName: `${tenantPrefix}Salary2`, saasTenantId });
     return urls;
   };
 

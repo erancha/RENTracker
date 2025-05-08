@@ -13,7 +13,6 @@ const AWS_REGION = process.env.APP_AWS_REGION;
 const STACK_NAME = process.env.STACK_NAME;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
-const SAAS_TENANT_ID = process.env.SAAS_TENANT_ID;
 
 //======================================================================================================
 // $connect handler:
@@ -46,6 +45,7 @@ exports.handler = async (event) => {
     const currentUserName = decodedJwt.name;
     const currentUserEmail = decodedJwt.email;
     const currentUserPhoneNumber = decodedJwt.phone_number;
+    // console.log(JSON.stringify(decodedJwt, null, 2));
 
     /*
      * Key Points of the connections management implementation:
@@ -122,13 +122,12 @@ exports.handler = async (event) => {
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
       // Read and send data to the frontend:
-      const userType =
-        currentUserId === ADMIN_USER_ID ? 'Admin' : dbData.isLandlordUser({ user_id: currentUserId, saas_tenant_id: SAAS_TENANT_ID }) ? 'Landlord' : 'Tenant';
+      const userType = currentUserId === ADMIN_USER_ID ? 'Admin' : (await dbData.cache.isLandlordUser({ user_id: currentUserId })) ? 'Landlord' : 'Tenant';
       let response = {
         targetConnectionIds: [currentConnectionId],
         message: { currentUserEmail, userType, connectionsAndUsernames },
       };
-      if (['Admin', 'Landlord'].includes(userType)) {
+      if (userType === 'Landlord') {
         response.message = {
           ...response.message,
           ...(await handleRead({
@@ -136,7 +135,7 @@ exports.handler = async (event) => {
               apartments: true,
               activity: { fromFirstApartment: true },
             },
-            connectedUserId: SAAS_TENANT_ID,
+            connectedUserId: currentUserId,
           })),
         };
       }

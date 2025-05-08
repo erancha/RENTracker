@@ -26,5 +26,4 @@ const logMiddleware = (name) => (fn) => {
 
 module.exports = {
   logMiddleware,
-  isLandlordUser: ({ user_id, saas_tenant_id }) => user_id === saas_tenant_id,
 };

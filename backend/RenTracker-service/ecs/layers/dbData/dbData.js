@@ -2,7 +2,7 @@
 const gwData = require('./ddbData');
 // const gwData = require('./pgData');
 const cache = require('./cache');
-const { logMiddleware, isLandlordUser } = require('./utils');
+const { logMiddleware } = require('./utils');
 
 /**
  * Checks the health of the database
@@ -119,28 +119,26 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
  * Get a document by ID
  * @param {Object} params
  * @param {string} params.document_id - UUID of the document
- * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
+ * @param {string} params.senderUserId - The id of the user attempting the update.
  * @returns {Promise<Object>} Document data
  */
-const getDocument = async ({ document_id, saas_tenant_id }) => {
+const getDocument = async ({ document_id, senderUserId }) => {
   validateUUID(document_id, 'document_id');
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
+  validateUUID(senderUserId, 'senderUserId');
 
-  return await gwData.getDocument({ document_id, saas_tenant_id });
+  return await gwData.getDocument({ document_id, senderUserId });
 };
 
 /**
  * Get all documents for a tenant
  * @param {Object} params
  * @param {string} params.tenant_user_id - ID of the tenant
- * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
  * @returns {Promise<Array>} List of documents
  */
-const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
+const getTenantDocuments = async ({ tenant_user_id }) => {
   validateUUID(tenant_user_id, 'user_id');
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
 
-  return await gwData.getTenantDocuments({ tenant_user_id, saas_tenant_id });
+  return await gwData.getTenantDocuments({ tenant_user_id });
 };
 
 /**
@@ -148,18 +146,18 @@ const getTenantDocuments = async ({ tenant_user_id, saas_tenant_id }) => {
  * @param {Object} params
  * @param {string} params.document_id - UUID of the document
  * @param {Object} params.template_fields - Updated template fields
- * @param {string} params.saas_tenant_id - SaaS tenant ID (note: the purpose is only for SaaS multi-tenancy - this has nothing to do with tenants of apartments).
- * @param {string} [params.tenant_user_id] - ID of the tenant that resides in the property (not related to saasTenantId)
+ * @param {string} params.senderUserId - The id of the user attempting the update.
+ * @param {string} [params.tenantUserId] - ID of the apartment tenant (not related to the SaaS Tenant Id, which is the landlord).
  * @returns {Promise<Object>} Updated document
  */
-const updateDocument = async ({ document_id, template_fields, saas_tenant_id, tenant_user_id }) => {
+const updateDocument = async ({ document_id, template_fields, senderUserId, tenantUserId }) => {
   validateUUID(document_id, 'document_id');
   validateTemplateFields(template_fields);
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
-  if (tenant_user_id) validateUUID(tenant_user_id, 'user_id');
+  validateUUID(senderUserId, 'senderUserId');
+  if (tenantUserId) validateUUID(tenantUserId, 'user_id');
 
-  const updateParams = { document_id, template_fields, updated_at: new Date().toISOString(), saas_tenant_id };
-  if (tenant_user_id) updateParams.tenant_user_id = tenant_user_id;
+  const updateParams = { document_id, template_fields, updated_at: new Date().toISOString(), senderUserId };
+  if (tenantUserId) updateParams.tenantUserId = tenantUserId;
   return await gwData.updateDocument(updateParams);
 };
 
@@ -234,31 +232,52 @@ const deleteApartmentActivity = logMiddleware('deleteApartmentActivity')(async (
  * @param {boolean} params.is_disabled - Whether the tenant is disabled
  * @returns {Promise<Object>} Created tenant data
  */
-const createSaasTenant = async ({ saas_tenant_id, is_disabled }) => {
+const createSaasTenant = async ({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
   validateBoolean(is_disabled, 'is_disabled');
+  validateEmail(email, 'email');
+  validateNonEmptyString(name, 'name');
+  validateNonEmptyString(phone, 'phone');
+  validateNonEmptyString(address, 'address');
+  validateNonEmptyString(israeli_id, 'israeli_id');
 
   return await gwData.createSaasTenant({
     saas_tenant_id,
     is_disabled,
     created_at: new Date().toISOString(),
+    email,
+    name,
+    phone,
+    address,
+    israeli_id,
   });
 };
 
 /**
  * Updates a SaaS tenant in the system
  * @param {Object} params
- * @param {string} params.saas_tenant_id - ID of the tenant to update
- * @param {boolean} params.is_disabled - New disabled status
+ * @param {string} params.saas_tenant_id - Unique identifier for the tenant
+ * @param {boolean} params.is_disabled - Whether the tenant is disabled
  * @returns {Promise<Object>} Updated tenant data
  */
-const updateSaasTenant = async ({ saas_tenant_id, is_disabled }) => {
+const updateSaasTenant = async ({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
   validateBoolean(is_disabled, 'is_disabled');
+  validateEmail(email, 'email');
+  validateNonEmptyString(name, 'name');
+  validateNonEmptyString(phone, 'phone');
+  validateNonEmptyString(address, 'address');
+  validateNonEmptyString(israeli_id, 'israeli_id');
 
+  await invalidation_isLandlordUser(saas_tenant_id);
   return await gwData.updateSaasTenant({
     saas_tenant_id,
     is_disabled,
+    email,
+    name,
+    phone,
+    address,
+    israeli_id,
     updated_at: new Date().toISOString(),
   });
 };
@@ -271,6 +290,8 @@ const updateSaasTenant = async ({ saas_tenant_id, is_disabled }) => {
  */
 const deleteSaasTenant = async ({ saas_tenant_id }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
+
+  await invalidation_isLandlordUser(saas_tenant_id);
   return await gwData.deleteSaasTenant({ saas_tenant_id });
 };
 
@@ -298,8 +319,13 @@ const cache_getSaasTenants = async () => {
   return await cache.get(`getSaasTenants()`, () => gwData.getSaasTenants());
 };
 
+const cache_isLandlordUser = async ({ user_id }) => {
+  validateUUID(user_id, 'user_id');
+  return await cache.get(`isLandlordUser(${user_id})`, () => gwData.isLandlordUser({ user_id }));
+};
+const invalidation_isLandlordUser = (user_id) => cache.invalidateGet(`isLandlordUser(${user_id})`);
+
 module.exports = {
-  isLandlordUser,
   healthCheck,
   createApartment,
   updateApartment,
@@ -320,6 +346,7 @@ module.exports = {
     getApartmentActivity: cache_getApartmentActivity,
     getApartmentDocuments: cache_getApartmentDocuments,
     getSaasTenants: cache_getSaasTenants,
+    isLandlordUser: cache_isLandlordUser,
     invalidation: {
       getApartmentsOfLandlord: (saas_tenant_id) =>
         saas_tenant_id
@@ -334,6 +361,7 @@ module.exports = {
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
           : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
       getSaasTenants: () => cache.invalidateGet('getSaasTenants()'),
+      isLandlordUser: invalidation_isLandlordUser,
     },
   },
 };
