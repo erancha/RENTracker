@@ -18,7 +18,12 @@ import {
   setApartmentConfirmedByBackendAction,
 } from '../redux/apartments/actions';
 import { setApartmentActivityAction, addApartmentActivityAction, setApartmentActivityConfirmedByBackendAction } from '../redux/apartmentActivity/actions';
-import { setSaasTenantsAction, addSaasTenantAction, setSaasTenantConfirmedByBackendAction } from '../redux/saasTenants/actions';
+import {
+  prepareReadSaasTenantsCommandAction,
+  setSaasTenantsAction,
+  addSaasTenantAction,
+  setSaasTenantConfirmedByBackendAction,
+} from '../redux/saasTenants/actions';
 import appConfigData from '../appConfig.json';
 import { Network } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -281,6 +286,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (parsedEventData.userType) {
       this.props.setUserTypeAction(parsedEventData.userType);
       if (parsedEventData.userType === UserType.Admin) this.props.toggleConnectionsAction(true);
+      else if (parsedEventData.userType === UserType.Landlord) this.props.prepareReadSaasTenantsCommandAction();
+
       if (parsedEventData.pendingEmailVerification)
         toast.info('Email verification pending. Please verify your email address to continue using the application.', { autoClose: 10000 });
     }
@@ -329,7 +336,14 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       const newReceivedSaasTenant = dataCreated.saasTenants;
       const isNewnewSaasTenant = !this.props.saasTenants.find((saasTenant) => saasTenant.saas_tenant_id === newReceivedSaasTenant.saas_tenant_id);
       if (isNewnewSaasTenant) this.props.addSaasTenantAction(newReceivedSaasTenant);
-      else this.props.setSaasTenantConfirmedByBackendAction(newReceivedSaasTenant.saas_tenant_id, newReceivedSaasTenant.updated_at);
+      else {
+        this.props.setSaasTenantConfirmedByBackendAction(newReceivedSaasTenant.saas_tenant_id, newReceivedSaasTenant.updated_at);
+        if (!dataCreated.saasTenants.is_disabled && this.props.userType === UserType.Tenant) {
+          // toggle to landlord view
+          this.props.setUserTypeAction(UserType.Landlord);
+          this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
+        }
+      }
     }
   }
 
@@ -348,6 +362,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       if (!dataUpdated.apartments.is_disabled) this.props.setCurrentApartmentAction(dataUpdated.apartments.apartment_id);
     } else if (dataUpdated.saasTenants) {
       this.props.setSaasTenantConfirmedByBackendAction(dataUpdated.saasTenants.saas_tenant_id, dataUpdated.saasTenants.updated_at as string);
+      // toggle between landlord and tenant views
       if (dataUpdated.saasTenants.is_disabled && this.props.userType === UserType.Landlord) {
         this.props.setUserTypeAction(UserType.Tenant);
         this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
@@ -413,6 +428,7 @@ interface IWebSocketProps {
   currentApartmentId: string | null;
   toggleMenuAction: typeof toggleMenuAction;
   saasTenants: ISaasTenant[];
+  prepareReadSaasTenantsCommandAction: typeof prepareReadSaasTenantsCommandAction;
   setSaasTenantsAction: typeof setSaasTenantsAction;
   addSaasTenantAction: typeof addSaasTenantAction;
   setSaasTenantConfirmedByBackendAction: typeof setSaasTenantConfirmedByBackendAction;
@@ -464,6 +480,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setUserTypeAction,
       setMenuSelectedPageAction,
       toggleMenuAction,
+      prepareReadSaasTenantsCommandAction,
       setSaasTenantsAction,
       addSaasTenantAction,
       setSaasTenantConfirmedByBackendAction,

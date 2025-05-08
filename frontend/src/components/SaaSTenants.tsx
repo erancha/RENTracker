@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { ISaasTenant, INewSaasTenant } from '../redux/saasTenants/types';
 import {
-  prepareReadSaasTenantsCommandAction,
   prepareCreateSaasTenantCommandAction,
   addSaasTenantAction,
   prepareUpdateSaasTenantCommandAction,
@@ -37,12 +36,9 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
   }
 
   componentDidMount() {
-    this.props.prepareReadSaasTenantsCommandAction();
-    setTimeout(() => {
-      /* Auto open new SaaS tenant form if the current user is not yet a SaaS tenant */
-      if (this.props.userType !== UserType.Admin && !this.props.saasTenants.some((t) => t.saas_tenant_id === this.props.userId))
-        this.setState({ ...this.state, showNewSaaSTenant: true });
-    }, 5000);
+    /* Auto open new SaaS tenant form if the current user is not yet a SaaS tenant */
+    if (this.props.userType !== UserType.Admin && !this.props.saasTenants.some((t) => t.saas_tenant_id === this.props.userId))
+      this.setState({ ...this.state, showNewSaaSTenant: true });
   }
 
   render(): React.ReactNode {
@@ -432,7 +428,6 @@ interface ISaaSTenantsState {
  */
 interface ISaaSTenantsProps {
   saasTenants: ISaasTenant[];
-  prepareReadSaasTenantsCommandAction: typeof prepareReadSaasTenantsCommandAction;
   prepareCreateSaasTenantCommandAction: typeof prepareCreateSaasTenantCommandAction;
   addSaasTenantAction: typeof addSaasTenantAction;
   prepareUpdateSaasTenantCommandAction: typeof prepareUpdateSaasTenantCommandAction;
@@ -456,7 +451,6 @@ const mapStateToProps = (state: IAppState): Pick<ISaaSTenantsProps, 'saasTenants
 
 // Map Redux actions to component props
 const mapDispatchToProps = {
-  prepareReadSaasTenantsCommandAction,
   prepareCreateSaasTenantCommandAction,
   addSaasTenantAction,
   prepareUpdateSaasTenantCommandAction,
