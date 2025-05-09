@@ -522,7 +522,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     const { formData } = this.state;
 
     if (requiredFields.includes(field) && (!value || stringValue.trim() === '')) {
-      return 'שדה חובה';
+      return 'ערך חובה';
     }
 
     // Format validation for non-empty fields
@@ -628,21 +628,25 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * Determines if a field should be disabled based on document state
    */
   private isFieldDisabled = (field: string) => {
-    const section = fieldToSection[field];
-    // console.log({ field, section });
-    const allowedSections =
-      this.props.userType === UserType.Landlord
-        ? ['landlordDetails', 'tenant1Details', 'tenant2Details', 'propertyDetails', 'leaseTerms', 'utilityLimits']
-        : ['tenant1Details', 'tenant1Attachments', 'tenant2Details', 'tenant2Attachments'];
+    let isDisabled = this.props.userType === UserType.Tenant && !!this.state.formData.landlordSignature;
+    if (!isDisabled) {
+      const section = fieldToSection[field];
+      // console.log({ field, section });
+      const allowedSections =
+        this.props.userType === UserType.Landlord
+          ? ['landlordDetails', 'tenant1Details', 'tenant2Details', 'propertyDetails', 'leaseTerms', 'utilityLimits']
+          : ['tenant1Details', 'tenant1Attachments', 'tenant2Details', 'tenant2Attachments'];
 
-    if (this.state.formData.securityRequired) {
-      allowedSections.push('securityDetails');
-    }
-    if (this.state.formData.guarantorRequired) {
-      allowedSections.push('guarantorDetails');
+      if (this.state.formData.securityRequired) {
+        allowedSections.push('securityDetails');
+      }
+      if (this.state.formData.guarantorRequired) {
+        allowedSections.push('guarantorDetails');
+      }
+      isDisabled = !allowedSections.includes(section);
     }
 
-    return !allowedSections.includes(section);
+    return isDisabled;
   };
 
   /**
@@ -846,6 +850,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // console.log(this.state);
     if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
       toast.warning('Please have the tenant sign first');
+    else if (section === 'signature' && this.state.formData.landlordSignature)
+      toast.warning('The agreement was already signed by both the tenant and the landlord');
     else
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
