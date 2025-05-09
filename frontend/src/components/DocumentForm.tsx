@@ -628,7 +628,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * Determines if a field should be disabled based on document state
    */
   private isFieldDisabled = (field: string) => {
-    let isDisabled = this.props.userType === UserType.Tenant && !!this.state.formData.landlordSignature;
+    let isDisabled = documentWasSigned(this.state.formData);
     if (!isDisabled) {
       const section = fieldToSection[field];
       // console.log({ field, section });
@@ -850,7 +850,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // console.log(this.state);
     if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
       toast.warning('Please have the tenant sign first');
-    else if (section === 'signature' && this.state.formData.landlordSignature)
+    else if (section === 'signature' && documentWasSigned(this.state.formData))
       toast.warning('The agreement was already signed by both the tenant and the landlord');
     else
       this.setState((prevState) => ({
@@ -1203,7 +1203,7 @@ type DocumentFormProps = OwnProps & StateProps & DispatchProps;
  * Component state interface
  */
 interface DocumentFormState {
-  formData: Record<string, any>;
+  formData: FormData;
   errors: Record<string, string>;
   expandedSections: string[];
   initialFormData: Record<string, any>;
@@ -1211,6 +1211,8 @@ interface DocumentFormState {
   showSecondTenant: boolean;
   expandSecondTenant: boolean;
 }
+type FormData = Record<string, any>
+const documentWasSigned = (formData: FormData) => !!formData.landlordSignature;
 
 const mapStateToProps = (state: RootState) => ({
   selectedDocument: state.documents.selectedDocument,

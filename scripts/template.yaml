@@ -566,6 +566,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - dynamodb:Scan
+                  - dynamodb:GetItem
                 Resource:
                   - !GetAtt SaaSTenantsTable.Arn
       # - PolicyName: LambdaRDSAccessPolicy

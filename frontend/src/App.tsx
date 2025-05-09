@@ -55,7 +55,7 @@ class AppComponent extends React.Component<IAppProps> {
           <div className='header-container'>
             <div className='header-title-container'>
               <div className='header-title' title='AWS/React/WebSockets-based betting application.'>
-                RENTracker
+                <span className='app-name'>RENTracker</span>
               </div>
               <img src='/favicon.ico' alt='Logo' width='32' height='32' />
               <span className='build'>{appConfigData.BUILD}</span>
@@ -112,7 +112,10 @@ class AppComponent extends React.Component<IAppProps> {
       <div className={`app-overview-container${menuOpen ? ' menu-is-opened' : ''}`}>
         <hr />
         <div className='header2'>
-          <p>RENTracker is a property rent management app that streamlines rent agreements and activity.</p>
+          <p>
+            <span className='app-name'>RENTracker</span> is a property rent tracking app that streamlines rent agreements and activity.
+          </p>
+          <hr />
           <p>
             The app provides <span className='secure-authentication'>secure authentication</span> through Google:{' '}
             <span className='text-link sign-in-from-overview' onClick={() => loginWithGoogleAction(auth)}>
@@ -132,14 +135,14 @@ class AppComponent extends React.Component<IAppProps> {
           )}
           <ul>
             <li>
-              The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in
-              rental agreements.
+              The app supports two user roles: <b>Landlords</b> who manage properties, rental agreements, and activity, and <b>Tenants</b> who complete their
+              details and sign rental agreements.
             </li>
             <li>
               The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS
               services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates
             </li>
-            <li>It offers an intuitive, mobile-friendly React UI/UX.</li>
+            <li>The app offers an intuitive, mobile-friendly React UI/UX.</li>
           </ul>
           <div className='link-container'>
             <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>

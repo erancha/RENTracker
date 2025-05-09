@@ -1,7 +1,7 @@
 import { Dispatch } from 'redux';
 import { IApartment } from './types';
 import { CommandSubject } from '../crud/types';
-import { prepareCreateCommandAction, /*prepareReadCommandAction,*/ prepareUpdateCommandAction, prepareDeleteCommandAction } from '../crud/actions';
+import { prepareCreateCommandAction, prepareReadCommandAction, prepareUpdateCommandAction, prepareDeleteCommandAction } from '../crud/actions';
 import {
   SET_NO_APARTMENTS_NOTIFIED,
   ADD_APARTMENT,
@@ -51,11 +51,11 @@ export const addApartmentAction = (apartment: IApartment): IAddApartmentAction =
   payload: apartment,
 });
 
-// export const prepareReadApartmentsCommandAction = () =>
-//   prepareReadCommandAction({
-//     type: 'apartments' as CommandSubject,
-//     params: {},
-//   });
+export const prepareReadApartmentsCommandAction = () =>
+  prepareReadCommandAction({
+    type: 'apartments' as CommandSubject,
+    params: {},
+  });
 
 export const setApartmentsAction = (apartments: IApartment[]): ISetApartmentsAction => ({
   type: SET_APARTMENTS,

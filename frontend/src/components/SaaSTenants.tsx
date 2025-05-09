@@ -48,7 +48,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     return (
       <div className='page body-container saas-tenants'>
         <div className='header m-n-relation'>
-          <span>SaaS Tenants</span>
+          <span>Landlord Settings</span>
           {
             /* allow adding SaaS tenants only by admin or only if the current user is not yet a SaaS tenant */
             (this.props.userType === UserType.Admin || !this.props.saasTenants.some((t) => t.saas_tenant_id === this.props.userId)) && (
@@ -95,7 +95,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 )
               )
             ) : (
-              <div className='empty-message'>No SaaS Tenants found...</div>
+              <div className='empty-message'>No Landlord details found...</div>
             )}
           </div>
         </div>
@@ -117,7 +117,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     return (
       <>
         <div data-title='Updated At'>{saasTenant.updated_at ? timeShortDisplay(new Date(saasTenant.updated_at)) : ''}</div>
-        <div data-title='SaaS Tenant ID'>
+        <div data-title='Landlord Id'>
           <span className='saas-tenant-id'>{saasTenant.saas_tenant_id}</span>
         </div>
         <div data-title='Email'>
@@ -197,19 +197,21 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
           )}
         </div>
         <div className='actions'>
-          <div className='disabled' title='Disabled'>
-            <input
-              type='checkbox'
-              checked={!!displayTenant.is_disabled}
-              onChange={(e) => {
-                if (isSaved) {
-                  this.handleEditTenantChange(saasTenant.saas_tenant_id!, 'is_disabled', e.target.checked);
-                } else {
-                  this.handleNewTenantChange('is_disabled', e.target.checked);
-                }
-              }}
-            />
-          </div>
+          {this.props.userType === UserType.Admin && (
+            <div className='disabled' title='Disabled'>
+              <input
+                type='checkbox'
+                checked={!!displayTenant.is_disabled}
+                onChange={(e) => {
+                  if (isSaved) {
+                    this.handleEditTenantChange(saasTenant.saas_tenant_id!, 'is_disabled', e.target.checked);
+                  } else {
+                    this.handleNewTenantChange('is_disabled', e.target.checked);
+                  }
+                }}
+              />
+            </div>
+          )}
           {!isSaved ? (
             <>
               <button onClick={() => this.handleCreateRecord()} className='action-button save' title='Save'>
@@ -219,20 +221,25 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 <Undo2 />
               </button>
             </>
-          ) : this.state.editedTenants[saasTenant.saas_tenant_id!] ? (
-            <>
-              <button onClick={() => this.handleUpdateRecord(this.state.editedTenants[saasTenant.saas_tenant_id!])} className='action-button save' title='Save'>
-                <Save />
-              </button>
-              <button onClick={() => this.handleCancelEdit(saasTenant.saas_tenant_id!)} className='action-button cancel' title='Cancel'>
-                <Undo2 />
-              </button>
-            </>
           ) : (
-            <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title='Delete'>
-              <Trash2 />
-            </button>
+            this.state.editedTenants[saasTenant.saas_tenant_id!] && (
+              <>
+                <button
+                  onClick={() => this.handleUpdateRecord(this.state.editedTenants[saasTenant.saas_tenant_id!])}
+                  className='action-button save'
+                  title='Save'
+                >
+                  <Save />
+                </button>
+                <button onClick={() => this.handleCancelEdit(saasTenant.saas_tenant_id!)} className='action-button cancel' title='Cancel'>
+                  <Undo2 />
+                </button>
+              </>
+            )
           )}
+          <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title='Delete'>
+            <Trash2 />
+          </button>
         </div>
       </>
     );
@@ -266,10 +273,10 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     const errors: Record<string, string> = {};
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!saasTenant.saas_tenant_id) errors.saas_tenant_id = 'SaaS Tenant ID is required';
-    else if (!uuidRegex.test(saasTenant.saas_tenant_id)) errors.saas_tenant_id = 'SaaS Tenant ID must be a valid UUID';
+    if (!saasTenant.saas_tenant_id) errors.saas_tenant_id = 'Landlord Id is required';
+    else if (!uuidRegex.test(saasTenant.saas_tenant_id)) errors.saas_tenant_id = 'Landlord Id must be a valid UUID';
     else if (this.isDuplicate(saasTenant.saas_tenant_id, 'saas_tenant_id', saasTenant.saas_tenant_id)) {
-      errors.saas_tenant_id = 'This SaaS Tenant ID is in use by another SaaS tenant';
+      errors.saas_tenant_id = 'This Landlord Id is in use by another landlord';
     }
 
     if (!saasTenant.email) errors.email = 'Email is required';

@@ -4,6 +4,8 @@ const gwData = require('./ddbData');
 const cache = require('./cache');
 const { logMiddleware } = require('./utils');
 
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
+
 /**
  * Checks the health of the database
  * @returns {Promise<Date>} Current database timestamp
@@ -315,8 +317,11 @@ const cache_getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => 
   return await cache.get(`getApartmentDocuments(${apartment_id})`, () => gwData.getApartmentDocuments({ apartment_id, saas_tenant_id }));
 };
 
-const cache_getSaasTenants = async () => {
-  return await cache.get(`getSaasTenants()`, () => gwData.getSaasTenants());
+const cache_getSaasTenants = async ({ connectedUserId }) => {
+  // Cache saas tenants only for non-admin users, since every specific user invalidation would also invalidate by definition the cache of all saas tenants, and admin doesn't worth the effort - the usage isn't expected to high enough, and we'll need pagination anyway.
+  return connectedUserId && connectedUserId !== ADMIN_USER_ID
+    ? await cache.get(`getSaasTenants(${connectedUserId || ''})`, () => gwData.getSaasTenants({ connectedUserId }))
+    : await gwData.getSaasTenants({}); // otherwise get all saas tenants, without caching.
 };
 
 const cache_isLandlordUser = async ({ user_id }) => {
@@ -360,7 +365,10 @@ module.exports = {
         apartment_id
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
           : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
-      getSaasTenants: () => cache.invalidateGet('getSaasTenants()'),
+      getSaasTenants: (connectedUserId) => {
+        // cache_getSaasTenants caches saas tenants only for non-admin users ...
+        if (connectedUserId && connectedUserId !== ADMIN_USER_ID) cache.invalidateGet(`getSaasTenants(${connectedUserId})`);
+      },
       isLandlordUser: invalidation_isLandlordUser,
     },
   },

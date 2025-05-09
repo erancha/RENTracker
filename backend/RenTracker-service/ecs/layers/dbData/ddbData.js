@@ -526,17 +526,22 @@ const deleteSaasTenant = logMiddleware('ddb_deleteSaasTenant')(async ({ saas_ten
 });
 
 /**
- * Gets all SaaS tenants from DynamoDB
+ * Gets all or one SaaS tenants from DynamoDB
  * @returns {Promise<Array>} List of tenants
  */
-const getSaasTenants = logMiddleware('ddb_getSaasTenants')(async () => {
+const getSaasTenants = logMiddleware('ddb_getSaasTenants')(async ({ connectedUserId }) => {
   try {
-    const { Items } = await ddbDocClient.send(
-      new ScanCommand({
-        TableName: SAAS_TENANTS_TABLE_NAME,
-      })
-    );
-    return (Items || []).sort((a, b) => b.updated_at.localeCompare(a.updated_at)); // Sort by updated_at desc
+    let retItems = [];
+
+    if (connectedUserId) {
+      const { Item } = await ddbDocClient.send(new GetCommand({ TableName: SAAS_TENANTS_TABLE_NAME, Key: { saas_tenant_id: connectedUserId } }));
+      if (Item) retItems = [Item];
+    } else {
+      const { Items } = await ddbDocClient.send(new ScanCommand({ TableName: SAAS_TENANTS_TABLE_NAME }));
+      retItems = Items.sort((a, b) => b.updated_at.localeCompare(a.updated_at)); // Sort by updated_at desc
+    }
+
+    return retItems;
   } catch (error) {
     console.error('Error in ddb_getSaasTenants:', error);
     throw error;

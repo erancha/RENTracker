@@ -202,7 +202,11 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    */
   handleToggleDocumentsActivity = (apartment_id: string) => {
     // toggle only if the apartment_id of the current apartment is the same as the apartment_id last saved in redux (to avoid toggling when the user just wants to select another apartment)
-    if (apartment_id === this.props.currentApartmentId) this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
+    if (apartment_id === this.props.currentApartmentId) {
+      const prevShowDocuments = this.state.showDocuments;
+      this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
+      if (prevShowDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
+    }
   };
 
   handleShowActivity = () => {
@@ -257,12 +261,10 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    */
   handleApartmentClick = (apartment_id: string) => {
     // Only proceed if the apartment_id is different from current
-    if (apartment_id !== this.props.currentApartmentId) {
-      this.props.setCurrentApartmentAction(apartment_id);
+    if (apartment_id !== this.props.currentApartmentId) this.props.setCurrentApartmentAction(apartment_id);
 
-      // Send command to read apartment activity only if the component's state is to show activity.
-      if (!this.state.showDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
-    }
+    // Send command to read apartment activity only if the component's state is to show activity.
+    if (!this.state.showDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
   };
 
   /**

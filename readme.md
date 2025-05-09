@@ -1,8 +1,8 @@
 # Preface
 
-**RENTracker** is a property rent management app that streamlines rent agreements and activity.
+**RENTracker** is a property rent tracking app that streamlines rent agreements and activity.
 
-The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details in rental agreements.
+The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details and sign rental agreements.
 
 Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
 
@@ -17,23 +17,23 @@ The app is available online at https://d1qes2uy1amux4.cloudfront.net
 <!-- toc -->
 
 - [High-Level Design (HLD) Document for RENTracker](#high-level-design-hld-document-for-rentracker)
-  * [Architecture](#architecture)
-    + [1. **Backend**](#1-backend)
+  - [Architecture](#architecture)
+    - [1. **Backend**](#1-backend)
       - [**API Gateway + Lambda**](#api-gateway--lambda)
       - [Data Model:](#data-model)
-        * [1. SaaS Tenants Table](#1-saas-tenants-table)
-        * [2. Apartments Table](#2-apartments-table)
-        * [3. Documents Table](#3-documents-table)
-        * [4. Apartment Activity Table](#4-apartment-activity-table)
-        * [Example of Relationships](#example-of-relationships)
+        - [1. SaaS Tenants Table](#1-saas-tenants-table)
+        - [2. Apartments Table](#2-apartments-table)
+        - [3. Documents Table](#3-documents-table)
+        - [4. Apartment Activity Table](#4-apartment-activity-table)
+        - [Example of Relationships](#example-of-relationships)
       - [**SQS**](#sqs)
-    + [2. **Frontend**](#2-frontend)
-    + [3. **Security** Considerations](#3-security-considerations)
-    + [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
-    + [5. **Deployment**](#5-deployment)
-    + [6. **Monitoring and Logging**](#6-monitoring-and-logging)
+    - [2. **Frontend**](#2-frontend)
+    - [3. **Security** Considerations](#3-security-considerations)
+    - [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
+    - [5. **Deployment**](#5-deployment)
+    - [6. **Monitoring and Logging**](#6-monitoring-and-logging)
       - [6.1 **AWS X-Ray**](#61-aws-x-ray)
-  * [Summary](#summary)
+  - [Summary](#summary)
 
 <!-- tocstop -->
 

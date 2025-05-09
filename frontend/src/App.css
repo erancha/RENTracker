@@ -6,6 +6,13 @@ body {
   margin: 0;
 }
 
+.app-name {
+  color: darkslateblue;
+  font-style: oblique;
+  font-weight: 700;
+  margin-right: 3px;
+}
+
 /* Common Components */
 .input-and-error-container {
   display: flex;
@@ -117,7 +124,6 @@ body {
     top: 0;
     z-index: 1000;
     background-color: white;
-    padding-bottom: 0.5rem;
 
     > .header-container {
       display: flex;
@@ -230,14 +236,18 @@ body {
     min-width: 80%;
 
     p {
-      font-weight: 500;
+      font-weight: 400;
       margin: 0.5rem 1rem;
       text-align: left;
 
       &,
       & > span {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
       }
+    }
+
+    hr {
+      margin-bottom: 1rem;
     }
 
     .secure-authentication {
@@ -1035,7 +1045,7 @@ body {
     minmax(100px, 3fr) minmax(80px, 3fr) minmax(120px, 5fr) minmax(120px, 1fr);
 
   .actions {
-    grid-template-columns: repeat(3, 2rem);
+    grid-template-columns: repeat(4, 1.5rem);
     align-content: center;
   }
 

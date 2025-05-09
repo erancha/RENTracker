@@ -122,7 +122,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   <ListItemIcon>
                     <UserCircle />
                   </ListItemIcon>
-                  SaaS Tenants
+                  Landlord Settings
                 </MenuItem>
                 {userType === UserType.Admin && (
                   <MenuItem

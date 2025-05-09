@@ -16,6 +16,7 @@ import {
   setApartmentStateAction,
   deleteApartmentAction,
   setApartmentConfirmedByBackendAction,
+  prepareReadApartmentsCommandAction,
 } from '../redux/apartments/actions';
 import { setApartmentActivityAction, addApartmentActivityAction, setApartmentActivityConfirmedByBackendAction } from '../redux/apartmentActivity/actions';
 import {
@@ -129,6 +130,9 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (readCommand && readCommand !== prevProps.readCommand) {
       const type = 'read';
       switch (readCommand.type) {
+        case 'apartments' as CommandSubject:
+          upload({ command: { type, params: { apartments: {} } } });
+          break;
         case 'apartmentActivity' as CommandSubject:
           const activityParams = readCommand.params as IReadApartmentActivityParams;
           upload({ command: { type, params: { activity: { apartment_id: activityParams.apartment_id } } } });
@@ -286,8 +290,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (parsedEventData.userType) {
       this.props.setUserTypeAction(parsedEventData.userType);
       if (parsedEventData.userType === UserType.Admin) this.props.toggleConnectionsAction(true);
-      else if (parsedEventData.userType === UserType.Landlord) this.props.prepareReadSaasTenantsCommandAction();
-
+      this.props.prepareReadSaasTenantsCommandAction();
       if (parsedEventData.pendingEmailVerification)
         toast.info('Email verification pending. Please verify your email address to continue using the application.', { autoClose: 10000 });
     }
@@ -368,6 +371,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
         this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
       } else if (!dataUpdated.saasTenants.is_disabled && this.props.userType === UserType.Tenant) {
         this.props.setUserTypeAction(UserType.Landlord);
+        this.props.prepareReadApartmentsCommandAction();
         this.props.setMenuSelectedPageAction(DOCUMENTS_VIEW);
       }
     }
@@ -422,6 +426,7 @@ interface IWebSocketProps {
   addApartmentActivityAction: typeof addApartmentActivityAction;
   setApartmentActivityAction: typeof setApartmentActivityAction;
   setApartmentActivityConfirmedByBackendAction: typeof setApartmentActivityConfirmedByBackendAction;
+  prepareReadApartmentsCommandAction: typeof prepareReadApartmentsCommandAction;
   activity: any[];
   menuSelectedPage: string | null;
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
@@ -474,6 +479,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setApartmentStateAction,
       deleteApartmentAction,
       setApartmentConfirmedByBackendAction,
+      prepareReadApartmentsCommandAction,
       addApartmentActivityAction,
       setApartmentActivityAction,
       setApartmentActivityConfirmedByBackendAction,

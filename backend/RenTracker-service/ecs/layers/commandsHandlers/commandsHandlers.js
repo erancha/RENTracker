@@ -93,7 +93,7 @@ async function handleCreate({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.createSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
-    await dbData.cache.invalidation.getSaasTenants();
+    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataCreated: response };
@@ -119,7 +119,10 @@ const handleRead = logMiddleware('handleRead')(async function ({ commandParams, 
       };
   }
   if (commandParams.saasTenants) {
-    response = { ...response, saasTenants: await dbData.cache.getSaasTenants() };
+    response = {
+      ...response,
+      saasTenants: await dbData.cache.getSaasTenants({ connectedUserId }),
+    };
   }
 
   if (response) return { dataRead: { ...response } };
@@ -148,7 +151,7 @@ async function handleUpdate({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.updateSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
-    await dbData.cache.invalidation.getSaasTenants();
+    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataUpdated: response };
@@ -172,7 +175,7 @@ async function handleDelete({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.deleteSaasTenant({ saas_tenant_id }) };
-    await dbData.cache.invalidation.getSaasTenants();
+    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataDeleted: response };
@@ -190,9 +193,10 @@ function determineTargetUsers({ commandType, commandParams, response, connectedU
     if (commandParams.apartments) {
       switch (commandType) {
         case 'create':
+        case 'read':
         case 'update':
         case 'delete':
-          // targetUserIds.push(process.env.ADMIN_USER_ID, connectedUserId);
+          // targetUserIds.push(ADMIN_USER_ID, connectedUserId);
           targetUserIds.push(connectedUserId);
           break;
       }
