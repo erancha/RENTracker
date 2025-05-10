@@ -1,5 +1,5 @@
+import { UserType } from 'redux/auth/types';
 import { IAppState } from './types';
-import { UserType } from '../auth/types';
 
 const initialState: IAppState = {
   menu: {
@@ -10,7 +10,7 @@ const initialState: IAppState = {
   },
   auth: {
     isAuthenticated: false,
-    userType: UserType.Unknown,
+    userType: UserType.Initial,
     JWT: null,
     userId: null,
     userName: null,

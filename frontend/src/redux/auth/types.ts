@@ -1,8 +1,9 @@
 export enum UserType {
+  Initial = '',
+  Pending = 'Pending',
   Admin = 'Admin',
   Landlord = 'Landlord',
   Tenant = 'Tenant',
-  Unknown = '',
 }
 
 export interface IAuthState {

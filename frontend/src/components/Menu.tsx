@@ -104,26 +104,43 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
             <div className='icon-line'></div>
           </div>
         </Button>
+
         <MuiMenu anchorEl={anchorEl ? anchorEl : this.buttonRef.current} open={menuOpen} onClose={this.handleMenuClose}>
           <div className='menu-content-inner'>
-            {isAuthenticated && (
+            {!isAuthenticated ? (
+              <MenuItem
+                onClick={() => {
+                  this.props.loginWithGoogleAction(auth);
+                  this.handleMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <UserCircle />
+                  <LogIn />
+                </ListItemIcon>
+                Sign In with Google
+              </MenuItem>
+            ) : (
               <>
                 <Typography variant='subtitle2' className='user-details'>
                   {auth.user?.profile.name} : {auth.user?.profile.email}
                 </Typography>
-
                 <hr />
-                <MenuItem
-                  onClick={() => {
-                    this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
-                    this.handleMenuClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <UserCircle />
-                  </ListItemIcon>
-                  Landlord Settings
-                </MenuItem>
+
+                {(userType === UserType.Admin || userType === UserType.Landlord) && (
+                  <MenuItem
+                    onClick={() => {
+                      this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
+                      this.handleMenuClose();
+                    }}
+                  >
+                    <ListItemIcon>
+                      <UserCircle />
+                    </ListItemIcon>
+                    Landlord Settings
+                  </MenuItem>
+                )}
+
                 {userType === UserType.Admin && (
                   <MenuItem
                     onClick={() => {
@@ -137,10 +154,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                     Apartments Analytics
                   </MenuItem>
                 )}
-              </>
-            )}
-            <div>
-              {isAuthenticated ? (
+
                 <MenuItem
                   onClick={() => {
                     this.props.logoutUserAction(auth);
@@ -152,23 +166,8 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   </ListItemIcon>
                   Sign Out
                 </MenuItem>
-              ) : (
-                <>
-                  <MenuItem
-                    onClick={() => {
-                      this.props.loginWithGoogleAction(auth);
-                      this.handleMenuClose();
-                    }}
-                  >
-                    <ListItemIcon>
-                      <UserCircle />
-                      <LogIn />
-                    </ListItemIcon>
-                    Sign In with Google
-                  </MenuItem>
-                </>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </MuiMenu>
       </div>

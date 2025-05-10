@@ -49,7 +49,7 @@ const handleCommand = logMiddleware('handleCommand')(async function ({ commandTy
       break;
 
     default:
-      throw 'Unknown command type!';
+      throw 'Unexpected command type!';
   }
 
   logTaskMessage('Response', response);

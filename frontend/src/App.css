@@ -135,6 +135,67 @@ body {
     }
   }
 
+  .first-time-landing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    margin: auto;
+    padding: 1rem;
+
+    > .content {
+      background-color: whitesmoke;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      max-width: 650px;
+      width: 100%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+      > .buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin: 2rem 0;
+
+        > button {
+          min-width: 200px;
+          transition: transform 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+          }
+
+          &.has-document-id {
+            animation: pulsate-brightness 2s infinite;
+          }
+        }
+      }
+
+      .has-document-id.message {
+        color: green;
+        font-weight: 300;
+
+        > .countdown-timer {
+          color: darkred;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   .header-title-container {
     display: grid;
     grid-template-columns: minmax(70px, 2fr) 1fr;
@@ -274,7 +335,7 @@ body {
         animation: fade-in-from-30-percent 8s linear 1 forwards;
       }
       &.visible {
-        margin-top: 0;
+        margin-top: 0.5rem;
       }
     }
 
@@ -328,7 +389,7 @@ body {
 
     &.sign-in-from-overview {
       font-weight: 600;
-      animation: pulsate-brightness 0.75s ease-in-out 12 4s forwards;
+      animation: pulsate-brightness 0.5s ease-in-out 20 4s forwards;
     }
   }
 }
@@ -811,10 +872,6 @@ body {
         box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
       }
     }
-
-    .action-button {
-      scale: 1.2;
-    }
   }
 }
 
@@ -1149,6 +1206,10 @@ body {
     padding-left: 1rem;
   }
 
+  .main-container .first-time-landing > .content {
+    max-width: 80%;
+  }
+
   .header-container {
     gap: 0.5rem;
   }
@@ -1174,6 +1235,10 @@ body {
   .main-container {
     .header-container .header-title {
       font-size: 1.4rem;
+    }
+
+    .first-time-landing > .content > .buttons {
+      flex-direction: column;
     }
 
     .header,

@@ -1,9 +1,10 @@
 import React from 'react';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Provider, connect } from 'react-redux';
+import { FirstTimeLanding } from './components/FirstTimeLanding';
 import store from './redux/store/store';
 import { IAppState } from './redux/store/types';
-import { loginWithGoogleAction, checkAuthStatusAction } from './redux/auth/actions';
+import { loginWithGoogleAction, checkAuthStatusAction, setUserTypeAction } from './redux/auth/actions';
 import { AuthContextProps, useAuth } from 'react-oidc-context';
 import { toggleOverviewAction, setMenuSelectedPageAction } from './redux/menu/actions';
 import Spinner from './components/Spinner';
@@ -24,7 +25,7 @@ import { IDocument } from 'redux/documents/types';
 
 // Create the base component
 class AppComponent extends React.Component<IAppProps> {
-  async componentDidMount() {
+  componentDidMount() {
     const { auth, checkAuthStatusAction } = this.props;
     checkAuthStatusAction(auth);
 
@@ -34,6 +35,11 @@ class AppComponent extends React.Component<IAppProps> {
       const { auth, toggleOverviewAction } = this.props;
       if (!auth.isAuthenticated) toggleOverviewAction(true);
     }, 8000);
+  }
+
+  componentDidUpdate(prevProps: Readonly<IAppProps>, prevState: Readonly<{}>, snapshot?: any): void {
+    // Redirect admin users to SaaS tenants view
+    if (this.props.userType !== prevProps.userType && this.props.userType === UserType.Admin) this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
   }
 
   componentWillUnmount() {
@@ -70,13 +76,13 @@ class AppComponent extends React.Component<IAppProps> {
           </div>
         </div>
 
-        {auth.isAuthenticated ? this.renderMenuSelectedPage() : this.renderOverview()}
+        {auth.isAuthenticated ? this.renderSelectedAuthenticatedView() : this.renderOverview()}
       </div>
     );
   }
 
   // Renders the selected page based on the menuSelectedPage prop
-  private renderMenuSelectedPage() {
+  private renderSelectedAuthenticatedView() {
     const { menuSelectedPage, setMenuSelectedPageAction } = this.props;
 
     const handleUndo = () => {
@@ -97,10 +103,12 @@ class AppComponent extends React.Component<IAppProps> {
         </button>
         <SaaSTenants />
       </div>
+    ) : this.props.userType === UserType.Pending ? (
+      <FirstTimeLanding userId={this.props.userId} setUserTypeAction={this.props.setUserTypeAction} />
     ) : this.props.userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (
-      this.props.userType !== UserType.Unknown && <Apartments />
+      this.props.userType === UserType.Landlord && <Apartments />
     );
   }
 
@@ -172,8 +180,10 @@ interface IAppProps {
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   checkAuthStatusAction: typeof checkAuthStatusAction;
   loginWithGoogleAction: typeof loginWithGoogleAction;
+  setUserTypeAction: typeof setUserTypeAction;
   apartments: IApartment[];
-  userType: UserType;
+  userId: string | null;
+  userType: UserType | undefined;
   currentApartmentId: string | null;
   selectedDocument: IDocument | null;
   JWT: string | null;
@@ -187,6 +197,7 @@ const mapStateToProps = (state: IAppState) => ({
   showOverview: state.menu.showOverview,
   menuSelectedPage: state.menu.menuSelectedPage,
   apartments: state.apartments.apartments,
+  userId: state.auth.userId,
   userType: state.auth.userType,
   currentApartmentId: state.apartments.currentApartmentId,
   JWT: state.auth.JWT,
@@ -202,6 +213,7 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
       setMenuSelectedPageAction,
       checkAuthStatusAction,
       loginWithGoogleAction,
+      setUserTypeAction,
     },
     dispatch
   );

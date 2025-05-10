@@ -120,7 +120,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
           upload({ command: { type, params: { saasTenants: createCommand.params } } });
           break;
         default:
-          console.warn(`Unknown create command type: ${createCommand.type}`);
+          console.warn(`Unexpected create command type: ${createCommand.type}`);
           break;
       }
     }
@@ -145,7 +145,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
           upload({ command: { type, params: { saasTenants: readCommand.params } } });
           break;
         default:
-          console.warn(`Unknown read command type: ${readCommand.type}`);
+          console.warn(`Unexpected read command type: ${readCommand.type}`);
           break;
       }
     }
@@ -163,7 +163,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
           upload({ command: { type, params: { saasTenants: updateCommand.params } } });
           break;
         default:
-          console.warn(`Unknown update command type: ${updateCommand.type}`);
+          console.warn(`Unexpected update command type: ${updateCommand.type}`);
           break;
       }
     }
@@ -183,7 +183,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
           upload({ command: { type, params: { saasTenants: deleteCommand.params } } });
           break;
         default: {
-          console.warn(`Unknown delete command type: ${deleteCommand.type}`);
+          console.warn(`Unexpected delete command type: ${deleteCommand.type}`);
           break;
         }
       }
@@ -290,7 +290,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
     if (parsedEventData.userType) {
       this.props.setUserTypeAction(parsedEventData.userType);
       if (parsedEventData.userType === UserType.Admin) this.props.toggleConnectionsAction(true);
-      this.props.prepareReadSaasTenantsCommandAction();
+      if (parsedEventData.userType === UserType.Admin || parsedEventData.userType === UserType.Landlord) this.props.prepareReadSaasTenantsCommandAction();
       if (parsedEventData.pendingEmailVerification)
         toast.info('Email verification pending. Please verify your email address to continue using the application.', { autoClose: 10000 });
     }

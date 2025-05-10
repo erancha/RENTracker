@@ -42,7 +42,7 @@ const documentsSlice = createSlice({
     });
     builder.addCase(getDocumentThunk.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.error.message || 'Failed to fetch document';
+      state.error = /*action.error.message ||*/ 'Failed to fetch document';
       state.selectedDocument = null;
     });
 

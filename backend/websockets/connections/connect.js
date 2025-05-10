@@ -122,7 +122,7 @@ exports.handler = async (event) => {
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
       // Read and send data to the frontend:
-      const userType = currentUserId === ADMIN_USER_ID ? 'Admin' : (await dbData.cache.isLandlordUser({ user_id: currentUserId })) ? 'Landlord' : 'Tenant';
+      const userType = currentUserId === ADMIN_USER_ID ? 'Admin' : (await dbData.cache.isLandlordUser({ user_id: currentUserId })) ? 'Landlord' : 'Pending';
       let response = {
         targetConnectionIds: [currentConnectionId],
         message: { currentUserEmail, userType, connectionsAndUsernames },

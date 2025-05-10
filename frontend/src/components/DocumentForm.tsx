@@ -1211,7 +1211,7 @@ interface DocumentFormState {
   showSecondTenant: boolean;
   expandSecondTenant: boolean;
 }
-type FormData = Record<string, any>
+type FormData = Record<string, any>;
 const documentWasSigned = (formData: FormData) => !!formData.landlordSignature;
 
 const mapStateToProps = (state: RootState) => ({

@@ -1,10 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { AnyAction } from 'redux';
+import { actions as documentActions } from '../redux/documents/slice';
 import { RootState } from '../redux/store/reducers';
 import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getTenantDocumentsThunk } from '../redux/documents/thunks';
 import { Pencil, FileText, Plus, ArrowRight, Undo2, Share2 } from 'lucide-react';
 import { timeShortDisplay, formatDate } from 'utils/utils';
+import { getClipboardDocumentId } from '../utils/clipboard';
 import DocumentForm from './DocumentForm';
 import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
@@ -109,7 +113,13 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
               </button>
             </div>
           ) : showForm ? (
-            <DocumentForm documentId={this.props.selectedDocument?.document_id} onClose={() => this.setState({ showForm: false, editMode: false })} />
+            <DocumentForm
+              documentId={this.props.selectedDocument?.document_id}
+              onClose={async () => {
+                this.setState({ showForm: false, editMode: false, documentIdInput: '' });
+                this.props.setSelectedDocument(null);
+              }}
+            />
           ) : (
             <div className='data-container'>
               {documents.length > 0 ? (
@@ -184,38 +194,14 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   };
 
   /**
-   * Extracts the second UUID after the first 'https' in a WhatsApp message and ensures the next part is '/rental-agreement.pdf'
-   * @param {string} message - The WhatsApp message containing the UUID
-   * @returns {string|null} The extracted UUID or null if not found
-   */
-  extractDocumentId = (message: string): string | null => {
-    let documentId: string | null = null;
-    if (message) {
-      // Match the second UUID after the first 'https' and ensure the next part is '/rental-agreement.pdf'
-      const match = message.match(
-        /https.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b(?=\/rental-agreement\.pdf)/i
-      );
-      documentId = match ? match[2] : null;
-      if (!documentId) {
-        const warningMessage = `Invalid document ID format in the message: ${message}. Please ensure it is a valid UUID.`;
-        toast.warn(warningMessage);
-        console.warn(warningMessage, match);
-        navigator.clipboard.writeText('').catch(() => {}); // Clear clipboard
-      }
-    }
-    return documentId;
-  };
-
-  /**
    * Handles click on document ID input
    */
   handleFocus = async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      const documentId = this.extractDocumentId(text);
+      const documentId = await getClipboardDocumentId();
       if (documentId) {
         this.setState({ documentIdInput: documentId });
-        this.props.getDocumentThunk(documentId.trim());
+        this.props.getDocumentThunk(documentId);
       }
     } catch (error) {
       // Ignore clipboard read errors
@@ -264,6 +250,7 @@ interface DocumentListProps {
   error: string | null;
   getDocumentThunk: (documentId: string) => void;
   getTenantDocumentsThunk: (tenantUserId: string) => void;
+  setSelectedDocument: (document: IDocument | null) => void;
 }
 
 /**
@@ -290,4 +277,10 @@ interface DocumentListState {
   documentIdInput: string;
 }
 
-export default connect(mapStateToProps, { getDocumentThunk, getTenantDocumentsThunk })(TenantDocumentList);
+const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, undefined, AnyAction>) => ({
+  getDocumentThunk: (documentId: string) => dispatch(getDocumentThunk(documentId)),
+  getTenantDocumentsThunk: (tenantUserId: string) => dispatch(getTenantDocumentsThunk(tenantUserId)),
+  setSelectedDocument: (document: IDocument | null) => dispatch(documentActions.setSelectedDocument(document)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(TenantDocumentList);
