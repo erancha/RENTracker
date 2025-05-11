@@ -1,3 +1,25 @@
+/* RTL Support */
+html[dir='rtl'] .app-name {
+  margin-right: 0;
+  margin-left: 3px;
+}
+
+html[dir='rtl'] .card .details {
+  direction: rtl;
+}
+
+html[dir='rtl'] .error-message {
+  text-align: right;
+}
+
+html[dir='rtl'] .app-overview-container {
+  align-items: flex-end;
+}
+
+html[dir='rtl'] .action-button {
+  transform: scaleX(-1);
+}
+
 /* Base Styles */
 body {
   display: flex;
@@ -132,6 +154,10 @@ body {
       padding: 4px;
       border-radius: 0.5rem;
       margin-bottom: 2rem;
+
+      .language-switcher {
+        scale: 60%;
+      }
     }
   }
 
@@ -299,7 +325,7 @@ body {
     p {
       font-weight: 400;
       margin: 0.5rem 1rem;
-      text-align: left;
+      text-align: start;
 
       &,
       & > span {
@@ -317,13 +343,12 @@ body {
 
     ul {
       text-align: center;
-      margin-top: 1rem;
-      margin-left: 1rem;
+      margin: 1rem;
       padding-inline-start: 0;
 
       li {
         margin: 0.5rem 0;
-        text-align: left;
+        text-align: start;
       }
     }
 

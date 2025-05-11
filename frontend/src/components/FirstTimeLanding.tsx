@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Typography } from '@mui/material';
 import { getClipboardDocumentId } from '../utils/clipboard';
 import { UserType } from 'redux/auth/types';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for the FirstTimeLanding component
@@ -20,6 +21,7 @@ interface FirstTimeLandingProps {
  * @param {FirstTimeLandingProps} props - Component props
  * @param {(isLandlord: boolean) => void} props.onSelect - Callback function when a role is selected
  */
+
 /**
  * Saves a user ID to the tenants array in localStorage if they are a tenant
  * @param {string} userId - The ID of the user to save
@@ -42,6 +44,7 @@ const saveUserTypeToStorage = (userId: string, userType: UserType): void => {
 };
 
 export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setUserTypeAction }) => {
+  const { t } = useTranslation();
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [, setAutoSelectTimer] = useState<NodeJS.Timeout | null>(null);
@@ -144,29 +147,28 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
     <div className='first-time-landing'>
       <div className='content'>
         <Typography variant='h4' gutterBottom align='center'>
-          Welcome to <span className='app-name'>RENTracker</span>
+          {t('welcome.title')}
         </Typography>
         <Typography variant='body1' paragraph align='center'>
-          The app supports two user roles: <b>Landlords</b> who manage properties, rental agreements, and activity, and <b>Tenants</b> who complete their
-          details and sign rental agreements.
+          {t('welcome.description', {
+            landlords: <b>{t('roles.landlordDesc')}</b>,
+            tenants: <b>{t('roles.tenantDesc')}</b>,
+          })}
         </Typography>
         <Typography variant='body1' paragraph align='center'>
-          Please select your role to continue:
+          {t('welcome.selectRole')}
         </Typography>
         <div className='buttons'>
           <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Landlord)}>
-            I'm a Landlord
+            {t('roles.landlord')}
           </Button>
           <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Tenant)} className={hasDocumentId ? 'has-document-id' : ''}>
-            I'm a Tenant
+            {t('roles.tenant')}
           </Button>
         </div>
         {hasDocumentId && (
           <Typography variant='body2' align='center' color='text.secondary' className='has-document-id message'>
-            Document ID detected - Tenant mode will be auto-selected in{' '}
-            <span className='countdown-timer'>
-              {countdown} second{countdown !== 1 ? 's' : ''}
-            </span>
+            {t('documentDetection.message')} <span className='countdown-timer'>{t('documentDetection.countdown', { count: countdown })}</span>
           </Typography>
         )}
       </div>

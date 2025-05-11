@@ -10,22 +10,32 @@ import { toggleOverviewAction, setMenuSelectedPageAction } from './redux/menu/ac
 import Spinner from './components/Spinner';
 import SaaSTenants from './components/SaaSTenants';
 import Apartments from './components/Apartments';
+import TenantDocumentList from './components/TenantDocumentList';
 import Analytics from './components/Analytics';
 import WebSocketService from './components/WebSocketService';
 import Menu from './components/Menu';
-import appConfigData from './appConfig.json';
 import { ToastContainer } from 'react-toastify';
 import { Undo2 } from 'lucide-react';
 import { DOCUMENTS_VIEW, ANALYTICS_VIEW, SAAS_TENANTS_VIEW } from './redux/menu/types';
 import { UserType } from './redux/auth/types';
+import { IApartment } from './redux/apartments/types';
+import { IDocument } from './redux/documents/types';
+
+import appConfigData from './appConfig.json';
+import 'react-toastify/dist/ReactToastify.css';
+
+import { useTranslation } from 'react-i18next';
 import './App.css';
-import { IApartment } from 'redux/apartments/types';
-import TenantDocumentList from './components/TenantDocumentList';
-import { IDocument } from 'redux/documents/types';
+import './i18n';
+import LanguageSwitcher from 'components/LanguageSwitcher';
 
 // Create the base component
-class AppComponent extends React.Component<IAppProps> {
-  componentDidMount() {
+class AppComponent extends React.Component<IAppProps, Record<string, never>> {
+  private t = (key: string, options?: any) => {
+    return this.props.t(key, options);
+  };
+
+  componentDidMount(): void {
     const { auth, checkAuthStatusAction } = this.props;
     checkAuthStatusAction(auth);
 
@@ -37,7 +47,7 @@ class AppComponent extends React.Component<IAppProps> {
     }, 8000);
   }
 
-  componentDidUpdate(prevProps: Readonly<IAppProps>, prevState: Readonly<{}>, snapshot?: any): void {
+  componentDidUpdate(prevProps: Readonly<IAppProps>): void {
     // Redirect admin users to SaaS tenants view
     if (this.props.userType !== prevProps.userType && this.props.userType === UserType.Admin) this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
   }
@@ -60,7 +70,7 @@ class AppComponent extends React.Component<IAppProps> {
         <div className='header-sticky-container'>
           <div className='header-container'>
             <div className='header-title-container'>
-              <div className='header-title' title='AWS/React/WebSockets-based betting application.'>
+              <div className='header-title' title='AWS/React/WebSockets-based application.'>
                 <span className='app-name'>RENTracker</span>
               </div>
               <img src='/favicon.ico' alt='Logo' width='32' height='32' />
@@ -68,7 +78,7 @@ class AppComponent extends React.Component<IAppProps> {
               {auth.isAuthenticated && !showConnections && <WebSocketService />}
             </div>
 
-            {auth.isAuthenticated && showConnections && <WebSocketService />}
+            {!auth.isAuthenticated ? <LanguageSwitcher className='language-switcher' /> : showConnections && <WebSocketService />}
 
             <div className={`menu-container${auth.isAuthenticated ? ' authenticated' : ''}`}>
               <Menu />
@@ -121,13 +131,14 @@ class AppComponent extends React.Component<IAppProps> {
         <hr />
         <div className='header2'>
           <p>
-            <span className='app-name'>RENTracker</span> is a property rent tracking app that streamlines rent agreements and activity.
+            <span className='app-name'>RENTracker</span> {this.t('overview.description')}
           </p>
           <hr />
           <p>
-            The app provides <span className='secure-authentication'>secure authentication</span> through Google:{' '}
+            {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
+            {this.t('overview.throughGoogle')}{' '}
             <span className='text-link sign-in-from-overview' onClick={() => loginWithGoogleAction(auth)}>
-              Sign In
+              {this.t('overview.signIn')}
             </span>
           </p>
         </div>
@@ -136,21 +147,18 @@ class AppComponent extends React.Component<IAppProps> {
           {!showOverview && (
             <span>
               <span className='text-link toggle-overview' onClick={() => toggleOverviewAction(!showOverview)}>
-                {`Show ${showOverview ? 'less' : 'more'}`}
+                {showOverview ? this.t('overview.showLess') : this.t('overview.showMore')}
               </span>
               ...
             </span>
           )}
           <ul>
             <li>
-              The app supports two user roles: <b>Landlords</b> who manage properties, rental agreements, and activity, and <b>Tenants</b> who complete their
-              details and sign rental agreements.
+              {this.t('overview.roles.title')} <b>{this.t('overview.roles.landlords')}</b> {this.t('overview.roles.landlordsDesc')}, {this.t('common.and')}
+              <b>{this.t('overview.roles.tenants')}</b> {this.t('overview.roles.tenantsDesc')}.
             </li>
-            <li>
-              The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS
-              services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates
-            </li>
-            <li>The app offers an intuitive, mobile-friendly React UI/UX.</li>
+            <li>{this.t('overview.techStack')}.</li>
+            <li>{this.t('overview.ui')}.</li>
           </ul>
           <div className='link-container'>
             <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>
@@ -189,6 +197,7 @@ interface IAppProps {
   JWT: string | null;
   auth: AuthContextProps;
   showConnections: boolean;
+  t: (key: string, options?: any) => string;
 }
 
 // Maps required state from Redux store to component props
@@ -218,18 +227,25 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
+// Connect the component to Redux
 const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(AppComponent);
 
 // Create the root component that provides the store
 export const App = () => {
   const auth = useAuth();
+  const { t, i18n } = useTranslation();
+
+  React.useEffect(() => {
+    document.documentElement.dir = i18n.language === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
 
   // render
   return auth.isLoading ? (
     <Spinner />
   ) : (
     <Provider store={store}>
-      <ConnectedApp auth={auth} />
+      <ConnectedApp auth={auth} t={t} />
     </Provider>
   );
 };

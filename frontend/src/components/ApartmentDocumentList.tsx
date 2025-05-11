@@ -2,6 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from '@reduxjs/toolkit';
 import { AnyAction } from 'redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { RootState } from '../redux/store/reducers';
 import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getApartmentDocumentsThunk, deleteDocumentThunk } from '../redux/documents/thunks';
@@ -132,7 +134,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error('Failed to generate PDF');
+                          else toast.error(this.props.t('toast.error'));
                         }}
                       >
                         <FileText />
@@ -143,7 +145,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                         onClick={async () => {
                           const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
-                          else toast.error('Failed to generate PDF');
+                          else toast.error(this.props.t('toast.error'));
                         }}
                       >
                         <Share2 />
@@ -152,7 +154,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                   </div>
                 ))
               ) : (
-                <div className='empty-message'>No documents found. Create a new rental agreement ...</div>
+                <div className='empty-message'>{this.props.t('documents.noDocumentsLandlord')}</div>
               )}
             </div>
           )}
@@ -215,13 +217,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     if (window.confirm(`Are you sure you want to delete document '${getDocumentTitle(document.template_fields?.tenant1Name)}'?`)) {
       try {
         await this.props.deleteDocumentThunk(document.document_id);
-        toast.success('Document deleted successfully');
+        toast.success(this.props.t('toast.documentDeleted'));
         // Refresh the documents list
         if (this.props.apartmentId) {
           await this.props.getApartmentDocumentsThunk(this.props.apartmentId);
         }
       } catch (error) {
-        toast.error('Failed to delete document');
+        toast.error(this.props.t('toast.error'));
       }
     }
   };
@@ -232,6 +234,9 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
  * @interface DocumentListProps
  */
 interface DocumentListProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   apartmentId: string;
   apartmentAddress: string;
   roomsCount: number;
@@ -285,4 +290,4 @@ interface DocumentListState {
   sectionsToExpand: string[];
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ApartmentDocumentList);
+export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(ApartmentDocumentList));

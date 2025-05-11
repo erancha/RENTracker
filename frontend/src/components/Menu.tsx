@@ -1,6 +1,8 @@
 import React from 'react';
 import { bindActionCreators, Dispatch } from 'redux';
 import { connect } from 'react-redux';
+import { useTranslation, withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { IAppState } from '../redux/store/types';
 import { SAAS_TENANTS_VIEW, ANALYTICS_VIEW } from '../redux/menu/types';
 import { toggleMenuAction, setAnchorElAction, setMenuSelectedPageAction } from '../redux/menu/actions';
@@ -10,14 +12,19 @@ import { Button, Menu as MuiMenu, MenuItem, Typography, ListItemIcon } from '@mu
 import { UserCircle, LogIn, ChartNoAxesCombined } from 'lucide-react';
 import { AuthContextProps, useAuth } from 'react-oidc-context';
 import { toast } from 'react-toastify';
+import LanguageSwitcher from './LanguageSwitcher';
 
 // Wraps the connected menu component with auth context
 const MenuWrapper = (props: IMenuProps) => {
   const auth = useAuth();
-  return <ConnectedMenu {...props} auth={auth} />;
+  const { t, i18n } = useTranslation();
+  return <ConnectedMenu {...props} auth={auth} t={t} i18n={i18n} tReady={true} />;
 };
 
 interface ConnectedMenuProps extends IMenuProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   auth: AuthContextProps;
 }
 
@@ -107,6 +114,10 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
 
         <MuiMenu anchorEl={anchorEl ? anchorEl : this.buttonRef.current} open={menuOpen} onClose={this.handleMenuClose}>
           <div className='menu-content-inner'>
+            <div style={{ padding: '8px 16px' }}>
+              <LanguageSwitcher />
+            </div>
+            <hr />
             {!isAuthenticated ? (
               <MenuItem
                 onClick={() => {
@@ -118,7 +129,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   <UserCircle />
                   <LogIn />
                 </ListItemIcon>
-                Sign In with Google
+                {this.props.t('auth.signInWithGoogle')}
               </MenuItem>
             ) : (
               <>
@@ -137,7 +148,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                     <ListItemIcon>
                       <UserCircle />
                     </ListItemIcon>
-                    Landlord Settings
+                    {this.props.t('menu.landlordSettings')}
                   </MenuItem>
                 )}
 
@@ -151,7 +162,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                     <ListItemIcon>
                       <ChartNoAxesCombined />
                     </ListItemIcon>
-                    Apartments Analytics
+                    {this.props.t('menu.analytics')}
                   </MenuItem>
                 )}
 
@@ -164,7 +175,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   <ListItemIcon>
                     <UserCircle />
                   </ListItemIcon>
-                  Sign Out
+                  {this.props.t('auth.signOut')}
                 </MenuItem>
               </>
             )}
@@ -216,4 +227,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(mapStateToProps, mapDispatchToProps)(MenuWrapper);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(MenuWrapper));

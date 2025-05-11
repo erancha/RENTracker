@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
-import Konva from 'konva';
 import { Check, Undo2 } from 'lucide-react';
 
 interface SignatureMakerProps {
@@ -41,7 +40,7 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
     const layer = stage.getLayers()[0];
 
     // Create a white background
-    const background = new Konva.Rect({
+    const background = new (window as any).Konva.Rect({
       x: 0,
       y: 0,
       width: stage.width(),
@@ -54,8 +53,8 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
     layer.draw();
 
     // Ensure the signature lines are black
-    layer.getChildren().forEach((child: Konva.Node) => {
-      if (child instanceof Konva.Line) {
+    layer.getChildren().forEach((child: any) => {
+      if (child instanceof (window as any).Konva.Line) {
         child.stroke('black');
       }
     });
@@ -76,6 +75,7 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
 
   return (
     <div>
+      {/* @ts-ignore */}
       <Stage
         width={window.innerWidth * 0.9} // Adjust width to 90% of the window width
         height={300}
@@ -90,7 +90,15 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
       >
         <Layer>
           {lines.map((line, i) => (
-            <Line key={i} points={line.points} stroke='darkblue' strokeWidth={4} tension={0.5} lineCap='round' globalCompositeOperation='source-over' />
+            <Line
+              key={i}
+              points={line.points}
+              stroke='#000'
+              strokeWidth={2}
+              tension={0.5}
+              lineCap='round'
+              globalCompositeOperation='source-over'
+            />
           ))}
         </Layer>
       </Stage>

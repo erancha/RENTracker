@@ -1,4 +1,6 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import {
   TextField,
   Typography,
@@ -849,9 +851,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     // console.log(this.state);
     if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
-      toast.warning('Please have the tenant sign first');
+      toast.warning(this.props.t('toast.signFirst'));
     else if (section === 'signature' && documentWasSigned(this.state.formData))
-      toast.warning('The agreement was already signed by both the tenant and the landlord');
+      toast.warning(this.props.t('toast.alreadySigned'));
     else
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
@@ -935,7 +937,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       if (onClose) onClose();
     } catch (error) {
       console.error('Error saving document:', error);
-      toast.error(`Failed to ${documentId ? 'update' : 'create'} document. Please try again.`);
+      toast.error(this.props.t('toast.error'));
     }
   };
 
@@ -1005,10 +1007,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           },
         }));
 
-        toast.success(`File '${file.name}' uploaded successfully!`);
+        toast.success(this.props.t('toast.fileUploaded', { fileName: file.name }));
       } catch (error) {
         console.error('Error uploading file:', error);
-        toast.error('Failed to upload file. Please try again.');
+        toast.error(this.props.t('toast.error'));
       }
     }
   };
@@ -1039,7 +1041,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       }));
     } catch (error) {
       console.error('Error saving signature:', error);
-      toast.error('Failed to save signature. Please try again.');
+      toast.error(this.props.t('toast.error'));
     }
   };
 
@@ -1197,7 +1199,10 @@ interface DispatchProps {
 /**
  * Combined props type for the DocumentForm component
  */
-type DocumentFormProps = OwnProps & StateProps & DispatchProps;
+type DocumentFormProps = OwnProps & StateProps & DispatchProps & {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+};
 
 /**
  * Component state interface
@@ -1242,4 +1247,4 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, unknown, AnyActio
 });
 
 const connector = connect(mapStateToProps, mapDispatchToProps);
-export default connector(DocumentForm);
+export default withTranslation()(connector(DocumentForm));

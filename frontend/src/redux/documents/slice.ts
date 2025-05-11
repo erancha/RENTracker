@@ -3,6 +3,18 @@ import { IDocument } from './types';
 import { createDocumentThunk, updateDocumentThunk, getDocumentThunk, getApartmentDocumentsThunk, getTenantDocumentsThunk } from './thunks';
 import initialState from 'redux/store/initialState';
 import { toast } from 'react-toastify';
+import i18next from 'i18next';
+
+// a wrapper function
+const translate = (key: string): string => {
+  try {
+    // @ts-ignore - Tell TypeScript to ignore this line
+    return i18next.t(key);
+  } catch (e) {
+    // Fallback if translation fails
+    return key;
+  }
+};
 
 const documentsSlice = createSlice({
   name: 'documents',
@@ -87,7 +99,9 @@ const documentsSlice = createSlice({
       state.documents = state.documents.filter((doc) => doc.document_id !== action.payload.document_id);
       // Add new document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
-      toast.success('Document created successfully', { autoClose: 2000 });
+
+      // Use our wrapper function to handle translation
+      toast.success(translate('toast.documentCreated'), { autoClose: 2000 });
     });
     builder.addCase(createDocumentThunk.rejected, (state, action) => {
       state.loading = false;
@@ -108,7 +122,9 @@ const documentsSlice = createSlice({
       state.documents.unshift(action.payload);
 
       const isDocumentSigned = action.payload.template_fields['tenantSignature'];
-      toast.success('Document updated successfully', { autoClose: isDocumentSigned ? 2000 : 5000 });
+
+      // Use our wrapper function to handle translation
+      toast.success(translate('toast.documentUpdated'), { autoClose: isDocumentSigned ? 2000 : 5000 });
     });
     builder.addCase(updateDocumentThunk.rejected, (state, action) => {
       state.loading = false;

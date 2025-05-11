@@ -1,0 +1,90 @@
+{
+  "overview": {
+    "description": "הינה אפליקציה המייעלת הפקת וניהול הסכמי שכירות.",
+    "authDescription": "האפליקציה מספקת",
+    "secureAuth": "אימות מאובטח",
+    "throughGoogle": "באמצעות Google:",
+    "signIn": "התחבר",
+    "showMore": "הצג עוד",
+    "showLess": "הצג פחות",
+    "roles": {
+      "title": "האפליקציה תומכת בשני תפקידי משתמש:",
+      "landlords": "משכירים",
+      "landlordsDesc": "המנהלים נכסים, הסכמי שכירות ופעילות",
+      "tenants": "שוכרים",
+      "tenantsDesc": "המשלימים את פרטיהם וחותמים על הסכמי שכירות"
+    },
+    "techStack": "האפליקציה מתוכננת לקנה מידה גדול, משתמשת במחשוב וזיכרון ללא שרת, עם אספקת תוכן גלובלית דרך CloudFront. בנויה עם שירותי AWS, עם ניטור חזק באמצעות AWS CloudWatch ו-X-Ray, ו-WebSockets לעדכונים בזמן אמת",
+    "ui": "האפליקציה מציעה ממשק משתמש React אינטואיטיבי ומותאם למסכים קטנים"
+  },
+  "welcome": {
+    "title": "ברוכים הבאים ל-RENTracker",
+    "description": "האפליקציה תומכת בשני תפקידי משתמש: משכירים המנהלים נכסים, הסכמי שכירות ופעילות, ושוכרים המשלימים את פרטיהם וחותמים על הסכמי שכירות.",
+    "selectRole": "אנא בחר את תפקידך להמשך:"
+  },
+  "auth": {
+    "signInWithGoogle": "התחבר עם Google",
+    "signOut": "התנתק"
+  },
+  "header": {
+    "title": "ברוכים הבאים ל-RENTracker",
+    "description": "האפליקציה תומכת בשני תפקידי משתמש: משכירים המנהלים נכסים, הסכמי שכירות ופעילות, ושוכרים המשלימים את פרטיהם וחותמים על הסכמי שכירות.",
+    "selectRole": "אנא בחר את תפקידך להמשך:"
+  },
+  "roles": {
+    "landlord": "אני משכיר",
+    "tenant": "אני שוכר",
+    "landlordDesc": "משכירים",
+    "tenantDesc": "שוכרים"
+  },
+  "documents": {
+    "noDocumentsLandlord": "לא נמצאו מסמכים. צור הסכם שכירות חדש ...",
+    "noDocumentsTenant": "לא נמצאו מסמכים.",
+    "landlordDesc": "משכירים",
+    "tenantDesc": "שוכרים"
+  },
+  "documentDetection": {
+    "message": "זוהה מזהה מסמך - מצב שוכר יבחר אוטומטית בעוד",
+    "countdown": "שנייה {{count}}",
+    "countdown_plural": "{{count}} שניות"
+  },
+  "menu": {
+    "dashboard": "לוח בקרה",
+    "documents": "מסמכים",
+    "activities": "פעילויות",
+    "analytics": "אנליטיקת דירות",
+    "landlordSettings": "הגדרות משכיר"
+  },
+  "tenantDocuments": {
+    "title": "הסכמי שכירות",
+    "documentIdPlaceholder": "הכנס מזהה מסמך או לחץ להדבקה מהלוח",
+    "submitDocument": "שלח",
+    "errorLinkedEmail": "אינך יכול לערוך מסמך זה. הוא משויך ל-{{email}}",
+    "fetchError": "נכשל בהבאת המסמך. אנא בדוק את המזהה ונסה שוב.",
+    "shareMessage": "להלן קישור להסכם השכירות *החתום*: *'{{title}}'*:\n\n{{url}}\n\nשים לב שהקישור יישאר *בתוקף למשך יום אחד*. לאחר מכן, ניתן לגשת למסמך דרך האפליקציה."
+  },
+  "common": {
+    "loading": "טוען...",
+    "error": "שגיאה",
+    "success": "הצלחה",
+    "save": "שמור",
+    "cancel": "בטל",
+    "delete": "מחק",
+    "edit": "ערוך",
+    "and": "ו"
+  },
+  "toast": {
+    "documentSaved": "המסמך נשמר בהצלחה",
+    "documentDeleted": "המסמך נמחק בהצלחה",
+    "documentCopied": "המסמך הועתק בהצלחה",
+    "documentShared": "המסמך שותף בהצלחה",
+    "documentCreated": "המסמך נוצר בהצלחה",
+    "documentUpdated": "המסמך עודכן בהצלחה",
+    "error": "אירעה שגיאה",
+    "noChanges": "אין שינויים לשמירה",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק מסמך זה?",
+    "signFirst": "אנא בקש מהשוכר לחתום תחילה",
+    "alreadySigned": "ההסכם כבר נחתם על ידי השוכר והמשכיר",
+    "fileUploaded": "הקובץ '{{fileName}}' הועלה בהצלחה!"
+  }
+}

@@ -2,6 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 import { AnyAction } from 'redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { actions as documentActions } from '../redux/documents/slice';
 import { RootState } from '../redux/store/reducers';
 import { IDocument } from '../redux/documents/types';
@@ -61,7 +63,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
       if (!template_fields.tenant1Email || template_fields.tenant1Email.toLowerCase() === this.props.email.toLowerCase())
         this.setState({ showDocumentIdInput: false, showForm: true });
       else {
-        toast.error(`You cannot edit this document. It is linked to ${this.props.selectedDocument.template_fields.tenant1Email}`);
+        toast.error(this.props.t('tenantDocuments.errorLinkedEmail', { email: this.props.selectedDocument.template_fields.tenant1Email }));
         this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
       }
     } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
@@ -83,7 +85,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     return (
       <div className='page body-container' id='tenant-documents'>
         <div className='header'>
-          Tenant Rental Agreements
+          {this.props.t('tenantDocuments.title')}
           <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
             {!this.state.showDocumentIdInput && <Plus />}
           </button>
@@ -152,7 +154,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error('Failed to generate PDF');
+                          else toast.error(this.props.t('toast.error'));
                         }}
                       >
                         <FileText />
@@ -164,7 +166,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                           onClick={async () => {
                             const pdf_url: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
                             if (pdf_url) this.handleShareViaWhatsApp(doc.document_id, pdf_url);
-                            else toast.error('Failed to generate PDF');
+                            else toast.error(this.props.t('toast.error'));
                           }}
                         >
                           <Share2 />
@@ -174,7 +176,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                   </div>
                 ))
               ) : (
-                <div className='empty-message'>No documents found.</div>
+                <div className='empty-message'>{this.props.t('documents.noDocumentsTenant')}</div>
               )}
             </div>
           )}
@@ -218,7 +220,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
     try {
       this.props.getDocumentThunk(documentIdInput.trim());
     } catch (error) {
-      toast.error('Failed to fetch document. Please check the ID and try again.');
+      toast.error(this.props.t('tenantDocuments.fetchError'));
     }
   };
 
@@ -229,9 +231,10 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    */
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
     const document = this.props.documents.find((d) => d.document_id === documentId);
-    const message = `\nPlease find below a link to the *signed* rental agreement: *'${getDocumentTitle(
-      document?.template_fields?.tenant1Name
-    )}'*:\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
+    const message = this.props.t('tenantDocuments.shareMessage', {
+      title: getDocumentTitle(document?.template_fields?.tenant1Name),
+      url: pdf_url
+    });
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 }
@@ -241,6 +244,9 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
  * @interface DocumentListProps
  */
 interface DocumentListProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   JWT: string;
   userId: string;
   email: string;
@@ -283,4 +289,4 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, undefined, AnyAct
   setSelectedDocument: (document: IDocument | null) => dispatch(documentActions.setSelectedDocument(document)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(TenantDocumentList);
+export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(TenantDocumentList));
