@@ -1,7 +1,12 @@
 import React from 'react';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { Save, Undo2 } from 'lucide-react';
 
 interface IApartmentFormProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   mode: 'create' | 'update';
   initialValues: {
     address: string;
@@ -29,7 +34,7 @@ interface IApartmentFormState {
  * Handles both creation of new apartments and modification of existing ones,
  * including the ability to enable/disable apartments in edit mode.
  */
-export class ApartmentForm extends React.Component<IApartmentFormProps, IApartmentFormState> {
+class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentFormState> {
   /**
    * Initializes the component's state with the provided initial values.
    *
@@ -52,56 +57,56 @@ export class ApartmentForm extends React.Component<IApartmentFormProps, IApartme
    * @returns The JSX element representing the form
    */
   render() {
-    const { mode, errors, inputRef } = this.props;
+    const { mode, errors, inputRef, t } = this.props;
     const { address, unit_number, rooms_count, rent_amount, is_disabled } = this.state;
 
     return (
       <div className='card apartment input'>
-        <div className='address input-and-error-container' data-title='Address'>
+        <div className='address input-and-error-container' data-title={t('common.fields.address')}>
           <input
             type='text'
-            title='Address'
+            title={t('common.fields.address')}
             value={address}
             onChange={(e) => this.setState({ address: e.target.value })}
-            placeholder='Building address...'
+            placeholder={t('common.placeholders.buildingAddress')}
             className={`address ${errors.address ? 'error-message' : ''}`}
             ref={inputRef}
           />
           {errors.address && <span className='error-message'>{errors.address}</span>}
         </div>
 
-        <div className='unit-number input-and-error-container' data-title='Unit Number'>
+        <div className='unit-number input-and-error-container' data-title={t('apartments.fields.unitNumber')}>
           <input
             type='text'
-            title='Unit Number'
+            title={t('apartments.fields.unitNumber')}
             value={unit_number}
             onChange={(e) => this.setState({ unit_number: e.target.value })}
-            placeholder='Unit number (e.g. Apt 2B)...'
+            placeholder={t('common.placeholders.unitNumber')}
             className={`unit ${errors.unit_number ? 'error-message' : ''}`}
           />
           {errors.unit_number && <span className='error-message'>{errors.unit_number}</span>}
         </div>
 
-        <div className='rooms-count input-and-error-container' data-title='Rooms Count'>
+        <div className='rooms-count input-and-error-container' data-title={t('apartments.fields.roomsCount')}>
           <input
             type='number'
-            title='Rooms Count'
+            title={t('apartments.fields.roomsCount')}
             value={rooms_count || ''}
             onChange={(e) => this.setState({ rooms_count: Number(e.target.value) })}
-            placeholder='Number of rooms...'
+            placeholder={t('common.placeholders.roomsCount')}
             className={`rooms ${errors.rooms_count ? 'error-message' : ''}`}
             step='0.5'
           />
           {errors.rooms_count && <span className='error-message'>{errors.rooms_count}</span>}
         </div>
 
-        <div className='rent-amount input-and-error-container' data-title='Rent Amount'>
+        <div className='rent-amount input-and-error-container' data-title={t('apartments.fields.rentAmount')}>
           <input
             type='number'
-            title='Rent Amount'
+            title={t('apartments.fields.rentAmount')}
             value={rent_amount || ''}
             onChange={(e) => this.setState({ rent_amount: Number(e.target.value) })}
-            placeholder='Monthly rent amount...'
+            placeholder={t('common.placeholders.rentAmount')}
             className={`rent ${errors.rent_amount ? 'error-message' : ''}`}
             step='50'
           />
@@ -109,18 +114,18 @@ export class ApartmentForm extends React.Component<IApartmentFormProps, IApartme
         </div>
 
         {mode === 'update' && (
-          <div className='disabled-toggle' data-title='Disable'>
+          <div className='disabled-toggle' data-title={t('apartments.fields.disable')}>
             <label>
-              <input type='checkbox' title='Disable apartment' checked={is_disabled} onChange={(e) => this.setState({ is_disabled: e.target.checked })} />
+              <input type='checkbox' title={t('apartments.fields.disable')} checked={is_disabled} onChange={(e) => this.setState({ is_disabled: e.target.checked })} />
             </label>
           </div>
         )}
 
         <div className='actions'>
-          <button onClick={this.handleSubmit} className='action-button save' title={`Save the ${mode === 'create' ? 'new' : 'modified'} apartment`}>
+          <button onClick={this.handleSubmit} className='action-button save' title={t(`apartments.tooltips.save${mode === 'create' ? 'New' : 'Modified'}`)}>
             <Save />
           </button>
-          <button onClick={this.handleCancel} className='action-button cancel' title='Cancel'>
+          <button onClick={this.handleCancel} className='action-button cancel' title={t('common.cancel')}>
             <Undo2 />
           </button>
         </div>
@@ -168,3 +173,5 @@ export class ApartmentForm extends React.Component<IApartmentFormProps, IApartme
     );
   };
 }
+
+export const ApartmentForm = withTranslation()(ApartmentFormBase);

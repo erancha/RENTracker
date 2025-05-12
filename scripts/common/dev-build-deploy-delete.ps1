@@ -32,9 +32,6 @@ if (-not $skipBuildDeploy) {
         Push-Location ..
         ./dev-build-deploy.ps1 -prepareForFrontend $deployFrontend
         Pop-Location
-        Push-Location util
-        ./manage-log-groups.ps1 -deleteLogStreams "/aws/lambda/$($commonConstants.stackName)"
-        Pop-Location
     }
 }
 
@@ -54,8 +51,7 @@ if ($deleteStack) {
     Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Deleting log groups and streams for stack '$($commonConstants.stackName)' ..."
 
     Push-Location util
-    $logGroupsPrefix = "/aws/lambda/$($commonConstants.stackName)"
-    ./manage-log-groups.ps1 -deleteLogGroups $logGroupsPrefix
+    ./manage-log-groups.ps1 -deleteLogGroupsSuffix $commonConstants.stackName
     Pop-Location
 }
 
@@ -67,6 +63,7 @@ elseif (-not $deleteStack) {
 }
 
 Push-Location util
+./manage-log-groups.ps1 -manageRetentionLogGroupsSuffix $commonConstants.stackName
 ./manage-log-groups.ps1 -deleteLogStreamsSuffix $commonConstants.stackName
 # ./list-all-non-default-resources.ps1 -region $commonConstants.region | Select-String -Pattern "$($commonConstants.stackName)-|$($commonConstants.stackNameMain)-"
 Pop-Location

@@ -1,4 +1,5 @@
 import React from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { bindActionCreators, Dispatch } from 'redux';
 import { IAppState } from '../redux/store/types';
@@ -196,12 +197,12 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
 
   // Component's rendering function:
   render() {
-    const { isWsConnected, showConnections, connectionsAndUsernames, lastConnectionsTimestamp } = this.props;
+    const { isWsConnected, showConnections, connectionsAndUsernames, lastConnectionsTimestamp, t } = this.props;
 
     return (
       <div
         className='network-container'
-        title={isWsConnected ? `Connected, last connections update on ${lastConnectionsTimestamp}` : 'Disconnected'}
+        title={isWsConnected ? t('websocket.tooltips.connected', { timestamp: lastConnectionsTimestamp }) : t('websocket.tooltips.disconnected')}
         onClick={() => this.props.toggleConnectionsAction(!showConnections)}
       >
         <div className='left-column'>
@@ -397,7 +398,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
   }
 }
 
-interface IWebSocketProps {
+interface IWebSocketProps extends Omit<WithTranslation, 't'> {
+  t: (key: string, options?: any) => string;
   JWT: string | null;
   userType: UserType;
   setUserTypeAction: typeof setUserTypeAction;
@@ -494,4 +496,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(mapStateToProps, mapDispatchToProps)(WebSocketService);
+export default withTranslation()(connect(mapStateToProps, mapDispatchToProps)(WebSocketService));

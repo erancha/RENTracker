@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { bindActionCreators, Dispatch } from 'redux';
 import { IAppState } from '../redux/store/types';
 import { IApartment } from '../redux/apartments/types';
@@ -84,7 +86,8 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { userType, showApartmentForm, toggleApartmentFormAction, resetApartmentFormAction, isWsConnected, currentApartmentId, apartmentForm } = this.props;
+    const { userType, showApartmentForm, toggleApartmentFormAction, resetApartmentFormAction, isWsConnected, currentApartmentId, apartmentForm, t } =
+      this.props;
     const { showDocuments } = this.state;
     const filteredApartments = this.getFilteredApartments();
 
@@ -92,7 +95,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
       <div className='body-container'>
         <div className={`page apartments-container${!isWsConnected ? ' disconnected' : ''}`}>
           <div className='header'>
-            Apartments
+            {t('apartments.title')}
             <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
               {!showApartmentForm && <Plus />}
             </button>
@@ -126,34 +129,34 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
                   ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
                 >
-                  <div className='apartment-id' title='apartment-id'>
+                  <div className='apartment-id' title={t('apartments.tooltips.id')}>
                     {apartment.apartment_id}
                   </div>
                   {/* <p>{apartment.user_name}</p> */}
                   <div className='details'>
                     {apartment.updated_at && (
-                      <div className='updated-at' data-title='Updated At'>
+                      <div className='updated-at' data-title={t('common.fields.updatedAt')}>
                         {new Date(apartment.updated_at).toLocaleDateString()}
                       </div>
                     )}
-                    <div className='address' data-title='Address'>
+                    <div className='address' data-title={t('common.fields.address')}>
                       {apartment.address} {apartment.unit_number && `(${apartment.unit_number})`}
                     </div>
-                    <div className='rooms-count' data-title='Rooms Count'>
+                    <div className='rooms-count' data-title={t('apartments.fields.roomsCount')}>
                       {apartment.rooms_count}
                     </div>
-                    <div className='rent-amount' data-title='Rent Amount'>
+                    <div className='rent-amount' data-title={t('apartments.fields.rentAmount')}>
                       {apartment.rent_amount.toLocaleString()}₪
                     </div>
                     {[UserType.Landlord, UserType.Admin].includes(userType) && (
                       <div className='actions'>
-                        <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title='Edit'>
+                        <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title={t('common.edit')}>
                           <Pencil />
                         </button>
-                        <button className='action-button' title='Duplicate' onClick={() => this.handleDuplicateApartment(apartment)}>
+                        <button className='action-button' title={t('common.tooltips.duplicate')} onClick={() => this.handleDuplicateApartment(apartment)}>
                           <Copy />
                         </button>
-                        <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title='Delete'>
+                        <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title={t('common.delete')}>
                           <Trash2 />
                         </button>
                         {this.renderDocumentsToggleButton(apartment.apartment_id)}
@@ -163,7 +166,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                 </div>
               ))
             ) : (
-              <div className='empty-message'>No apartments found. Create a new apartment ...</div>
+              <div className='empty-message'>{this.props.t('apartments.noApartments')}</div>
             )}
           </div>
         </div>
@@ -191,7 +194,10 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     <button
       onClick={() => this.handleToggleDocumentsActivity(apartment_id)}
       className='action-button documents activity'
-      title={`Toggle from Apartment ${this.state.showDocuments ? 'Rental Agreements to Activity' : 'Activity to Rental Agreements'}`}
+      title={this.props.t('apartments.tooltips.toggleView', {
+        from: this.state.showDocuments ? 'Rental Agreements' : 'Activity',
+        to: this.state.showDocuments ? 'Activity' : 'Rental Agreements',
+      })}
     >
       {this.state.showDocuments ? <FileText /> : <List />}
     </button>
@@ -334,7 +340,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @param {IApartment} apartment - The apartment to delete
    */
   handleDeleteApartment = (apartment: IApartment) => {
-    if (window.confirm(`Are you sure you want to delete this ${!apartment.is_disabled ? 'open ' : ''}apartment?`)) {
+    if (window.confirm(this.props.t(!apartment.is_disabled ? 'apartments.confirmDeleteOpen' : 'apartments.confirmDelete'))) {
       this.props.prepareDeleteApartmentCommandAction(apartment.apartment_id);
       this.props.deleteApartmentAction(apartment.apartment_id);
     }
@@ -346,6 +352,9 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
  * @interface IApartmentsProps
  */
 interface IApartmentsProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   isWsConnected: boolean;
   userType: UserType;
   userId: string | null;
@@ -416,4 +425,4 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
     dispatch
   );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Apartments);
+export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(Apartments));

@@ -52,8 +52,7 @@ export const formatDate = (dateString: string) => {
  * @param apartment_id - ID of the apartment to find
  * @returns The matching apartment object or undefined if not found
  */
-export const getApartment = (apartments: IApartment[], apartment_id: string) => 
-  apartments.find((apartment) => apartment.apartment_id === apartment_id);
+export const getApartment = (apartments: IApartment[], apartment_id: string) => apartments.find((apartment) => apartment.apartment_id === apartment_id);
 
 /**
  * Validates an Israeli mobile phone number
@@ -88,7 +87,7 @@ export function formatPhoneNumber(phone: string): string {
   if (digits.length <= 3) return digits;
   if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-};
+}
 
 /**
  * Validates an Israeli ID number using the Luhn algorithm
@@ -98,6 +97,8 @@ export function formatPhoneNumber(phone: string): string {
 export function validateIsraeliId(id: string): boolean {
   // Remove any non-digit characters
   id = id.replace(/\D/g, '');
+  // Pad 8-digit IDs with leading zero
+  if (id.length === 8) id = '0' + id;
   if (id.length !== 9) return false;
 
   const digits = id.split('').map(Number);
@@ -110,4 +111,4 @@ export function validateIsraeliId(id: string): boolean {
   }
 
   return (10 - (sum % 10)) % 10 === digits[8];
-};
+}

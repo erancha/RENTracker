@@ -1,13 +1,9 @@
 import React, { useRef, useState } from 'react';
+import { withTranslation } from 'react-i18next';
 import { Stage, Layer, Line } from 'react-konva';
 import { Check, Undo2 } from 'lucide-react';
 
-interface SignatureMakerProps {
-  onSave: (imageData: string) => void;
-  onCancel: () => void;
-}
-
-const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => {
+const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel, t }) => {
   const [lines, setLines] = useState<any[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const isDrawing = useRef(false);
@@ -77,39 +73,31 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
     <div>
       {/* @ts-ignore */}
       <Stage
-        width={window.innerWidth * 0.9} // Adjust width to 90% of the window width
+        width={window.innerWidth * 0.9}
         height={300}
         onMouseDown={handleMouseDown}
-        onTouchStart={handleMouseDown} // Add touch support
+        onTouchStart={handleMouseDown}
         onMousemove={handleMouseMove}
-        onTouchMove={handleMouseMove} // Add touch support
+        onTouchMove={handleMouseMove}
         onMouseup={handleMouseUp}
-        onTouchEnd={handleMouseUp} // Add touch support
+        onTouchEnd={handleMouseUp}
         ref={stageRef}
         style={{ border: '1px solid black', margin: '0 auto', touchAction: 'none' }} // Prevent default touch behavior
       >
         <Layer>
           {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke='#000'
-              strokeWidth={2}
-              tension={0.5}
-              lineCap='round'
-              globalCompositeOperation='source-over'
-            />
+            <Line key={i} points={line.points} stroke='#000' strokeWidth={2} tension={0.5} lineCap='round' globalCompositeOperation='source-over' />
           ))}
         </Layer>
       </Stage>
 
       <div className='actions' style={{ marginTop: '10px' }}>
         {hasChanges && (
-          <button type='button' className='action-button save has-changes' title='Save' onClick={handleSave}>
+          <button type='button' className='action-button save has-changes' title={t('common.save')} onClick={handleSave}>
             <Check />
           </button>
         )}
-        <button type='button' className='action-button cancel' title='Cancel' onClick={handleClear}>
+        <button type='button' className='action-button cancel' title={t('common.cancel')} onClick={handleClear}>
           <Undo2 />
         </button>
       </div>
@@ -117,4 +105,10 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel }) => 
   );
 };
 
-export default SignatureMaker;
+interface SignatureMakerProps {
+  t: (key: string, options?: any) => string;
+  onSave: (imageData: string) => void;
+  onCancel: () => void;
+}
+
+export default withTranslation()(SignatureMaker);

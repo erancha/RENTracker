@@ -94,7 +94,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
 
   // Renders the complete menu UI with all submenus and authentication options
   render() {
-    const { auth, menuOpen, anchorEl, isAuthenticated, userType } = this.props;
+    const { auth, menuOpen, anchorEl, isAuthenticated, userType, t } = this.props;
 
     return (
       <div className='menu-trigger'>
@@ -105,7 +105,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
           aria-expanded={menuOpen ? 'true' : undefined}
           onClick={this.handleMenuTriggerClick}
         >
-          <div className='icon' title={isAuthenticated ? auth.user?.profile.name : ''}>
+          <div className='icon' title={isAuthenticated ? auth.user?.profile.name : undefined}>
             <div className='icon-line'></div>
             <div className='icon-line'></div>
             <div className='icon-line'></div>
@@ -129,7 +129,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   <UserCircle />
                   <LogIn />
                 </ListItemIcon>
-                {this.props.t('auth.signInWithGoogle')}
+                {t('auth.signInWithGoogle')}
               </MenuItem>
             ) : (
               <>
@@ -148,7 +148,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                     <ListItemIcon>
                       <UserCircle />
                     </ListItemIcon>
-                    {this.props.t('menu.landlordSettings')}
+                    {t('menu.landlordSettings')}
                   </MenuItem>
                 )}
 
@@ -162,7 +162,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                     <ListItemIcon>
                       <ChartNoAxesCombined />
                     </ListItemIcon>
-                    {this.props.t('menu.analytics')}
+                    {t('menu.analytics')}
                   </MenuItem>
                 )}
 
@@ -175,7 +175,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
                   <ListItemIcon>
                     <UserCircle />
                   </ListItemIcon>
-                  {this.props.t('auth.signOut')}
+                  {t('auth.signOut')}
                 </MenuItem>
               </>
             )}

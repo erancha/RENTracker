@@ -1,6 +1,8 @@
 import React from 'react';
 import { bindActionCreators, Dispatch } from 'redux';
 import { Provider, connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { FirstTimeLanding } from './components/FirstTimeLanding';
 import store from './redux/store/store';
 import { IAppState } from './redux/store/types';
@@ -61,7 +63,7 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
   };
 
   render() {
-    const { auth, showConnections } = this.props;
+    const { auth, showConnections, t } = this.props;
 
     return (
       <div className='main-container'>
@@ -70,7 +72,7 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
         <div className='header-sticky-container'>
           <div className='header-container'>
             <div className='header-title-container'>
-              <div className='header-title' title='AWS/React/WebSockets-based application.'>
+              <div className='header-title' title={t('welcome.subtitle')}>
                 <span className='app-name'>RENTracker</span>
               </div>
               <img src='/favicon.ico' alt='Logo' width='32' height='32' />
@@ -181,6 +183,8 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
 // Props for the base component
 interface IAppProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
   menuOpen: boolean;
   showOverview: boolean;
   toggleOverviewAction: typeof toggleOverviewAction;
@@ -197,7 +201,6 @@ interface IAppProps {
   JWT: string | null;
   auth: AuthContextProps;
   showConnections: boolean;
-  t: (key: string, options?: any) => string;
 }
 
 // Maps required state from Redux store to component props
@@ -228,12 +231,12 @@ const mapDispatchToProps = (dispatch: Dispatch) =>
   );
 
 // Connect the component to Redux
-const ConnectedApp = connect(mapStateToProps, mapDispatchToProps)(AppComponent);
+const ConnectedApp = withTranslation()(connect(mapStateToProps, mapDispatchToProps)(AppComponent));
 
 // Create the root component that provides the store
 export const App = () => {
   const auth = useAuth();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
 
   React.useEffect(() => {
     document.documentElement.dir = i18n.language === 'he' ? 'rtl' : 'ltr';
@@ -245,7 +248,7 @@ export const App = () => {
     <Spinner />
   ) : (
     <Provider store={store}>
-      <ConnectedApp auth={auth} t={t} />
+      <ConnectedApp auth={auth} />
     </Provider>
   );
 };

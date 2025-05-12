@@ -220,27 +220,28 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   }
 
   render() {
+    const { t } = this.props;
     return (
       <Paper sx={{ p: 2 }}>
         <form onSubmit={this.handleSubmit} noValidate>
           <Box sx={{ mb: 2 }}>
             <Typography variant='h5' gutterBottom>
-              {getDocumentTitle(this.state.formData?.tenant1Name)}
+              {getDocumentTitle(this.state.formData?.tenant1Name, t('documents.rentalAgreement'))}
             </Typography>
           </Box>
 
           {/* Property Details */}
           <Accordion expanded={this.state.expandedSections.includes('propertyDetails')} onChange={this.handleAccordionChange('propertyDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטי הנכס</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.property')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={8} sm={5} md={4}>
-                  {this.renderTextField('propertyAddress', 'כתובת הנכס', { isDisabled: true })}
+                  {this.renderTextField('propertyAddress', t('documentForm.fields.propertyAddress'), { isDisabled: true })}
                 </Grid>
                 <Grid item xs={4} sm={3} md={1}>
-                  {this.renderNumberField('roomCount', 'מספר חדרים', { min: 1, max: 20, step: '0.5', isDisabled: true })}
+                  {this.renderNumberField('roomCount', t('documentForm.fields.roomCount'), { min: 1, max: 20, step: '0.5', isDisabled: true })}
                 </Grid>
                 <Grid item xs={12}>
                   <IncludedEquipmentSelect
@@ -251,7 +252,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  {this.renderTextField('includedServices', 'שירותים כלולים')}
+                  {this.renderTextField('includedServices', t('documentForm.fields.includedServices'))}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -260,36 +261,36 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Lease & Financial Terms */}
           <Accordion expanded={this.state.expandedSections.includes('leaseTerms')} onChange={this.handleAccordionChange('leaseTerms')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>תנאי השכירות</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.lease')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderDateField('date', 'תאריך ההסכם')}
+                  {this.renderDateField('date', t('documentForm.fields.agreementDate'))}
                 </Grid>
               </Grid>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('rentAmount', 'דמי שכירות', { min: 0, step: '50', adornment: '₪' })}
+                  {this.renderNumberField('rentAmount', t('documentForm.fields.rentAmount'), { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('leasePeriod', 'תקופת שכירות', { min: 1, adornment: 'חודשים' })}
+                  {this.renderNumberField('leasePeriod', t('documentForm.fields.leasePeriod'), { min: 1, adornment: 'חודשים' })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderDateField('startDate', 'תאריך תחילה')}
+                  {this.renderDateField('startDate', t('documentForm.fields.startDate'))}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderDateField('endDate', 'תאריך סיום')}
+                  {this.renderDateField('endDate', t('documentForm.fields.endDate'))}
                 </Grid>
 
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('initialPaymentMonths', 'מספר חודשים בתשלום מראש', { min: 0.5, max: 12, step: '0.5' })}
+                  {this.renderNumberField('initialPaymentMonths', t('documentForm.fields.initialPaymentMonths'), { min: 0.5, max: 12, step: '0.5' })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderDateField('standingOrderStart', 'תחילת תשלום חודשי')}
+                  {this.renderDateField('standingOrderStart', t('documentForm.fields.standingOrderStart'))}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('paymentDay', 'יום תשלום בחודש', { min: 1, max: 31 })}
+                  {this.renderNumberField('paymentDay', t('documentForm.fields.paymentDay'), { min: 1, max: 31 })}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -298,16 +299,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Utility Limits */}
           <Accordion expanded={this.state.expandedSections.includes('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>מגבלות צריכה</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.utilities')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <p>שימו לב: אם תקבעו ערך 0 לאחד מהסעיפים הבאים, הסעיף לא יופיע בהסכם.</p>
+              <p>{t('documentForm.messages.utilityLimitsNote')}</p>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('waterLimit', 'מגבלת מים', { min: 0, step: '50', adornment: '₪' })}
+                  {this.renderNumberField('waterLimit', t('documentForm.fields.waterLimit'), { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('electricityLimit', 'מגבלת חשמל', { min: 0, step: '50', adornment: '₪' })}
+                  {this.renderNumberField('electricityLimit', t('documentForm.fields.electricityLimit'), { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -316,24 +317,24 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Landlord Details */}
           <Accordion expanded={this.state.expandedSections.includes('landlordDetails')} onChange={this.handleAccordionChange('landlordDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטי משכיר</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.landlord')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={7} sm={6} md={2}>
-                  {this.renderTextField('landlordName', 'שם מלא')}
+                  {this.renderTextField('landlordName', t('documentForm.fields.fullName'))}
                 </Grid>
                 <Grid item xs={5} sm={6} md={2}>
-                  {this.renderNumberField('landlordId', 'תעודת זהות', { isIsraeliId: true })}
+                  {this.renderNumberField('landlordId', t('documentForm.fields.israeliId'), { isIsraeliId: true })}
                 </Grid>
                 <Grid item xs={7} sm={6} md={3}>
-                  {this.renderTextField('landlordEmail', 'דוא״ל', { type: 'email', isDisabled: true })}
+                  {this.renderTextField('landlordEmail', t('documentForm.fields.email'), { type: 'email', isDisabled: true })}
                 </Grid>
                 <Grid item xs={5} sm={6} md={2}>
-                  {this.renderNumberField('landlordPhone', 'טלפון', { isPhoneNumber: true })}
+                  {this.renderNumberField('landlordPhone', t('documentForm.fields.phone'), { isPhoneNumber: true })}
                 </Grid>
                 <Grid item xs={12} sm={12} md={3}>
-                  {this.renderTextField('landlordAddress', 'כתובת')}
+                  {this.renderTextField('landlordAddress', t('documentForm.fields.address'))}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -350,6 +351,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             presignedUrls={this.props.selectedDocument?.presignedUrls}
             onImageViewerClose={() => this.setState({ showImagesViewer: false })}
             on2ndTenantToggle={() => this.setState({ showSecondTenant: !this.state.showSecondTenant, expandSecondTenant: true })}
+            t={this.props.t}
           />
 
           {/* Tenant2 (optional) Details */}
@@ -363,13 +365,14 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
               handleAccordionChange={this.handleAccordionChange}
               presignedUrls={this.props.selectedDocument?.presignedUrls}
               onImageViewerClose={() => this.setState({ showImagesViewer: false })}
+              t={this.props.t}
             />
           )}
 
           {/* Security Details */}
           <Accordion expanded={this.state.expandedSections.includes('securityDetails')} onChange={this.handleAccordionChange('securityDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>בטחונות וערבויות (אופציונלי)</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.security')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -382,11 +385,15 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                         disabled={this.props.userType === UserType.Tenant}
                       />
                     }
-                    label='דרוש פיקדון בטחון'
+                    label={t('documentForm.fields.requireSecurityDeposit')}
                   />
                 </Grid>
-                <Grid item xs={6} sm={3} md={2}>
-                  {this.renderNumberField('securityDeposit', 'סכום פיקדון', { min: 0, adornment: '₪', isDisabled: this.props.userType === UserType.Tenant })}
+                <Grid item xs={6} sm={3} md={3}>
+                  {this.renderNumberField('securityDeposit', t('documentForm.fields.securityDeposit'), {
+                    min: 0,
+                    adornment: '₪',
+                    isDisabled: this.props.userType === UserType.Tenant,
+                  })}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -395,7 +402,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Guarantor Details */}
           <Accordion expanded={this.state.expandedSections.includes('guarantorDetails')} onChange={this.handleAccordionChange('guarantorDetails')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>פרטי ערב (אופציונלי)</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.guarantor')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
@@ -408,24 +415,24 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                         disabled={this.props.userType === UserType.Tenant}
                       />
                     }
-                    label='דרוש ערב'
+                    label={t('documentForm.fields.requireGuarantor')}
                   />
                 </Grid>
 
                 <Grid item xs={7} sm={6} md={2}>
-                  {this.renderTextField('guarantorName', 'שם מלא')}
+                  {this.renderTextField('guarantorName', t('documentForm.fields.fullName'))}
                 </Grid>
                 <Grid item xs={5} sm={6} md={2}>
-                  {this.renderNumberField('guarantorId', 'תעודת זהות', { isIsraeliId: true })}
+                  {this.renderNumberField('guarantorId', t('documentForm.fields.israeliId'), { isIsraeliId: true })}
                 </Grid>
                 <Grid item xs={7} sm={6} md={3}>
-                  {this.renderTextField('guarantorEmail', 'דוא״ל', { type: 'email', isDisabled: true })}
+                  {this.renderTextField('guarantorEmail', t('documentForm.fields.email'), { type: 'email', isDisabled: true })}
                 </Grid>
                 <Grid item xs={5} sm={6} md={2}>
-                  {this.renderNumberField('guarantorPhone', 'טלפון', { isPhoneNumber: true })}
+                  {this.renderNumberField('guarantorPhone', t('documentForm.fields.phone'), { isPhoneNumber: true })}
                 </Grid>
                 <Grid item xs={12} sm={12} md={3}>
-                  {this.renderTextField('guarantorAddress', 'כתובת')}
+                  {this.renderTextField('guarantorAddress', t('documentForm.fields.address'))}
                 </Grid>
               </Grid>
             </AccordionDetails>
@@ -434,7 +441,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {/* Signature */}
           <Accordion expanded={this.state.expandedSections.includes('signature')} onChange={this.handleAccordionChange('signature')}>
             <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>חתימה</Typography>
+              <Typography className='section-header'>{t('documentForm.sections.signature')}</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Grid item xs={12}>
@@ -461,7 +468,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     <Save />
                   </button>
                 )}
-                <button type='button' className='action-button cancel' title='Cancel' onClick={this.handleCancel}>
+                <button type='button' className='action-button cancel' title={t('common.cancel')} onClick={this.handleCancel}>
                   <Undo2 />
                 </button>
               </div>
@@ -752,7 +759,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           name: field,
         }}
         InputProps={{
-          ...(options.adornment ? { endAdornment: <InputAdornment position='end'>{options.adornment}</InputAdornment> } : {}),
+          ...(options.adornment ? { startAdornment: <InputAdornment position='start'>{options.adornment}</InputAdornment> } : {}),
         }}
         margin='normal'
         variant='outlined'
@@ -849,11 +856,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   };
 
   private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    const { t } = this.props;
     // console.log(this.state);
-    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
-      toast.warning(this.props.t('toast.signFirst'));
-    else if (section === 'signature' && documentWasSigned(this.state.formData))
-      toast.warning(this.props.t('toast.alreadySigned'));
+    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature) toast.warning(t('toast.signFirst'));
+    else if (section === 'signature' && documentWasSigned(this.state.formData)) toast.warning(t('toast.alreadySigned'));
     else
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
@@ -867,7 +873,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { documentId, createDocumentThunk, updateDocumentThunk, onSave, onClose, apartmentId } = this.props;
+    const { documentId, createDocumentThunk, updateDocumentThunk, onSave, onClose, apartmentId, t } = this.props;
 
     // Validate all fields
     const errors: Record<string, string> = {};
@@ -937,7 +943,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       if (onClose) onClose();
     } catch (error) {
       console.error('Error saving document:', error);
-      toast.error(this.props.t('toast.error'));
+      toast.error(t('toast.error'));
     }
   };
 
@@ -987,7 +993,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param fileName - Name of the file to be uploaded
    */
   private handleFileUpload = async (files: FileList | null, fileName: string) => {
-    const { documentId } = this.props;
+    const { documentId, t } = this.props;
     if (!documentId) throw new Error("<input type='file' .. disabled={!this.props.documentId} />");
     if (files && files.length > 0) {
       const file = files[0];
@@ -1007,10 +1013,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           },
         }));
 
-        toast.success(this.props.t('toast.fileUploaded', { fileName: file.name }));
+        toast.success(t('toast.fileUploaded', { fileName: file.name }));
       } catch (error) {
         console.error('Error uploading file:', error);
-        toast.error(this.props.t('toast.error'));
+        toast.error(t('toast.error'));
       }
     }
   };
@@ -1060,6 +1066,7 @@ interface TenantSectionProps {
   presignedUrls?: Record<string, string>;
   onImageViewerClose: () => void;
   on2ndTenantToggle?: () => void;
+  t: (key: string, options?: any) => string;
 }
 
 const TenantSection: React.FC<TenantSectionProps> = ({
@@ -1072,6 +1079,7 @@ const TenantSection: React.FC<TenantSectionProps> = ({
   presignedUrls,
   onImageViewerClose,
   on2ndTenantToggle,
+  t,
 }) => {
   const sectionId = `${prefix}Details`;
   const attachmentsId = `${prefix}Attachments`;
@@ -1082,7 +1090,10 @@ const TenantSection: React.FC<TenantSectionProps> = ({
       onChange={handleAccordionChange(sectionId)}
     >
       <AccordionSummary expandIcon={<ExpandMore />}>
-        <Typography className='section-header'>פרטי שוכר{prefix === 'tenant2' ? ' 2' : state.showSecondTenant ? ' 1' : ''}</Typography>
+        <Typography className='section-header'>
+          {t('documentForm.sections.tenant')}
+          {prefix === 'tenant2' ? ' 2' : state.showSecondTenant ? ' 1' : ''}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Grid container spacing={2}>
@@ -1106,18 +1117,18 @@ const TenantSection: React.FC<TenantSectionProps> = ({
         {/* Tenant Attachments */}
         <Accordion expanded={state.expandedSections.includes(attachmentsId)} onChange={handleAccordionChange(attachmentsId)}>
           <AccordionSummary expandIcon={<ExpandMore />}>
-            <Typography className='section-header'>קבצים מצורפים</Typography>
+            <Typography className='section-header'>{t('documentForm.attachments.title')}</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={4}>
-                {renderFileField(`${prefix}IdCard`, 'צילום ת.ז')}
+                {renderFileField(`${prefix}IdCard`, t('documentForm.attachments.idCard'))}
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                {renderFileField(`${prefix}Salary1`, 'צילום משכורת 1')}
+                {renderFileField(`${prefix}Salary1`, t('documentForm.attachments.salary1'))}
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                {renderFileField(`${prefix}Salary2`, 'צילום משכורת 2')}
+                {renderFileField(`${prefix}Salary2`, t('documentForm.attachments.salary2'))}
               </Grid>
             </Grid>
           </AccordionDetails>
@@ -1126,7 +1137,7 @@ const TenantSection: React.FC<TenantSectionProps> = ({
         </Accordion>
 
         {state.expandedSections.includes(sectionId) && on2ndTenantToggle && (
-          <Tooltip title='Add second tenant'>
+          <Tooltip title={t('common.tooltips.addSecondTenant')}>
             <Plus id='plus-icon' className='action-button' onClick={on2ndTenantToggle} />
           </Tooltip>
         )}
@@ -1199,10 +1210,12 @@ interface DispatchProps {
 /**
  * Combined props type for the DocumentForm component
  */
-type DocumentFormProps = OwnProps & StateProps & DispatchProps & {
-  t: (key: string, options?: any) => string;
-  i18n: i18n;
-};
+type DocumentFormProps = OwnProps &
+  StateProps &
+  DispatchProps & {
+    t: (key: string, options?: any) => string;
+    i18n: i18n;
+  };
 
 /**
  * Component state interface

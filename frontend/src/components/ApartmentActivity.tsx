@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { IAppState } from '../redux/store/types';
 import { IApartment } from '../redux/apartments/types';
 import { IApartmentActivity, INewApartmentActivity } from '../redux/apartmentActivity/types';
@@ -71,12 +73,12 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
   }
 
   render() {
-    const { activity } = this.props;
+    const { activity, t } = this.props;
 
     return (
       <div className='page body-container'>
         <div className='header m-n-relation'>
-          <span>Apartment Activity</span>
+          <span>{t('apartmentActivity.title')}</span>
           <button
             onClick={() => {
               // Reset the selected document to ensure form starts fresh
@@ -92,8 +94,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
         </div>
         <div className='activity-container'>
           <div className='table-header activity'>
-            <div className='saved-at'>Saved At</div>
-            <div className='description'>Description</div>
+            <div className='saved-at'>{t('apartmentActivity.savedAt')}</div>
+            <div className='description'>{t('apartmentActivity.description')}</div>
             {/* <div className='pending-confirmation'>Wait for confirmation</div> */}
           </div>
 
@@ -109,7 +111,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
                 </div>
               ))
             ) : (
-              <div className='empty-message'>No activity made ...</div>
+              <div className='empty-message'>{t('apartmentActivity.noActivity')}</div>
             )}
           </div>
         </div>
@@ -171,7 +173,8 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
   };
 
   handleDeleteActivity = (activity_id: string, activity_description: string) => {
-    if (window.confirm(`Are you sure you want to delete activity '${activity_description}'?`)) {
+    const { t } = this.props;
+    if (window.confirm(t('apartmentActivity.confirmDelete', { description: activity_description }))) {
       this.props.prepareDeleteApartmentActivityCommandAction(activity_id);
       this.props.deleteApartmentActivityAction((this.props.currentApartment as IApartment).apartment_id, activity_id);
     }
@@ -191,13 +194,15 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
    * @returns {JSX.Element} The rendered activity row
    */
   renderActivity = (activity: Partial<IApartmentActivity>) => {
+    const { t } = this.props;
+
     const isSaved = !!activity.created_at;
     const isValid = !isSaved ? this.isActivityValid(activity as INewApartmentActivity) : true;
 
     return (
       <>
         <div className='saved-at'>{isSaved ? timeShortDisplay(new Date(activity.created_at!)) : ''}</div>
-        <div className='description' data-title='Description'>
+        <div className='description' data-title={t('common.fields.description')}>
           {isSaved ? (
             activity.description
           ) : (
@@ -212,7 +217,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
             />
           )}
         </div>
-        {/* <div className='pending-confirmation' data-title='Pending Confirmation'>
+        {/* <div className='pending-confirmation' data-title={t('common.fields.pendingConfirmation')}>
           {isSaved ? (
             activity.pending_confirmation ? (
               'Waiting'
@@ -231,10 +236,10 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
         </div> */}
         {!isSaved ? (
           <div className='actions'>
-            <button onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)} className='action-button save' title='Save' disabled={!isValid}>
+            <button onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)} className='action-button save' title={t('common.save')} disabled={!isValid}>
               <Save />
             </button>
-            <button onClick={() => this.handleCancelActivity()} className='action-button cancel' title='Cancel'>
+            <button onClick={() => this.handleCancelActivity()} className='action-button cancel' title={t('common.cancel')}>
               <Undo2 />
             </button>
           </div>
@@ -244,7 +249,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
               <button
                 onClick={() => this.handleDeleteActivity(activity.activity_id as string, activity.description as string)}
                 className='action-button delete'
-                title='Delete'
+                title={t('common.delete')}
               >
                 <Trash2 />
               </button>
@@ -271,6 +276,9 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
  * @interface IApartmentActivityProps
  */
 interface IApartmentActivityProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   userType: UserType;
   activity: IApartmentActivity[]; // List of activity activity
   apartments: IApartment[]; // List of all apartments
@@ -303,4 +311,4 @@ const mapDispatchToProps = {
   deleteApartmentActivityAction,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ApartmentActivity);
+export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(ApartmentActivity));

@@ -42,7 +42,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * @param {DocumentListProps} prevProps - Previous component props
    */
   componentDidUpdate(prevProps: DocumentListProps) {
-    const { userId, getTenantDocumentsThunk } = this.props;
+    const { userId, getTenantDocumentsThunk, t } = this.props;
     // Fetch when userId becomes available or changes
     if (userId && (!prevProps.userId || userId !== prevProps.userId)) {
       getTenantDocumentsThunk(userId);
@@ -63,7 +63,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
       if (!template_fields.tenant1Email || template_fields.tenant1Email.toLowerCase() === this.props.email.toLowerCase())
         this.setState({ showDocumentIdInput: false, showForm: true });
       else {
-        toast.error(this.props.t('tenantDocuments.errorLinkedEmail', { email: this.props.selectedDocument.template_fields.tenant1Email }));
+        toast.error(t('tenantDocuments.errorLinkedEmail', { email: this.props.selectedDocument.template_fields.tenant1Email }));
         this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
       }
     } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
@@ -79,13 +79,13 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { documents = [], error } = this.props;
+    const { documents = [], error, t } = this.props;
     const { showForm, showDocumentIdInput, documentIdInput } = this.state;
 
     return (
       <div className='page body-container' id='tenant-documents'>
         <div className='header'>
-          {this.props.t('tenantDocuments.title')}
+          {t('tenantDocuments.title')}
           <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
             {!this.state.showDocumentIdInput && <Plus />}
           </button>
@@ -102,15 +102,15 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                   onChange={(e) => this.setState({ documentIdInput: e.target.value })}
                   onKeyDown={this.handleKeyDown}
                   onFocus={this.handleFocus}
-                  placeholder='Enter Document ID or paste WhatsApp message'
+                  placeholder={t('tenantDocuments.documentIdPlaceholder')}
                   className='document-id-input'
                 />
                 {error && <span className='error-message'>{error}</span>}
               </div>
-              <button className='action-button save' title='Save' onClick={this.handleSubmit}>
+              <button className='action-button save' title={t('common.save')} onClick={this.handleSubmit}>
                 <ArrowRight />
               </button>
-              <button className='action-button cancel' title='Cancel' onClick={() => this.setState({ showDocumentIdInput: false })}>
+              <button className='action-button cancel' title={t('common.cancel')} onClick={() => this.setState({ showDocumentIdInput: false })}>
                 <Undo2 />
               </button>
             </div>
@@ -127,19 +127,19 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
               {documents.length > 0 ? (
                 documents.map((doc) => (
                   <div key={doc.document_id} className='table-row document'>
-                    <div className='updated' data-title='Last Updated'>
+                    <div className='updated' data-title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(doc.updated_at))}
                     </div>
-                    <div className='name' data-title='Name'>
-                      '{getDocumentTitle(doc.template_fields?.tenant1Name)}'
+                    <div className='name' data-title={t('common.fields.name')}>
+                      '{getDocumentTitle(doc.template_fields?.tenant1Name, t('documents.rentalAgreement'))}'
                     </div>
-                    <div className='period' data-title='Period'>
+                    <div className='period' data-title={t('common.fields.period')}>
                       {formatDate(doc.template_fields?.startDate)} - {formatDate(doc.template_fields?.endDate)}
                     </div>
-                    <div className='actions' data-title='Actions'>
+                    <div className='actions' data-title={t('common.fields.actions')}>
                       <button
                         className='action-button edit'
-                        title='Edit'
+                        title={t('common.edit')}
                         onClick={async () => {
                           await this.props.getDocumentThunk(doc.document_id);
                           this.setState({ showForm: true, editMode: true });
@@ -150,11 +150,11 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
 
                       <button
                         className='action-button pdf'
-                        title='Download PDF'
+                        title={t('common.tooltips.downloadPdf')}
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error(this.props.t('toast.error'));
+                          else toast.error(t('toast.error'));
                         }}
                       >
                         <FileText />
@@ -162,11 +162,11 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                       {doc.template_fields['tenantSignature'] && (
                         <button
                           className='action-button share'
-                          title='Share via WhatsApp'
+                          title={t('common.tooltips.shareWhatsapp')}
                           onClick={async () => {
                             const pdf_url: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
                             if (pdf_url) this.handleShareViaWhatsApp(doc.document_id, pdf_url);
-                            else toast.error(this.props.t('toast.error'));
+                            else toast.error(t('toast.error'));
                           }}
                         >
                           <Share2 />
@@ -176,7 +176,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                   </div>
                 ))
               ) : (
-                <div className='empty-message'>{this.props.t('documents.noDocumentsTenant')}</div>
+                <div className='empty-message'>{t('documents.noDocumentsTenant')}</div>
               )}
             </div>
           )}
@@ -230,10 +230,11 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * @param {string} pdf_url - URL in CloudFront of the document to share
    */
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
+    const { t } = this.props;
     const document = this.props.documents.find((d) => d.document_id === documentId);
-    const message = this.props.t('tenantDocuments.shareMessage', {
-      title: getDocumentTitle(document?.template_fields?.tenant1Name),
-      url: pdf_url
+    const message = t('tenantDocuments.shareMessage', {
+      title: getDocumentTitle(document?.template_fields?.tenant1Name, t('documents.rentalAgreement')),
+      url: pdf_url,
     });
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };

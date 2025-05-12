@@ -1,5 +1,6 @@
 import React from 'react';
 import { FormGroup, FormControlLabel, Checkbox, FormControl, FormLabel, FormHelperText } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface IncludedEquipmentSelectProps {
   value: string;
@@ -9,28 +10,30 @@ interface IncludedEquipmentSelectProps {
 }
 
 const EQUIPMENT_OPTIONS = [
-  { value: 'מקרר', label: 'מקרר' },
-  { value: 'תנור', label: 'תנור' },
-  { value: 'כיריים', label: 'כיריים' },
-  { value: 'מיקרוגל', label: 'מיקרוגל' },
-  { value: 'מכונת כביסה', label: 'מכונת כביסה' },
-  { value: 'מייבש', label: 'מייבש' },
-  { value: 'טלויזיה 1', label: 'טלויזיה 1' },
-  { value: 'טלויזיה 2', label: 'טלויזיה 2' },
-  { value: 'ספה + שולחן קפה', label: 'ספה + שולחן קפה' },
-  { value: 'שולחן פ"א + כסאות', label: 'שולחן פ"א + כסאות' },
-  { value: 'מזגן 1', label: 'מזגן 1' },
-  { value: 'מזגן 2', label: 'מזגן 2' },
-  { value: 'מיטה', label: 'מיטה' },
-  { value: 'מזרון', label: 'מזרון' },
-  { value: 'ארון קיר', label: 'ארון קיר' },
+  { key: 'refrigerator' },
+  { key: 'oven' },
+  { key: 'stove' },
+  { key: 'microwave' },
+  { key: 'washingMachine' },
+  { key: 'dryer' },
+  { key: 'tv1' },
+  { key: 'tv2' },
+  { key: 'sofaAndTable' },
+  { key: 'diningTable' },
+  { key: 'ac1' },
+  { key: 'ac2' },
+  { key: 'bed' },
+  { key: 'mattress' },
+  { key: 'closet' },
 ];
 
 export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = ({ value, onChange, error, disabled = false }) => {
+  const { t } = useTranslation();
   // Parse the comma-separated string into an array
   const selectedEquipment = value ? value.split(',').map((item) => item.trim()) : [];
 
-  const handleChange = (equipmentValue: string) => {
+  const handleChange = (equipmentKey: string) => {
+    const equipmentValue = t('documentForm.equipment.' + equipmentKey, { lng: 'he' });
     const newSelected = selectedEquipment.includes(equipmentValue)
       ? selectedEquipment.filter((item) => item !== equipmentValue)
       : [...selectedEquipment, equipmentValue];
@@ -40,7 +43,7 @@ export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = (
 
   return (
     <FormControl error={!!error} fullWidth margin='normal'>
-      <FormLabel component='legend'>ציוד כלול</FormLabel>
+      <FormLabel component='legend'>{t('documentForm.sections.includedEquipment')}</FormLabel>
       <FormGroup
         sx={{
           display: 'grid',
@@ -54,17 +57,15 @@ export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = (
       >
         {EQUIPMENT_OPTIONS.map((option) => (
           <FormControlLabel
-            key={option.value}
-            sx={{ minWidth: 0 }}
+            key={option.key}
             control={
               <Checkbox
-                checked={selectedEquipment.includes(option.value)}
-                onChange={() => handleChange(option.value)}
+                checked={selectedEquipment.includes(t('documentForm.equipment.' + option.key, { lng: 'he' }))}
+                onChange={() => handleChange(option.key)}
                 disabled={disabled}
-                name={option.value}
               />
             }
-            label={option.label}
+            label={t('documentForm.equipment.' + option.key, { lng: 'he' })}
           />
         ))}
       </FormGroup>

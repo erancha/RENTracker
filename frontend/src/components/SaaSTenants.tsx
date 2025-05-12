@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withTranslation } from 'react-i18next';
+import type { i18n } from 'i18next';
 import { ISaasTenant, INewSaasTenant } from '../redux/saasTenants/types';
 import {
   prepareCreateSaasTenantCommandAction,
@@ -42,13 +44,13 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
   }
 
   render(): React.ReactNode {
-    const { saasTenants } = this.props;
+    const { saasTenants, t } = this.props;
     const { showNewSaaSTenant, newSaaSTenant } = this.state;
 
     return (
       <div className='page body-container saas-tenants'>
         <div className='header m-n-relation'>
-          <span>Landlord Settings</span>
+          <span>{t('menu.landlordSettings')}</span>
           {
             /* allow adding SaaS tenants only by admin or only if the current user is not yet a SaaS tenant */
             (this.props.userType === UserType.Admin || !this.props.saasTenants.some((t) => t.saas_tenant_id === this.props.userId)) && (
@@ -114,16 +116,18 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     // If tenant is being edited, use the edited values
     const displayTenant = isSaved && this.state.editedTenants[saasTenant.saas_tenant_id!] ? this.state.editedTenants[saasTenant.saas_tenant_id!] : saasTenant;
 
+    const { t } = this.props;
+
     return (
       <>
-        <div data-title='Updated At'>{saasTenant.updated_at ? timeShortDisplay(new Date(saasTenant.updated_at)) : ''}</div>
-        <div data-title='Landlord Id'>
+        <div data-title={t('common.fields.updatedAt')}>{saasTenant.updated_at ? timeShortDisplay(new Date(saasTenant.updated_at)) : ''}</div>
+        <div data-title={t('common.fields.tenantId')}>
           <span className='saas-tenant-id'>{saasTenant.saas_tenant_id}</span>
         </div>
-        <div data-title='Email'>
+        <div data-title={t('common.fields.email')}>
           <span className='email'>{saasTenant.email}</span>
         </div>
-        <div data-title='Name' className='input-and-error-container'>
+        <div data-title={t('common.fields.tenantName')} className='input-and-error-container'>
           <input
             type='text'
             value={displayTenant.name || ''}
@@ -134,14 +138,14 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('name', e.target.value);
               }
             }}
-            placeholder='Enter Name'
+            placeholder={t('common.placeholders.enterName')}
             className={`name ${this.state.errors.name ? 'error' : ''}`}
           />
           {this.state.errors.name && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.name}</span>
           )}
         </div>
-        <div data-title='Phone' className='input-and-error-container'>
+        <div data-title={t('common.fields.phone')} className='input-and-error-container'>
           <input
             type='text'
             value={displayTenant.phone || ''}
@@ -153,14 +157,14 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('phone', formattedPhone);
               }
             }}
-            placeholder='Enter Phone (05X-XXX-XXXX)'
+            placeholder={t('common.placeholders.enterPhone')}
             className={`phone ${this.state.errors.phone ? 'error' : ''}`}
           />
           {this.state.errors.phone && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.phone}</span>
           )}
         </div>
-        <div data-title='Israeli ID' className='input-and-error-container'>
+        <div data-title={t('common.fields.israeliId')} className='input-and-error-container'>
           <input
             type='text'
             value={displayTenant.israeli_id || ''}
@@ -171,14 +175,14 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('israeli_id', e.target.value);
               }
             }}
-            placeholder='Enter Israeli ID'
+            placeholder={t('common.placeholders.enterIsraeliId')}
             className={`israeli-id ${this.state.errors.israeli_id ? 'error' : ''}`}
           />
           {this.state.errors.israeli_id && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.israeli_id}</span>
           )}
         </div>
-        <div data-title='Address' className='input-and-error-container'>
+        <div data-title={t('common.fields.address')} className='input-and-error-container'>
           <input
             type='text'
             value={displayTenant.address || ''}
@@ -189,7 +193,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('address', e.target.value);
               }
             }}
-            placeholder='Enter Address'
+            placeholder={t('common.placeholders.enterAddress')}
             className={`address ${this.state.errors.address ? 'error' : ''}`}
           />
           {this.state.errors.address && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
@@ -198,7 +202,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
         </div>
         <div className='actions'>
           {this.props.userType === UserType.Admin && (
-            <div className='disabled' title='Disabled'>
+            <div className='disabled' title={t('common.disabled')}>
               <input
                 type='checkbox'
                 checked={!!displayTenant.is_disabled}
@@ -214,10 +218,10 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
           )}
           {!isSaved ? (
             <>
-              <button onClick={() => this.handleCreateRecord()} className='action-button save' title='Save'>
+              <button onClick={() => this.handleCreateRecord()} className='action-button save' title={t('common.save')}>
                 <Save />
               </button>
-              <button onClick={this.handleCancelNewTenant} className='action-button cancel' title='Cancel'>
+              <button onClick={this.handleCancelNewTenant} className='action-button cancel' title={t('common.cancel')}>
                 <Undo2 />
               </button>
             </>
@@ -227,17 +231,17 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 <button
                   onClick={() => this.handleUpdateRecord(this.state.editedTenants[saasTenant.saas_tenant_id!])}
                   className='action-button save'
-                  title='Save'
+                  title={t('common.save')}
                 >
                   <Save />
                 </button>
-                <button onClick={() => this.handleCancelEdit(saasTenant.saas_tenant_id!)} className='action-button cancel' title='Cancel'>
+                <button onClick={() => this.handleCancelEdit(saasTenant.saas_tenant_id!)} className='action-button cancel' title={t('common.cancel')}>
                   <Undo2 />
                 </button>
               </>
             )
           )}
-          <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title='Delete'>
+          <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title={t('common.delete')}>
             <Trash2 />
           </button>
         </div>
@@ -433,7 +437,10 @@ interface ISaaSTenantsState {
  * Props interface for SaaSTenants component
  * @interface ISaaSTenantsProps
  */
-interface ISaaSTenantsProps {
+export interface ISaaSTenantsProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
   saasTenants: ISaasTenant[];
   prepareCreateSaasTenantCommandAction: typeof prepareCreateSaasTenantCommandAction;
   addSaasTenantAction: typeof addSaasTenantAction;
@@ -466,4 +473,4 @@ const mapDispatchToProps = {
   deleteSaasTenantAction,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(SaaSTenants);
+export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(SaaSTenants));

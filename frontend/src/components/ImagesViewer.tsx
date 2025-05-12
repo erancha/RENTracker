@@ -1,19 +1,21 @@
 import { Undo2 } from 'lucide-react';
 import React from 'react';
+import { withTranslation } from 'react-i18next';
 
 interface ImagesViewerProps {
   presignedUrls: Record<string, string>;
   onClose?: () => void;
+  t: (key: string, options?: any) => string;
 }
 
 class ImagesViewer extends React.Component<ImagesViewerProps> {
   render() {
-    const { presignedUrls, onClose } = this.props;
+    const { presignedUrls, onClose, t } = this.props;
     return (
       <div className='images-viewer'>
         <div className='images-viewer-header'>
           {onClose && (
-            <button onClick={onClose} className='action-button cancel' title='Close'>
+            <button onClick={onClose} className='action-button cancel' title={t('common.cancel')}>
               <Undo2 />
             </button>
           )}
@@ -31,4 +33,4 @@ class ImagesViewer extends React.Component<ImagesViewerProps> {
   }
 }
 
-export default ImagesViewer;
+export default withTranslation()(ImagesViewer);

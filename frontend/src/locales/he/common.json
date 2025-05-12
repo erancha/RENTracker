@@ -1,4 +1,184 @@
 {
+  "apartmentActivity": {
+    "title": "פעילות דירה",
+    "savedAt": "נשמר ב",
+    "description": "תיאור",
+    "noActivity": "אין פעילות להצגה",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק פעילות '{{description}}'?"
+  },
+  "apartmentDocuments": {
+    "shareMessage": "\nמצורף קישור להסכם השכירות שלך: *'{{title}}'*.\n\nכדי להשלים את הפרטים שלך ולחתום על ההסכם, העתק הודעת וואטסאפ זו והירשם לאפליקציה בכתובת *{{origin}}*\n\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
+    "title": "הסכמי שכירות לדירה",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק מסמך '{{name}}'?",
+    "tooltips": {
+      "documentId": "מסמך {{id}}",
+      "downloadPdf": "הורד PDF",
+      "shareWhatsapp": "שתף בוואטסאפ"
+    }
+  },
+  "apartments": {
+    "title": "דירות",
+    "noApartments": "לא נמצאו דירות. צור דירה חדשה ...",
+    "confirmDeleteOpen": "האם אתה בטוח שברצונך למחוק דירה פתוחה זו?",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק דירה זו?",
+    "fields": {
+      "unitNumber": "מספר דירה",
+      "roomsCount": "מספר חדרים",
+      "rentAmount": "סכום שכירות",
+      "disable": "השבת"
+    },
+    "tooltips": {
+      "id": "מזהה דירה",
+      "saveNew": "שמור את הדירה החדשה",
+      "saveModified": "שמור את השינויים בדירה",
+      "toggleView": "החלף תצוגה מ{{from}} ל{{to}}"
+    }
+  },
+  "auth": {
+    "signInWithGoogle": "התחבר עם Google",
+    "signOut": "התנתק"
+  },
+  "common": {
+    "loading": "טוען...",
+    "error": "שגיאה",
+    "success": "הצלחה",
+    "save": "שמור",
+    "cancel": "בטל",
+    "delete": "מחק",
+    "edit": "ערוך",
+    "and": "ו",
+    "create": "צור",
+    "update": "עדכן",
+    "fields": {
+      "name": "שם",
+      "address": "כתובת",
+      "email": "דוא״ל",
+      "phone": "טלפון",
+      "israeliId": "תעודת זהות",
+      "updatedAt": "עודכן ב",
+      "lastUpdated": "עודכן לאחרונה",
+      "actions": "פעולות",
+      "period": "תקופה",
+      "description": "תיאור",
+      "savedAt": "נשמר ב"
+    },
+    "tooltips": {
+      "duplicate": "שכפל",
+      "close": "סגור"
+    },
+    "placeholders": {
+      "buildingAddress": "כתובת הבניין...",
+      "enterName": "הכנס שם",
+      "enterPhone": "הכנס טלפון (05X-XXX-XXXX)",
+      "enterIsraeliId": "הכנס תעודת זהות",
+      "enterAddress": "הכנס כתובת",
+      "unitNumber": "מספר דירה (לדוגמה: דירה 2ב)...",
+      "roomsCount": "מספר חדרים...",
+      "rentAmount": "סכום שכירות חודשי..."
+    }
+  },
+  "documentDetection": {
+    "message": "זוהה מזהה מסמך - מצב שוכר יבחר אוטומטית בעוד",
+    "countdown": "שנייה {{count}}",
+    "countdown_plural": "{{count}} שניות"
+  },
+  "documents": {
+    "noDocumentsLandlord": "לא נמצאו מסמכים. צור הסכם שכירות חדש ...",
+    "noDocumentsTenant": "לא נמצאו מסמכים.",
+    "landlordDesc": "משכירים",
+    "tenantDesc": "שוכרים",
+    "rentalAgreement": "הסכם שכירות"
+  },
+  "documentForm": {
+    "equipment": {
+      "refrigerator": "מקרר",
+      "oven": "תנור",
+      "stove": "כיריים",
+      "microwave": "מיקרוגל",
+      "washingMachine": "מכונת כביסה",
+      "dryer": "מייבש",
+      "tv1": "טלויזיה 1",
+      "tv2": "טלויזיה 2",
+      "sofaAndTable": "ספה + שולחן קפה",
+      "diningTable": "שולחן פינת אוכל + כסאות",
+      "ac1": "מזגן 1",
+      "ac2": "מזגן 2",
+      "bed": "מיטה",
+      "mattress": "מזרון",
+      "closet": "ארון קיר"
+    },
+    "sections": {
+      "includedEquipment": "ציוד כלול",
+      "property": "פרטי הנכס",
+      "lease": "תנאי השכירות",
+      "utilities": "מגבלות צריכה",
+      "landlord": "פרטי משכיר",
+      "tenant": "פרטי שוכר",
+      "security": "בטחונות וערבויות (אופציונלי)",
+      "guarantor": "פרטי ערב (אופציונלי)",
+      "signature": "חתימה"
+    },
+    "fields": {
+      "propertyAddress": "כתובת הנכס",
+      "roomCount": "מספר חדרים",
+      "includedServices": "שירותים כלולים",
+      "agreementDate": "תאריך ההסכם",
+      "rentAmount": "דמי שכירות",
+      "leasePeriod": "תקופת שכירות",
+      "startDate": "תאריך תחילה",
+      "endDate": "תאריך סיום",
+      "initialPaymentMonths": "מספר חודשים בתשלום מראש",
+      "standingOrderStart": "תחילת תשלום חודשי",
+      "paymentDay": "יום תשלום בחודש",
+      "waterLimit": "מגבלת מים",
+      "electricityLimit": "מגבלת חשמל",
+      "fullName": "שם מלא",
+      "israeliId": "תעודת זהות",
+      "email": "דוא״ל",
+      "phone": "טלפון",
+      "address": "כתובת",
+      "securityDeposit": "סכום פיקדון",
+      "requireSecurityDeposit": "דרוש פיקדון בטחון",
+      "requireGuarantor": "דרוש ערב"
+    },
+    "attachments": {
+      "title": "קבצים מצורפים",
+      "idCard": "צילום ת.ז",
+      "salary1": "צילום משכורת 1",
+      "salary2": "צילום משכורת 2"
+    },
+    "messages": {
+      "utilityLimitsNote": "שימו לב: אם תקבעו ערך 0 לאחד מהסעיפים הבאים, הסעיף לא יופיע בהסכם.",
+      "unsavedChanges": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לבטל?"
+    },
+    "tooltips": {
+      "addSecondTenant": "הוסף שוכר שני"
+    }
+  },
+  "landlordSettings": {
+    "title": "הגדרות משכיר",
+    "description": "הגדרות והעדפות משכיר",
+    "name": "שם משכיר",
+    "phone": "טלפון",
+    "israeliId": "תעודת זהות",
+    "address": "כתובת",
+    "email": "דוא'ל",
+    "save": "שמור הגדרות",
+    "placeholders": {
+      "name": "הכנס את שמך המלא",
+      "phone": "הכנס מספר טלפון (05X-XXX-XXXX)",
+      "israeliId": "הכנס תעודת זהות",
+      "address": "הכנס כתובת מלאה",
+      "email": "הכנס כתובת דוא'ל"
+    }
+  },
+  "menu": {
+    "dashboard": "לוח בקרה",
+    "documents": "מסמכים",
+    "activities": "פעילויות",
+    "analytics": "אנליטיקת דירות",
+    "landlordSettings": "הגדרות משכיר"
+  },
   "overview": {
     "description": "הינה אפליקציה המייעלת הפקת וניהול הסכמי שכירות.",
     "authDescription": "האפליקציה מספקת",
@@ -14,22 +194,8 @@
       "tenants": "שוכרים",
       "tenantsDesc": "המשלימים את פרטיהם וחותמים על הסכמי שכירות"
     },
-    "techStack": "האפליקציה מתוכננת לקנה מידה גדול, משתמשת במחשוב וזיכרון ללא שרת, עם אספקת תוכן גלובלית דרך CloudFront. בנויה עם שירותי AWS, עם ניטור חזק באמצעות AWS CloudWatch ו-X-Ray, ו-WebSockets לעדכונים בזמן אמת",
+    "techStack": "האפליקציה מתוכננת לסקיילביליות, משתמשת במחשוב וזיכרון ללא שרת, עם אספקת תוכן גלובלית דרך CloudFront. בנויה עם שירותי AWS, עם ניטור חזק באמצעות AWS CloudWatch ו-X-Ray, ו-WebSockets לעדכונים בזמן אמת",
     "ui": "האפליקציה מציעה ממשק משתמש React אינטואיטיבי ומותאם למסכים קטנים"
-  },
-  "welcome": {
-    "title": "ברוכים הבאים ל-RENTracker",
-    "description": "האפליקציה תומכת בשני תפקידי משתמש: משכירים המנהלים נכסים, הסכמי שכירות ופעילות, ושוכרים המשלימים את פרטיהם וחותמים על הסכמי שכירות.",
-    "selectRole": "אנא בחר את תפקידך להמשך:"
-  },
-  "auth": {
-    "signInWithGoogle": "התחבר עם Google",
-    "signOut": "התנתק"
-  },
-  "header": {
-    "title": "ברוכים הבאים ל-RENTracker",
-    "description": "האפליקציה תומכת בשני תפקידי משתמש: משכירים המנהלים נכסים, הסכמי שכירות ופעילות, ושוכרים המשלימים את פרטיהם וחותמים על הסכמי שכירות.",
-    "selectRole": "אנא בחר את תפקידך להמשך:"
   },
   "roles": {
     "landlord": "אני משכיר",
@@ -37,41 +203,18 @@
     "landlordDesc": "משכירים",
     "tenantDesc": "שוכרים"
   },
-  "documents": {
-    "noDocumentsLandlord": "לא נמצאו מסמכים. צור הסכם שכירות חדש ...",
-    "noDocumentsTenant": "לא נמצאו מסמכים.",
-    "landlordDesc": "משכירים",
-    "tenantDesc": "שוכרים"
-  },
-  "documentDetection": {
-    "message": "זוהה מזהה מסמך - מצב שוכר יבחר אוטומטית בעוד",
-    "countdown": "שנייה {{count}}",
-    "countdown_plural": "{{count}} שניות"
-  },
-  "menu": {
-    "dashboard": "לוח בקרה",
-    "documents": "מסמכים",
-    "activities": "פעילויות",
-    "analytics": "אנליטיקת דירות",
-    "landlordSettings": "הגדרות משכיר"
-  },
   "tenantDocuments": {
     "title": "הסכמי שכירות",
     "documentIdPlaceholder": "הכנס מזהה מסמך או לחץ להדבקה מהלוח",
     "submitDocument": "שלח",
-    "errorLinkedEmail": "אינך יכול לערוך מסמך זה. הוא משויך ל-{{email}}",
+    "errorLinkedEmail": "{{email}}-אינך יכול לערוך מסמך זה. הוא משויך ל",
     "fetchError": "נכשל בהבאת המסמך. אנא בדוק את המזהה ונסה שוב.",
-    "shareMessage": "להלן קישור להסכם השכירות *החתום*: *'{{title}}'*:\n\n{{url}}\n\nשים לב שהקישור יישאר *בתוקף למשך יום אחד*. לאחר מכן, ניתן לגשת למסמך דרך האפליקציה."
-  },
-  "common": {
-    "loading": "טוען...",
-    "error": "שגיאה",
-    "success": "הצלחה",
-    "save": "שמור",
-    "cancel": "בטל",
-    "delete": "מחק",
-    "edit": "ערוך",
-    "and": "ו"
+    "shareMessage": "מצורף קישור להסכם השכירות החתום: *'{{title}}'*:\n\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
+    "tooltips": {
+      "addSecondTenant": "הוסף דייר שני",
+      "downloadPdf": "הורד PDF",
+      "shareWhatsapp": "שתף בוואטסאפ"
+    }
   },
   "toast": {
     "documentSaved": "המסמך נשמר בהצלחה",
@@ -86,5 +229,17 @@
     "signFirst": "אנא בקש מהשוכר לחתום תחילה",
     "alreadySigned": "ההסכם כבר נחתם על ידי השוכר והמשכיר",
     "fileUploaded": "הקובץ '{{fileName}}' הועלה בהצלחה!"
+  },
+  "welcome": {
+    "title": "ברוכים הבאים ל-RENTracker",
+    "subtitle": "אפליקציה מבוססת AWS/React/WebSockets",
+    "description": "האפליקציה תומכת בשני סוגי משתמשים: משכירים המנהלים נכסים, הסכמי שכירות ופעילות, ושוכרים המשלימים את פרטיהם וחותמים על הסכמי שכירות.",
+    "selectRole": "אנא בחר את תפקידך להמשך:"
+  },
+  "websocket": {
+    "tooltips": {
+      "connected": "מחובר, עדכון חיבורים אחרון ב{{timestamp}}",
+      "disconnected": "מנותק"
+    }
   }
 }

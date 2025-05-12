@@ -52,13 +52,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { documents = [], loading, error } = this.props;
+    const { documents = [], loading, error, t } = this.props;
     const { showForm } = this.state;
 
     return (
       <div className='page body-container'>
         <div className='header m-n-relation'>
-          <span>Apartment Rental Agreements</span>
+          <span>{t('apartmentDocuments.title')}</span>
           {!this.state.showForm && (
             <button
               onClick={() => {
@@ -100,19 +100,19 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
               {documents.length > 0 ? (
                 documents.map((document) => (
                   <div key={document.document_id} className='table-row document'>
-                    <div className='updated' data-title='Last Updated'>
+                    <div className='updated' data-title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
-                    <div className='name' data-title='Name' title={`Document ${document.document_id}`}>
-                      '{getDocumentTitle(document.template_fields?.tenant1Name)}'
+                    <div className='name' data-title={t('common.fields.name')} title={`Document ${document.document_id}`}>
+                      '{getDocumentTitle(document.template_fields?.tenant1Name, t('documents.rentalAgreement'))}'
                     </div>
-                    <div className='period' data-title='Period'>
+                    <div className='period' data-title={t('common.fields.period')}>
                       {formatDate(document.template_fields?.startDate)} - {formatDate(document.template_fields?.endDate)}
                     </div>
-                    <div className='actions' data-title='Actions'>
+                    <div className='actions' data-title={t('common.fields.actions')}>
                       <button
                         className='action-button edit'
-                        title='Edit'
+                        title={t('common.edit')}
                         onClick={async () => {
                           // First fetch the document
                           await this.props.getDocumentThunk(document.document_id);
@@ -122,30 +122,30 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                       >
                         <Pencil />
                       </button>
-                      <button className='action-button' title='Duplicate' onClick={() => this.handleDuplicateDocument(document)}>
+                      <button className='action-button' title={t('common.tooltips.duplicate')} onClick={() => this.handleDuplicateDocument(document)}>
                         <Copy />
                       </button>
-                      <button onClick={() => this.handleDeleteDocument(document)} className='action-button delete' title='Delete'>
+                      <button onClick={() => this.handleDeleteDocument(document)} className='action-button delete' title={t('common.delete')}>
                         <Trash2 />
                       </button>
                       <button
                         className='action-button documents'
-                        title='Download PDF'
+                        title={t('common.tooltips.downloadPdf')}
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error(this.props.t('toast.error'));
+                          else toast.error(t('toast.error'));
                         }}
                       >
                         <FileText />
                       </button>
                       <button
                         className='action-button pdf'
-                        title='Share via WhatsApp'
+                        title={t('common.tooltips.shareWhatsapp')}
                         onClick={async () => {
                           const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
-                          else toast.error(this.props.t('toast.error'));
+                          else toast.error(t('toast.error'));
                         }}
                       >
                         <Share2 />
@@ -154,7 +154,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                   </div>
                 ))
               ) : (
-                <div className='empty-message'>{this.props.t('documents.noDocumentsLandlord')}</div>
+                <div className='empty-message'>{t('documents.noDocumentsLandlord')}</div>
               )}
             </div>
           )}
@@ -169,12 +169,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * @param {string} pdf_url - URL in CloudFront of the document to share
    */
   handleShareViaWhatsApp = (documentId: string, pdf_url: string) => {
+    const { t } = this.props;
     const document = this.props.documents.find((d) => d.document_id === documentId);
-    const message = `\nPlease find below a link to your rental agreement: *'${getDocumentTitle(
-      document?.template_fields?.tenant1Name
-    )}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at *${
-      window.location.origin
-    }*\n\n${pdf_url}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.`;
+    const message = t('apartmentDocuments.shareMessage', {
+      title: getDocumentTitle(document?.template_fields?.tenant1Name, t('documents.rentalAgreement')),
+      origin: window.location.origin,
+      url: pdf_url
+    });
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -214,16 +215,19 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * Handles document deletion after user confirmation
    */
   handleDeleteDocument = async (document: IDocument) => {
-    if (window.confirm(`Are you sure you want to delete document '${getDocumentTitle(document.template_fields?.tenant1Name)}'?`)) {
+    const { t } = this.props;
+    if (
+      window.confirm(t('apartmentDocuments.confirmDelete', { name: getDocumentTitle(document.template_fields?.tenant1Name, t('documents.rentalAgreement')) }))
+    ) {
       try {
         await this.props.deleteDocumentThunk(document.document_id);
-        toast.success(this.props.t('toast.documentDeleted'));
+        toast.success(t('toast.documentDeleted'));
         // Refresh the documents list
         if (this.props.apartmentId) {
           await this.props.getApartmentDocumentsThunk(this.props.apartmentId);
         }
       } catch (error) {
-        toast.error(this.props.t('toast.error'));
+        toast.error(t('toast.error'));
       }
     }
   };
