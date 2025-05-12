@@ -116,6 +116,8 @@ const handleCreateDocument = async ({ event, parentSegment }) => {
       saas_tenant_id: senderUserId,
     });
 
+    await sendRentalAgreementEmail(document.template_fields);
+
     subsegment.close();
     return {
       statusCode: 201,
@@ -164,39 +166,7 @@ const handleUpdateDocument = async ({ documentId, event, parentSegment }) => {
     });
     // console.log(JSON.stringify(document, null, 2));
 
-    const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
-    await insertMessageToSQS(
-      JSON.stringify({
-        emailParams: {
-          toAddresses: [document.template_fields.landlordEmail, ...(document.template_fields.tenant1Email ? [document.template_fields.tenant1Email] : [])],
-          subject: `Rental Agreement - ${document.template_fields.propertyAddress}`,
-          message: `
-            <h2>Rental Agreement Details</h2>
-            <p>Property: ${document.template_fields.propertyAddress}</p>
-            <p>Lease Period: ${document.template_fields.leasePeriod} months</p>
-            <p>Start Date: ${document.template_fields.startDate}</p>
-            <p>End Date: ${document.template_fields.endDate}</p>
-            <p>Monthly Rent: ₪${document.template_fields.rentAmount}</p>
-            <br/>
-            <h3>Tenant Details:</h3>
-            <p>Name: ${document.template_fields.tenant1Name}</p>
-            <p>Phone: ${document.template_fields.tenant1Phone}</p>
-            <p>Email: ${document.template_fields.tenant1Email}</p>
-            <p>${document.template_fields.tenantSignature ? 'Signed by tenant' : 'Not signed by tenant'}</p>
-            <br/>
-            <h3>Landlord Details:</h3>
-            <p>Name: ${document.template_fields.landlordName}</p>
-            <p>Phone: ${document.template_fields.landlordPhone}</p>
-            <p>Email: ${document.template_fields.landlordEmail}</p>
-            <p>${document.template_fields.landlordSignature ? 'Signed by landlord' : 'Not signed by landlord'}</p>
-            <br/>
-            <p>The rental agreement has been updated in the system.</p>
-          `,
-        },
-      }),
-      sqsClient,
-      SQS_MESSAGES_TO_CLIENTS_Q_URL
-    );
+    await sendRentalAgreementEmail(document.template_fields);
 
     subsegment.close();
     return {
@@ -506,6 +476,47 @@ const handleFileUpload = async ({ event, parentSegment }) => {
 //=============================================================================================================================================
 // Utilities
 //=============================================================================================================================================
+
+/**
+ * Send email notification about rental agreement updates
+ * @param {Object} templateFields - The template fields from the document
+ * @returns {Promise<void>}
+ */
+async function sendRentalAgreementEmail(templateFields) {
+  const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+  await insertMessageToSQS(
+    JSON.stringify({
+      emailParams: {
+        toAddresses: [templateFields.landlordEmail, ...(templateFields.tenant1Email ? [templateFields.tenant1Email] : [])],
+        subject: `Rental Agreement - ${templateFields.propertyAddress}`,
+        message: `
+          <h2>Rental Agreement Details</h2>
+          <p>Property: ${templateFields.propertyAddress}</p>
+          <p>Lease Period: ${templateFields.leasePeriod} months</p>
+          <p>Start Date: ${templateFields.startDate}</p>
+          <p>End Date: ${templateFields.endDate}</p>
+          <p>Monthly Rent: ₪${templateFields.rentAmount}</p>
+          <br/>
+          <h3>Tenant Details:</h3>
+          <p>Name: ${templateFields.tenant1Name}</p>
+          <p>Phone: ${templateFields.tenant1Phone}</p>
+          <p>Email: ${templateFields.tenant1Email}</p>
+          <p>Signature: ${templateFields.tenantSignature ? 'Signed' : ''}</p>
+          <br/>
+          <h3>Landlord Details:</h3>
+          <p>Name: ${templateFields.landlordName}</p>
+          <p>Phone: ${templateFields.landlordPhone}</p>
+          <p>Email: ${templateFields.landlordEmail}</p>
+          <p>Signature: ${templateFields.landlordSignature ? 'Signed' : 'Pending ...'}</p>
+          <br/>
+          <p>The rental agreement has been updated in the system.</p>
+        `,
+      },
+    }),
+    sqsClient,
+    SQS_MESSAGES_TO_CLIENTS_Q_URL
+  );
+}
 
 /**
  * Extract common values from the event object

@@ -88,8 +88,7 @@ body {
   transition: background-color 0.2s;
   scale: 0.8;
 
-  &.add,
-  &.edit {
+  &.add {
     animation: fade-in-from-30-percent 1s 3 5s;
   }
 
@@ -701,6 +700,11 @@ body {
   }
   > .name {
     font-weight: bold;
+  }
+
+  .action-button.pending-landlord-signature {
+    border: 1px solid darkred;
+    animation: pulsate-brightness 1s ease-in-out infinite;
   }
 }
 

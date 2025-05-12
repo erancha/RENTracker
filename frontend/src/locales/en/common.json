@@ -50,6 +50,8 @@
     "and": "and ",
     "create": "Create",
     "update": "Update",
+    "months": "months",
+    "confirmUnsavedChanges": "You have unsaved changes. Are you sure you want to cancel?",
     "fields": {
       "name": "Name",
       "address": "Address",
@@ -88,9 +90,24 @@
     "noDocumentsTenant": "No documents found.",
     "landlordDesc": "Landlords",
     "tenantDesc": "Tenants",
-    "rentalAgreement": "Rental Agreement"
+    "rentalAgreement": "Rental Agreement",
+    "pendingLandlordSignature": "Pending landlord signature"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidId": "Invalid Israeli ID number",
+    "mustStartWithZero": "Must start with 0",
+    "invalidPhone": "Invalid phone number",
+    "missingDigits": "Missing digits",
+    "tooManyDigits": "Too many digits",
+    "invalidDate": "Invalid date",
+    "dateMustBeAfterAgreement": "Date must be after agreement date",
+    "endDateMinMonths": "End date must be at least {{months}} months after start date",
+    "standingOrderAfterInitial": "Standing order start date must be after initial payment period",
+    "standingOrderBeforeEnd": "Standing order start date must be before agreement end date"
   },
   "documentForm": {
+    "confirmSaveUnsigned": "Are you sure you want to save the document without signing?",
     "equipment": {
       "refrigerator": "Refrigerator",
       "oven": "Oven",
@@ -208,7 +225,7 @@
     "title": "Tenant Rental Agreements",
     "documentIdPlaceholder": "Enter document ID or click to paste from clipboard",
     "submitDocument": "Submit",
-    "errorLinkedEmail": "You cannot edit this document. It is linked to {{email}}",
+    "errorLinkedEmail": "You cannot edit this document. It is linked to another tenant.",
     "fetchError": "Failed to fetch document. Please check the ID and try again.",
     "shareMessage": "Please find below a link to the *signed* rental agreement: *'{{title}}'*:\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "tooltips": {
@@ -227,8 +244,8 @@
     "error": "An error occurred",
     "noChanges": "No changes to save",
     "confirmDelete": "Are you sure you want to delete this document?",
-    "signFirst": "Please have the tenant sign first",
-    "alreadySigned": "The agreement was already signed by both the tenant and the landlord",
+    "tenantMustSignFirst": "Please share the document with the tenant and have the document signed first",
+    "agreementSignedByBoth": "The agreement was signed by the tenant and the landlord",
     "fileUploaded": "File '{{fileName}}' uploaded successfully!"
   },
   "welcome": {

@@ -43,6 +43,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    */
   componentDidUpdate(prevProps: DocumentListProps) {
     if (this.props.apartmentId !== prevProps.apartmentId) {
+      this.setState({ showForm: false });
       this.props.getApartmentDocumentsThunk(this.props.apartmentId);
     }
   }
@@ -54,6 +55,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
   render() {
     const { documents = [], loading, error, t } = this.props;
     const { showForm } = this.state;
+    const isPendingLandlordSignature = (document: IDocument) => document.template_fields.tenantSignature && !document.template_fields.landlordSignature;
 
     return (
       <div className='page body-container'>
@@ -64,12 +66,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
               onClick={() => {
                 // Reset the selected document to ensure form starts fresh
                 this.props.setSelectedDocument(null);
-                this.setState({
-                  showForm: true,
-                  editMode: false,
-                  duplicateTemplateFields: null,
-                  sectionsToExpand: ['landlordDetails'],
-                });
+                this.setState({ showForm: true, editMode: false, duplicateTemplateFields: null, sectionsToExpand: ['landlordDetails'] });
               }}
               className='action-button add'
             >
@@ -111,13 +108,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                     </div>
                     <div className='actions' data-title={t('common.fields.actions')}>
                       <button
-                        className='action-button edit'
-                        title={t('common.edit')}
+                        className={`action-button edit${isPendingLandlordSignature(document) ? ' pending-landlord-signature' : ''}`}
+                        title={`${isPendingLandlordSignature(document) ? t('documents.pendingLandlordSignature') : t('common.edit')}`}
                         onClick={async () => {
                           // First fetch the document
                           await this.props.getDocumentThunk(document.document_id);
                           // Then show the form
-                          this.setState({ showForm: true, editMode: true });
+                          this.setState({ showForm: true, editMode: true, sectionsToExpand: isPendingLandlordSignature(document) ? ['signature'] : [] });
                         }}
                       >
                         <Pencil />
@@ -174,7 +171,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     const message = t('apartmentDocuments.shareMessage', {
       title: getDocumentTitle(document?.template_fields?.tenant1Name, t('documents.rentalAgreement')),
       origin: window.location.origin,
-      url: pdf_url
+      url: pdf_url,
     });
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -199,16 +196,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     templateFields['date'] = currentDate.toISOString().split('T')[0];
     templateFields['startDate'] = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1, 12).toISOString().split('T')[0]; // + 12 hours to normalize the time zone.
 
-    // Determine which sections need to be expanded based on reset fields
-    const sectionsToExpand = new Set(['leaseTerms']); // These sections contain the reset fields
-
     // Show the form with duplicated fields
-    this.setState({
-      showForm: true,
-      editMode: false,
-      duplicateTemplateFields: templateFields,
-      sectionsToExpand: Array.from(sectionsToExpand),
-    });
+    this.setState({ showForm: true, editMode: false, duplicateTemplateFields: templateFields, sectionsToExpand: ['leaseTerms'] });
   };
 
   /**

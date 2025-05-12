@@ -1,3 +1,33 @@
+/**
+ * DocumentForm Component
+ *
+ * A comprehensive form component for creating and editing rental agreements with the following features:
+ *
+ * Key Features:
+ * - Multi-section form with expandable/collapsible sections:
+ *   - Property Details
+ *   - Lease & Financial Terms
+ *   - Utility Limits
+ *   - Landlord Details
+ *   - Tenant Details (supports up to 2 tenants)
+ *   - Security Details
+ *   - Guarantor Details
+ *   - Signature
+ *
+ * Core Functionality:
+ * - Form validation for required fields
+ * - Date calculations and validations
+ * - Israeli ID and phone number validations
+ * - File upload handling
+ * - Digital signature support
+ * - Auto-population of fields based on user type
+ * - State management for form data and errors
+ * - Unsaved changes detection
+ *
+ * @class DocumentForm
+ * @extends {React.Component<DocumentFormProps, DocumentFormState>}
+ */
+
 import React from 'react';
 import { withTranslation } from 'react-i18next';
 import type { i18n } from 'i18next';
@@ -104,7 +134,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // Tenant fields are only required for tenants
     ...(this.props.userType === UserType.Tenant
       ? ['tenant1Name', 'tenant1Id', 'tenant1Phone', 'tenant1Email', 'tenant1IdCard', 'tenant1Salary1', 'tenant1Salary2']
-      : []),
+      : ['tenant1Name']),
     'roomCount',
     'propertyAddress',
     'includedEquipment',
@@ -183,16 +213,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     if (initialTemplateFields) {
       // Use duplicated fields and populate user name and emails if needed
       const templateFields = this.populateCurrentUserFields(initialTemplateFields, userType, auth.email as string);
-      this.setState({
-        formData: templateFields,
-      });
+      this.setState({ formData: templateFields });
     } else if (documentId && selectedDocument) {
       // Edit mode - use selected document fields and populate user name and emails if needed
       const templateFields = this.populateCurrentUserFields(selectedDocument.template_fields, userType, auth.email as string);
-      this.setState({
-        formData: templateFields,
-        expandedSections: userType === UserType.Tenant ? ['tenant1Details', 'tenant2Details'] : [],
-      });
+      this.setState({ formData: templateFields });
     } else if (!documentId) {
       // Create mode - use defaults and populate user name and emails if needed
       const templateFields = this.populateCurrentUserFields(this.defaultTemplateFields, userType, auth.email as string);
@@ -259,7 +284,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           </Accordion>
 
           {/* Lease & Financial Terms */}
-          <Accordion expanded={this.state.expandedSections.includes('leaseTerms')} onChange={this.handleAccordionChange('leaseTerms')}>
+          <Accordion
+            expanded={this.state.expandedSections.includes('leaseTerms') || this.state.expandedSections.includes('utilityLimits')}
+            onChange={this.handleAccordionChange('leaseTerms')}
+          >
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography className='section-header'>{t('documentForm.sections.lease')}</Typography>
             </AccordionSummary>
@@ -274,7 +302,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                   {this.renderNumberField('rentAmount', t('documentForm.fields.rentAmount'), { min: 0, step: '50', adornment: '₪' })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('leasePeriod', t('documentForm.fields.leasePeriod'), { min: 1, adornment: 'חודשים' })}
+                  {this.renderNumberField('leasePeriod', t('documentForm.fields.leasePeriod'), { min: 1, adornment: t('common.months') })}
                 </Grid>
                 <Grid item xs={6} sm={6} md={4}>
                   {this.renderDateField('startDate', t('documentForm.fields.startDate'))}
@@ -294,24 +322,24 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 </Grid>
               </Grid>
             </AccordionDetails>
-          </Accordion>
 
-          {/* Utility Limits */}
-          <Accordion expanded={this.state.expandedSections.includes('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography className='section-header'>{t('documentForm.sections.utilities')}</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <p>{t('documentForm.messages.utilityLimitsNote')}</p>
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('waterLimit', t('documentForm.fields.waterLimit'), { min: 0, step: '50', adornment: '₪' })}
+            {/* Utility Limits */}
+            <Accordion expanded={this.state.expandedSections.includes('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography className='section-header'>{t('documentForm.sections.utilities')}</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <p>{t('documentForm.messages.utilityLimitsNote')}</p>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} sm={6} md={4}>
+                    {this.renderNumberField('waterLimit', t('documentForm.fields.waterLimit'), { min: 0, step: '50', adornment: '₪' })}
+                  </Grid>
+                  <Grid item xs={6} sm={6} md={4}>
+                    {this.renderNumberField('electricityLimit', t('documentForm.fields.electricityLimit'), { min: 0, step: '50', adornment: '₪' })}
+                  </Grid>
                 </Grid>
-                <Grid item xs={6} sm={6} md={4}>
-                  {this.renderNumberField('electricityLimit', t('documentForm.fields.electricityLimit'), { min: 0, step: '50', adornment: '₪' })}
-                </Grid>
-              </Grid>
-            </AccordionDetails>
+              </AccordionDetails>
+            </Accordion>
           </Accordion>
 
           {/* Landlord Details */}
@@ -351,7 +379,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             presignedUrls={this.props.selectedDocument?.presignedUrls}
             onImageViewerClose={() => this.setState({ showImagesViewer: false })}
             on2ndTenantToggle={() => this.setState({ showSecondTenant: !this.state.showSecondTenant, expandSecondTenant: true })}
-            t={this.props.t}
+            t={t}
           />
 
           {/* Tenant2 (optional) Details */}
@@ -365,7 +393,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
               handleAccordionChange={this.handleAccordionChange}
               presignedUrls={this.props.selectedDocument?.presignedUrls}
               onImageViewerClose={() => this.setState({ showImagesViewer: false })}
-              t={this.props.t}
+              t={t}
             />
           )}
 
@@ -382,7 +410,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.securityRequired)}
                         onChange={(e) => this.handleInputChange('securityRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant || documentWasSigned(this.state.formData)}
+                        disabled={this.props.userType === UserType.Tenant || this.documentWasSigned()}
                       />
                     }
                     label={t('documentForm.fields.requireSecurityDeposit')}
@@ -412,7 +440,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.guarantorRequired)}
                         onChange={(e) => this.handleInputChange('guarantorRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant || documentWasSigned(this.state.formData)}
+                        disabled={this.props.userType === UserType.Tenant || this.documentWasSigned()}
                       />
                     }
                     label={t('documentForm.fields.requireGuarantor')}
@@ -446,9 +474,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             <AccordionDetails>
               <Grid item xs={12}>
                 <SignatureMaker
-                  onSave={(imageData) => {
-                    this.handleSignatureUpload(imageData);
+                  onSave={async (imageData) => {
+                    await this.handleSignatureUpload(imageData);
                     this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
+                    await this.handleSubmit(new Event('dummy') as any);
                   }}
                   onCancel={() => this.handleAccordionChange('signature')(new Event('dummy') as any, false)} // collapses the current section.
                 />
@@ -529,9 +558,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   private validateField = (field: string, value: any, requiredFields: string[] = this.requiredFields): string => {
     const stringValue = String(value ?? '');
     const { formData } = this.state;
+    const { t } = this.props;
 
     if (requiredFields.includes(field) && (!value || stringValue.trim() === '')) {
-      return 'ערך חובה';
+      return t('validation.required');
     }
 
     // Format validation for non-empty fields
@@ -539,28 +569,28 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       if (field === 'landlordId' || field === 'tenant1Id' || field === 'tenant2Id' || field === 'guarantorId') {
         //TODO: get the indication as a parameter to the function rather than asking about field names.
         if (!validateIsraeliId(stringValue)) {
-          return 'מספר תעודת זהות לא תקין';
+          return t('validation.invalidId');
         }
       } else if (field === 'landlordPhone' || field === 'tenant1Phone' || field === 'tenant2Phone' || field === 'guarantorPhone') {
         //TODO: get the indication as a parameter to the function rather than asking about field names.
         const digits = stringValue.replace(/\D/g, '');
         if (!digits.startsWith('0')) {
-          return 'חייב להתחיל ב-0';
+          return t('validation.mustStartWithZero');
         } else if (!digits.startsWith('05')) {
-          return 'מספר טלפון לא תקין';
+          return t('validation.invalidPhone');
         } else if (digits.length < 10) {
-          return 'חסרות ספרות';
+          return t('validation.missingDigits');
         } else if (digits.length > 10) {
-          return 'יותר מדי ספרות';
+          return t('validation.tooManyDigits');
         } else if (!validateIsraeliPhone(stringValue)) {
-          return 'מספר טלפון לא תקין';
+          return t('validation.invalidPhone');
         }
       }
 
       // Date validations
       if (['startDate', 'endDate', 'standingOrderStart'].includes(field)) {
         if (!this.isValidDate(value)) {
-          return 'תאריך לא תקין';
+          return t('validation.invalidDate');
         }
 
         const date = new Date(formData.date || '');
@@ -568,7 +598,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
         // All dates must be after the agreement date
         if (this.isValidDate(formData.date) && currentDate < date) {
-          return 'התאריך חייב להיות אחרי תאריך ההסכם';
+          return t('validation.dateMustBeAfterAgreement');
         }
 
         if (field === 'endDate' && this.isValidDate(formData.startDate)) {
@@ -578,7 +608,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           minMonthsFromStartDate.setMonth(startDate.getMonth() + minMonthsFromStart - 1);
 
           if (currentDate < minMonthsFromStartDate) {
-            return `תאריך סיום חייב להיות לפחות ${minMonthsFromStart} חודשים אחרי תאריך התחלה`;
+            return t('validation.endDateMinMonths', { months: minMonthsFromStart });
           }
         }
 
@@ -592,12 +622,12 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             expectedStartDate.setMonth(startDate.getMonth() + initialMonths > 0 ? 1 : 0);
 
             if (currentDate < expectedStartDate) {
-              return 'תאריך תחילת הוראת קבע חייב להיות אחרי תקופת התשלום הראשוני';
+              return t('validation.standingOrderAfterInitial');
             }
           }
 
           if (this.isValidDate(formData.endDate) && currentDate > endDate) {
-            return 'תאריך תחילת הוראת קבע חייב להיות לפני תאריך סיום ההסכם';
+            return t('validation.standingOrderBeforeEnd');
           }
         }
       }
@@ -637,7 +667,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * Determines if a field should be disabled based on document state
    */
   private isFieldDisabled = (field: string) => {
-    let isDisabled = documentWasSigned(this.state.formData);
+    let isDisabled = this.documentWasSigned();
     if (!isDisabled) {
       const section = fieldToSection[field];
       // console.log({ field, section });
@@ -807,7 +837,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param {string} field - Field name
    * @param {string} label - Field label
    */
-  private renderFileField = (field: string, label: string) => {
+  private renderFileField = (field: string, label: string, options?: { onUpload?: () => void }) => {
     const existingFileName = this.state.formData[field];
     const error = this.state.errors[field];
 
@@ -828,7 +858,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         <input
           type='file'
           accept='image/*'
-          onChange={(e) => this.handleFileUpload(e.target.files, field)}
+          onChange={(e) => {
+            this.handleFileUpload(e.target.files, field);
+            options?.onUpload?.();
+          }}
           disabled={!this.props.documentId || this.isFieldDisabled(field)}
         />
 
@@ -855,12 +888,28 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     });
   };
 
+  /**
+   * Validates if all required fields in the document are filled
+   * @param formData - The form data to validate
+   * @returns boolean indicating if the document is valid
+   */
+  private isDocumentValid = (): boolean => {
+    // Check if all required fields have values
+    return this.requiredFields.every((field) => {
+      const value = this.state.formData[field];
+      return value !== undefined && value !== null && value !== '';
+    });
+  };
+
+  private documentWasSigned = (): boolean => !!this.state.formData.landlordSignature;
+
   private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     const { t } = this.props;
     // console.log(this.state);
-    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature) toast.warning(t('toast.signFirst'));
-    else if (section === 'signature' && documentWasSigned(this.state.formData)) toast.warning(t('toast.alreadySigned'));
-    else
+    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
+      toast.warning(t('toast.tenantMustSignFirst'));
+    else if (section === 'signature' && this.documentWasSigned()) toast.warning(t('toast.agreementSignedByBoth'));
+    else if (section !== 'signature' || this.isDocumentValid())
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
       }));
@@ -927,20 +976,31 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
     // Create new document or update existing one based on documentId
     try {
-      let savedDocument: IDocument;
+      let savedDocument: IDocument | null = null;
       if (documentId) {
-        savedDocument = await updateDocumentThunk({
-          documentId,
-          templateFields: this.state.formData,
-          ...(this.props.userType === UserType.Tenant && this.props.userId ? { tenantUserId: this.props.userId } : {}),
-        });
+        // update:
+        const { userType } = this.props;
+        if (
+          userType === UserType.Landlord ||
+          this.documentWasSigned() ||
+          this.state.formData.tenantSignature ||
+          window.confirm(t('documentForm.confirmSaveUnsigned'))
+        ) {
+          savedDocument = await updateDocumentThunk({
+            documentId,
+            templateFields: this.state.formData,
+            ...(this.props.userType === UserType.Tenant && this.props.userId ? { tenantUserId: this.props.userId } : {}),
+          });
+        }
       } else {
+        // create:
         savedDocument = await createDocumentThunk({ apartmentId: apartmentId as string, templateFields: this.state.formData });
       }
-      this.props.setSelectedDocument(savedDocument);
-
-      if (onSave) onSave();
-      if (onClose) onClose();
+      if (savedDocument) {
+        this.props.setSelectedDocument(savedDocument);
+        if (onSave) onSave();
+        if (onClose) onClose();
+      }
     } catch (error) {
       console.error('Error saving document:', error);
       toast.error(t('toast.error'));
@@ -952,7 +1012,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    */
   private handleCancel = () => {
     if (this.hasUnsavedChanges()) {
-      if (window.confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לבטל?')) {
+      if (window.confirm(this.props.t('common.confirmUnsavedChanges'))) {
         this.props.onClose();
       }
     } else {
@@ -1026,7 +1086,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param files - FileList object containing selected files
    * @param fileName - Name of the file to be uploaded
    */
-  private handleSignatureUpload = async (imageData: string) => {
+  private handleSignatureUpload = async (imageData: string): Promise<void> => {
+    const { t } = this.props;
     try {
       const documentId = this.props.documentId;
       const fileName = `${this.props.userType === 'Tenant' ? 'tenant' : 'landlord'}Signature`;
@@ -1038,16 +1099,22 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         documentId,
       });
 
-      // Update formData with the signature data
-      this.setState((prevState) => ({
-        formData: {
-          ...prevState.formData,
-          [fileName]: `${fileName}-${new Date().toISOString()}`,
-        },
-      }));
+      // Update formData with the signature data and wait for it to complete
+      await new Promise<void>((resolve) => {
+        this.setState(
+          (prevState) => ({
+            formData: {
+              ...prevState.formData,
+              [fileName]: `${fileName}-${new Date().toISOString()}`,
+            },
+          }),
+          resolve
+        );
+      });
     } catch (error) {
       console.error('Error saving signature:', error);
-      toast.error(this.props.t('toast.error'));
+      toast.error(t('toast.error'));
+      throw error; // Re-throw the error so we know if the upload failed
     }
   };
 
@@ -1060,7 +1127,7 @@ interface TenantSectionProps {
   prefix: string;
   renderTextField: (name: string, label: string, options?: any) => React.ReactNode;
   renderNumberField: (name: string, label: string, options?: any) => React.ReactNode;
-  renderFileField: (name: string, label: string) => React.ReactNode;
+  renderFileField: (name: string, label: string, options?: { onUpload?: () => void }) => React.ReactNode;
   state: DocumentFormState;
   handleAccordionChange: (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => void;
   presignedUrls?: Record<string, string>;
@@ -1098,19 +1165,19 @@ const TenantSection: React.FC<TenantSectionProps> = ({
       <AccordionDetails>
         <Grid container spacing={2}>
           <Grid item xs={7} sm={6} md={2}>
-            {renderTextField(`${prefix}Name`, 'שם מלא')}
+            {renderTextField(`${prefix}Name`, t('documentForm.fields.fullName'))}
           </Grid>
           <Grid item xs={5} sm={6} md={2}>
-            {renderNumberField(`${prefix}Id`, 'תעודת זהות', { isIsraeliId: true })}
+            {renderNumberField(`${prefix}Id`, t('documentForm.fields.israeliId'), { isIsraeliId: true })}
           </Grid>
           <Grid item xs={7} sm={6} md={3}>
-            {renderTextField(`${prefix}Email`, 'דוא״ל', { type: 'email', isDisabled: true })}
+            {renderTextField(`${prefix}Email`, t('documentForm.fields.email'), { type: 'email', isDisabled: true })}
           </Grid>
           <Grid item xs={5} sm={6} md={2}>
-            {renderNumberField(`${prefix}Phone`, 'טלפון', { isPhoneNumber: true })}
+            {renderNumberField(`${prefix}Phone`, t('documentForm.fields.phone'), { isPhoneNumber: true })}
           </Grid>
           <Grid item xs={12} sm={12} md={3}>
-            {renderTextField(`${prefix}Address`, 'כתובת')}
+            {renderTextField(`${prefix}Address`, t('documentForm.fields.address'))}
           </Grid>
         </Grid>
 
@@ -1128,7 +1195,9 @@ const TenantSection: React.FC<TenantSectionProps> = ({
                 {renderFileField(`${prefix}Salary1`, t('documentForm.attachments.salary1'))}
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                {renderFileField(`${prefix}Salary2`, t('documentForm.attachments.salary2'))}
+                {renderFileField(`${prefix}Salary2`, t('documentForm.attachments.salary2'), {
+                  onUpload: () => handleAccordionChange('signature')(null as any, true),
+                })}
               </Grid>
             </Grid>
           </AccordionDetails>
@@ -1221,7 +1290,7 @@ type DocumentFormProps = OwnProps &
  * Component state interface
  */
 interface DocumentFormState {
-  formData: FormData;
+  formData: Record<string, any>;
   errors: Record<string, string>;
   expandedSections: string[];
   initialFormData: Record<string, any>;
@@ -1229,8 +1298,6 @@ interface DocumentFormState {
   showSecondTenant: boolean;
   expandSecondTenant: boolean;
 }
-type FormData = Record<string, any>;
-const documentWasSigned = (formData: FormData) => !!formData.landlordSignature;
 
 const mapStateToProps = (state: RootState) => ({
   selectedDocument: state.documents.selectedDocument,

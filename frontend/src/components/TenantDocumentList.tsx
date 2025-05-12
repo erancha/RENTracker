@@ -63,7 +63,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
       if (!template_fields.tenant1Email || template_fields.tenant1Email.toLowerCase() === this.props.email.toLowerCase())
         this.setState({ showDocumentIdInput: false, showForm: true });
       else {
-        toast.error(t('tenantDocuments.errorLinkedEmail', { email: this.props.selectedDocument.template_fields.tenant1Email }));
+        toast.error(t('tenantDocuments.errorLinkedEmail'));
         this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
       }
     } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
@@ -159,7 +159,8 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                       >
                         <FileText />
                       </button>
-                      {doc.template_fields['tenantSignature'] && (
+
+                      {doc.template_fields['tenantSignature'] /* the document was signed by the tenant */ && (
                         <button
                           className='action-button share'
                           title={t('common.tooltips.shareWhatsapp')}

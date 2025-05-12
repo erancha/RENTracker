@@ -50,6 +50,8 @@
     "and": "ו",
     "create": "יצירה",
     "update": "עדכון",
+    "months": "חודשים",
+    "confirmUnsavedChanges": "יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לבטל?",
     "fields": {
       "name": "שם",
       "address": "כתובת",
@@ -88,9 +90,24 @@
     "noDocumentsTenant": "לא נמצאו מסמכים.",
     "landlordDesc": "משכירים",
     "tenantDesc": "שוכרים",
-    "rentalAgreement": "הסכם שכירות"
+    "rentalAgreement": "הסכם שכירות",
+    "pendingLandlordSignature": "בהמתנה לחתימת המשכיר"
+  },
+  "validation": {
+    "required": "ערך חובה",
+    "invalidId": "מספר תעודת זהות לא תקין",
+    "mustStartWithZero": "חייב להתחיל ב-0",
+    "invalidPhone": "מספר טלפון לא תקין",
+    "missingDigits": "חסרות ספרות",
+    "tooManyDigits": "יותר מדי ספרות",
+    "invalidDate": "תאריך לא תקין",
+    "dateMustBeAfterAgreement": "התאריך חייב להיות אחרי תאריך ההסכם",
+    "endDateMinMonths": "תאריך סיום חייב להיות לפחות {{months}} חודשים אחרי תאריך התחלה",
+    "standingOrderAfterInitial": "תאריך תחילת הוראת קבע חייב להיות אחרי תקופת התשלום הראשוני",
+    "standingOrderBeforeEnd": "תאריך תחילת הוראת קבע חייב להיות לפני תאריך סיום ההסכם"
   },
   "documentForm": {
+    "confirmSaveUnsigned": "האם אתה בטוח שברצונך לשמור את המסמך מבלי לחתום?",
     "equipment": {
       "refrigerator": "מקרר",
       "oven": "תנור",
@@ -208,7 +225,7 @@
     "title": "הסכמי שכירות",
     "documentIdPlaceholder": "הכנס מזהה מסמך או לחץ להדבקה מהלוח",
     "submitDocument": "שלח",
-    "errorLinkedEmail": "{{email}}-אינך יכול לערוך מסמך זה. הוא משויך ל",
+    "errorLinkedEmail": "אינך יכול לערוך מסמך זה. הוא משויך לשוכר אחר.",
     "fetchError": "נכשל בהבאת המסמך. אנא בדוק את המזהה ונסה שוב.",
     "shareMessage": "מצורף קישור להסכם השכירות החתום: *'{{title}}'*:\n\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
     "tooltips": {
@@ -227,8 +244,8 @@
     "error": "אירעה שגיאה",
     "noChanges": "אין שינויים לשמירה",
     "confirmDelete": "האם אתה בטוח שברצונך למחוק מסמך זה?",
-    "signFirst": "אנא בקש מהשוכר לחתום תחילה",
-    "alreadySigned": "ההסכם כבר נחתם על ידי השוכר והמשכיר",
+    "tenantMustSignFirst": "אנא שתף את המסמך ובקש מהשוכר לחתום תחילה",
+    "agreementSignedByBoth": "ההסכם נחתם על ידי השוכר והמשכיר",
     "fileUploaded": "הקובץ '{{fileName}}' הועלה בהצלחה!"
   },
   "welcome": {
