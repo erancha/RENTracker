@@ -382,7 +382,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.securityRequired)}
                         onChange={(e) => this.handleInputChange('securityRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant}
+                        disabled={this.props.userType === UserType.Tenant || documentWasSigned(this.state.formData)}
                       />
                     }
                     label={t('documentForm.fields.requireSecurityDeposit')}
@@ -412,7 +412,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.guarantorRequired)}
                         onChange={(e) => this.handleInputChange('guarantorRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant}
+                        disabled={this.props.userType === UserType.Tenant || documentWasSigned(this.state.formData)}
                       />
                     }
                     label={t('documentForm.fields.requireGuarantor')}

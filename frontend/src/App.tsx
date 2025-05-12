@@ -95,28 +95,32 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
   // Renders the selected page based on the menuSelectedPage prop
   private renderSelectedAuthenticatedView() {
-    const { menuSelectedPage, setMenuSelectedPageAction } = this.props;
+    const { menuSelectedPage, setMenuSelectedPageAction, t } = this.props;
 
-    const handleUndo = () => {
+    const switchToMenuSelectedPage = () => {
       setMenuSelectedPageAction(DOCUMENTS_VIEW);
     };
 
     return menuSelectedPage === ANALYTICS_VIEW ? (
       <div className='chart-container'>
-        <button onClick={handleUndo} className='action-button'>
+        <button onClick={switchToMenuSelectedPage} className='action-button' title={t('common.back')}>
           <Undo2 />
         </button>
         <Analytics />
       </div>
     ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
       <div className='saas-tenants-container'>
-        <button onClick={handleUndo} className='action-button'>
+        <button onClick={switchToMenuSelectedPage} className='action-button' title={t('common.back')}>
           <Undo2 />
         </button>
-        <SaaSTenants />
+        <SaaSTenants onSave={switchToMenuSelectedPage} />
       </div>
     ) : this.props.userType === UserType.Pending ? (
-      <FirstTimeLanding userId={this.props.userId} setUserTypeAction={this.props.setUserTypeAction} />
+      <FirstTimeLanding
+        userId={this.props.userId}
+        setUserTypeAction={this.props.setUserTypeAction}
+        setMenuSelectedPageAction={this.props.setMenuSelectedPageAction}
+      />
     ) : this.props.userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (

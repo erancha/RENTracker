@@ -44,6 +44,7 @@
     "success": "Success",
     "save": "Save",
     "cancel": "Cancel",
+    "back": "Back",
     "delete": "Delete",
     "edit": "Edit",
     "and": "and ",
@@ -143,7 +144,7 @@
     },
     "attachments": {
       "title": "Attachments",
-      "idCard": "ID Card Copy",
+      "idCard": "ID Card",
       "salary1": "Salary Slip 1",
       "salary2": "Salary Slip 2"
     },

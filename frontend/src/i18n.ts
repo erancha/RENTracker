@@ -20,7 +20,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'he', // Force Hebrew as initial language
+    // lng: 'he', // Force Hebrew as initial language
     fallbackLng: 'he',
     interpolation: {
       escapeValue: false, // React already safes from XSS

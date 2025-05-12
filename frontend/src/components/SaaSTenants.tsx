@@ -14,6 +14,7 @@ import {
 import { Plus, Save, Trash2, Undo2 } from 'lucide-react';
 import { timeShortDisplay, validateIsraeliPhone, validateEmail, validateIsraeliId, formatPhoneNumber } from 'utils/utils';
 import { IAppState } from 'redux/store/types';
+import { setUserTypeAction } from '../redux/auth/actions';
 import { UserType } from 'redux/auth/types';
 
 class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> {
@@ -344,6 +345,10 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
       showNewSaaSTenant: false,
       newSaaSTenant: this.createInitialTenant(),
     });
+
+    this.props.setUserTypeAction(UserType.Landlord);
+
+    if (this.props.onSave) this.props.onSave();
   };
 
   /**
@@ -409,6 +414,8 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
 
     // Clear the edited state for this tenant
     this.handleCancelEdit(saasTenant.saas_tenant_id);
+
+    if (this.props.onSave) this.props.onSave();
   };
 
   /**
@@ -448,10 +455,12 @@ export interface ISaaSTenantsProps {
   updateSaasTenantAction: typeof updateSaasTenantAction;
   prepareDeleteSaasTenantCommandAction: typeof prepareDeleteSaasTenantCommandAction;
   deleteSaasTenantAction: typeof deleteSaasTenantAction;
+  setUserTypeAction: typeof setUserTypeAction;
   userType: UserType;
   userId: string;
   userName: string;
   email: string;
+  onSave?: () => void;
 }
 
 // Maps Redux state to component props
@@ -471,6 +480,7 @@ const mapDispatchToProps = {
   updateSaasTenantAction,
   prepareDeleteSaasTenantCommandAction,
   deleteSaasTenantAction,
+  setUserTypeAction,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(SaaSTenants));

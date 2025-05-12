@@ -3,47 +3,10 @@ import { Button, Typography } from '@mui/material';
 import { getClipboardDocumentId } from '../utils/clipboard';
 import { UserType } from 'redux/auth/types';
 import { useTranslation } from 'react-i18next';
+import { SAAS_TENANTS_VIEW } from 'redux/menu/types';
+import { ISetMenuSelectedPageAction } from 'redux/menu/actions';
 
-/**
- * Props for the FirstTimeLanding component
- */
-interface FirstTimeLandingProps {
-  userId: string | null;
-  setUserTypeAction: (userType: UserType) => void;
-}
-
-/**
- * A component that handles initial user role selection.
- * Displays a welcome screen with options to choose between Landlord and Tenant roles.
- * If a document ID is detected in the clipboard, it will highlight the Tenant option
- * and auto-select it after 10 seconds.
- *
- * @param {FirstTimeLandingProps} props - Component props
- * @param {(isLandlord: boolean) => void} props.onSelect - Callback function when a role is selected
- */
-
-/**
- * Saves a user ID to the tenants array in localStorage if they are a tenant
- * @param {string} userId - The ID of the user to save
- * @param {UserType} userType - The type of the user
- */
-const saveUserTypeToStorage = (userId: string, userType: UserType): void => {
-  if (userType !== UserType.Tenant) return;
-
-  try {
-    const stored = localStorage.getItem('RENTracker');
-    const tenantIds = stored ? JSON.parse(stored) : [];
-
-    if (!tenantIds.includes(userId)) {
-      tenantIds.push(userId);
-      localStorage.setItem('RENTracker', JSON.stringify(tenantIds));
-    }
-  } catch (e) {
-    console.warn('Error saving tenant to storage:', e);
-  }
-};
-
-export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setUserTypeAction }) => {
+export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setUserTypeAction, setMenuSelectedPageAction }) => {
   const { t } = useTranslation();
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
@@ -59,12 +22,12 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
       if (!userId) return;
 
       // Save to localStorage
-      saveUserTypeToStorage(userId, selectedUserType);
-
-      // Update Redux state
-      setUserTypeAction(selectedUserType);
+      if (selectedUserType === UserType.Tenant) {
+        saveTenantUserTypeToStorage(userId, selectedUserType);
+        setUserTypeAction(selectedUserType);
+      } else setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
     },
-    [userId, setUserTypeAction]
+    [userId, setUserTypeAction, setMenuSelectedPageAction]
   );
 
   // Check for stored user type on mount
@@ -174,4 +137,44 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
       </div>
     </div>
   );
+};
+
+/**
+ * Props for the FirstTimeLanding component
+ */
+interface FirstTimeLandingProps {
+  userId: string | null;
+  setUserTypeAction: (userType: UserType) => void;
+  setMenuSelectedPageAction: (menuSelectedPage: string | null) => ISetMenuSelectedPageAction;
+}
+
+/**
+ * A component that handles initial user role selection.
+ * Displays a welcome screen with options to choose between Landlord and Tenant roles.
+ * If a document ID is detected in the clipboard, it will highlight the Tenant option
+ * and auto-select it after 10 seconds.
+ *
+ * @param {FirstTimeLandingProps} props - Component props
+ * @param {(isLandlord: boolean) => void} props.onSelect - Callback function when a role is selected
+ */
+
+/**
+ * Saves a user ID to the tenants array in localStorage if they are a tenant
+ * @param {string} userId - The ID of the user to save
+ * @param {UserType} userType - The type of the user
+ */
+const saveTenantUserTypeToStorage = (userId: string, userType: UserType): void => {
+  if (userType === UserType.Tenant) {
+    try {
+      const stored = localStorage.getItem('RENTracker');
+      const tenantIds = stored ? JSON.parse(stored) : [];
+
+      if (!tenantIds.includes(userId)) {
+        tenantIds.push(userId);
+        localStorage.setItem('RENTracker', JSON.stringify(tenantIds));
+      }
+    } catch (e) {
+      console.warn('Error saving tenant to storage:', e);
+    }
+  }
 };
