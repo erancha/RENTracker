@@ -21,7 +21,7 @@ try {
         }
     }
     else {
-        $stackName = "${appName}-f"
+        $stackName = "${appName}-fb"
     }
 
     $appFolder = "$PSScriptRoot/../.."

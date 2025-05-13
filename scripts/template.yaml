@@ -94,6 +94,14 @@ Parameters:
       - 'false'
     Default: 'false'
 
+  EnableAdditionalMetrics:
+    Description: 'Enable additional CloudFront metrics ($0.30 per metric per distribution)'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+
   TargetChattyLambdaArn:
     Type: String
     Description: 'ARN of the Lambda function to be invoked by EventBridge'
@@ -108,6 +116,7 @@ Conditions:
   UseCustomDomain: !And
     - !Condition HasCustomDomainName
     - !Condition HasCertificateArn
+  EnableAdditionalMetricsCondition: !Equals [!Ref EnableAdditionalMetrics, 'true']
   AllowOnlyCloudfrontOriginCondition: !Equals [!Ref AllowOnlyCloudfrontOrigin, 'true']
 
 Globals:
@@ -895,7 +904,7 @@ Resources:
           STACK_NAME: !Ref AWS::StackName
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
-          DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
+          # DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
       VpcConfig:
         SubnetIds: [!Ref ExistingAppPrivateSubnetId]
@@ -935,10 +944,10 @@ Resources:
                   - s3:DeleteObject
                 Resource:
                   - !Sub 'arn:aws:s3:::${DocumentsBucket}/*'
-              - Effect: Allow
-                Action:
-                  - cloudfront:CreateInvalidation
-                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${DocumentsDistribution}'
+              # - Effect: Allow
+              #   Action:
+              #     - cloudfront:CreateInvalidation
+              #   Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${DocumentsDistribution}'
         - PolicyName: DynamoDBStreamAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -1197,6 +1206,7 @@ Resources:
           ENABLE_ENHANCED_LOGGING: true
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           SES_SOURCE_EMAIL: 'webcharm.tech@gmail.com'
+          DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
       Role: !GetAtt WebsocketEventsHandlerExecutionRole.Arn
       Events: # event source mapping
         SQSTrigger:
@@ -1260,6 +1270,14 @@ Resources:
                   - ses:SendEmail
                   - ses:SendRawEmail
                 Resource: '*'
+        - PolicyName: S3InvalidatePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${DocumentsDistribution}'
 
   #==========================================================================================================================================================
   # EventBridge Resources
@@ -1382,6 +1400,15 @@ Resources:
           - [!Ref CustomDomainName]
           - !Ref AWS::NoValue
 
+  FrontendDistributionMetrics:
+    Type: AWS::CloudFront::MonitoringSubscription
+    Condition: EnableAdditionalMetricsCondition
+    Properties:
+      DistributionId: !Ref FrontendDistribution
+      MonitoringSubscription:
+        RealtimeMetricsSubscriptionConfig:
+          RealtimeMetricsSubscriptionStatus: Enabled
+
   DocumentsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -1410,6 +1437,8 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # Allow CloudFront to access S3 when requests include valid pre-signed URL parameters
+          # This ensures only authenticated requests via CloudFront can access the private bucket
           - Sid: AllowCloudfrontPresignedUrlsAccess
             Effect: Allow
             Principal:
@@ -1419,6 +1448,44 @@ Resources:
             Condition:
               StringEqualsIfExists:
                 s3:signatureversion: 'AWS4-HMAC-SHA256'
+
+  # Cache policy: Determines what CloudFront uses as cache key
+  # - Ignores all query parameters (including auth) for better cache hits
+  # - Files with same path are served from cache regardless of auth parameters
+  # - TTL controls how long files stay in CloudFront cache
+  DocumentsCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub ${AWS::StackName}-documents-cache
+        DefaultTTL: 86400 # 24 hours
+        MaxTTL: 31536000 # 365 days
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig: # See 'Ignores all query parameters' comment above
+            QueryStringBehavior: none
+
+  # Origin request policy: Controls what CloudFront forwards to S3
+  # - Forwards ALL query parameters to S3 including pre-signed URL auth parameters
+  # - This ensures S3 can authenticate the request while CloudFront still uses cache
+  # - Separates caching (above policy) from authentication (this policy)
+  DocumentsOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Sub ${AWS::StackName}-documents-origin
+        QueryStringsConfig: # See 'Forwards ALL query parameters' comment above
+          QueryStringBehavior: all
+        HeadersConfig:
+          HeaderBehavior: whitelist
+          Headers: ['Origin']
+        CookiesConfig:
+          CookieBehavior: none
 
   DocumentsDistribution:
     Type: AWS::CloudFront::Distribution
@@ -1436,24 +1503,21 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods: ['GET', 'HEAD']
           CachedMethods: ['GET', 'HEAD']
-          ForwardedValues:
-            QueryString: true
-            QueryStringCacheKeys:
-              - 'X-Amz-Algorithm'
-              - 'X-Amz-Credential'
-              - 'X-Amz-Date'
-              - 'X-Amz-Expires'
-              - 'X-Amz-SignedHeaders'
-              - 'X-Amz-Signature'
-              - 'X-Amz-Security-Token'
-            Headers: ['Origin']
-          MinTTL: 0
-          DefaultTTL: 86400
-          MaxTTL: 31536000
+          CachePolicyId: !Ref DocumentsCachePolicy
+          OriginRequestPolicyId: !Ref DocumentsOriginRequestPolicy
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
         PriceClass: PriceClass_100
         Enabled: true
+
+  DocumentsDistributionMetrics:
+    Type: AWS::CloudFront::MonitoringSubscription
+    Condition: EnableAdditionalMetricsCondition
+    Properties:
+      DistributionId: !Ref DocumentsDistribution
+      MonitoringSubscription:
+        RealtimeMetricsSubscriptionConfig:
+          RealtimeMetricsSubscriptionStatus: Enabled
 
 Outputs:
   WebSocketApiUrl:

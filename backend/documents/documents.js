@@ -167,6 +167,7 @@ const handleUpdateDocument = async ({ documentId, event, parentSegment }) => {
     // console.log(JSON.stringify(document, null, 2));
 
     await sendRentalAgreementEmail(document.template_fields);
+    await sendCloudfrontInvalidationCommand(documentId, document.saas_tenant_id);
 
     subsegment.close();
     return {
@@ -501,18 +502,32 @@ async function sendRentalAgreementEmail(templateFields) {
           <p>Name: ${templateFields.tenant1Name}</p>
           <p>Phone: ${templateFields.tenant1Phone}</p>
           <p>Email: ${templateFields.tenant1Email}</p>
-          <p>Signature: ${templateFields.tenantSignature ? 'Signed' : ''}</p>
+          ${(!!templateFields.tenantSignature && '<p>Signed</p>') || ''}
           <br/>
           <h3>Landlord Details:</h3>
           <p>Name: ${templateFields.landlordName}</p>
           <p>Phone: ${templateFields.landlordPhone}</p>
           <p>Email: ${templateFields.landlordEmail}</p>
-          <p>Signature: ${templateFields.landlordSignature ? 'Signed' : 'Pending ...'}</p>
+          ${(!!templateFields.landlordSignature && '<p>Signed</p>') || (!!templateFields.tenantSignature && '<p>Pending signing ...</p>') || ''}
           <br/>
           <p>The rental agreement has been updated in the system.</p>
         `,
       },
     }),
+    sqsClient,
+    SQS_MESSAGES_TO_CLIENTS_Q_URL
+  );
+}
+
+/**
+ * Send email notification about rental agreement updates
+ * @param {Object} templateFields - The template fields from the document
+ * @returns {Promise<void>}
+ */
+async function sendCloudfrontInvalidationCommand(documentId, saasTenantId) {
+  const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+  await insertMessageToSQS(
+    JSON.stringify({ cloudfrontInvalidationParams: { s3Key: prepareS3RentalAgreementKey(documentId, saasTenantId) } }),
     sqsClient,
     SQS_MESSAGES_TO_CLIENTS_Q_URL
   );

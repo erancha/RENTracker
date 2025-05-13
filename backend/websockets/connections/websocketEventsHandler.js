@@ -3,6 +3,7 @@ const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbr
 const AWSXRay = require('aws-xray-sdk');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
 const { SESv2Client, GetEmailIdentityCommand, CreateEmailIdentityCommand, SendEmailCommand } = require('@aws-sdk/client-sesv2');
+const { CloudFrontClient, CreateInvalidationCommand } = require('@aws-sdk/client-cloudfront');
 
 const eventBridgeClient = new EventBridgeClient();
 
@@ -11,6 +12,7 @@ const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https')
 const STACK_NAME = process.env.STACK_NAME;
 const ENABLE_ENHANCED_LOGGING = process.env.ENABLE_ENHANCED_LOGGING;
 const SES_SOURCE_EMAIL = process.env.SES_SOURCE_EMAIL;
+const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
 
 //=========================================================================================================================================
 // Handler:
@@ -77,6 +79,11 @@ exports.handler = async (event) => {
           const emailSubsegment = handlerSubsegment.addNewSubsegment('sendEmail');
           await sendEmail(extractedRecord.emailParams);
           emailSubsegment.close();
+        }
+
+        // Optionally, invalidate an S3 key:
+        if (extractedRecord.cloudfrontInvalidationParams) {
+          await handleInvalidate(extractedRecord.cloudfrontInvalidationParams.s3Key);
         }
       })
     );
@@ -195,3 +202,27 @@ const sendEmail = async ({ fromAddress, toAddresses, subject, message }) => {
     throw error;
   }
 };
+
+/**
+ * Invalidate the CloudFront cache for an S3 key.
+ * @param {string} s3Key - the key to invalidate.
+ * @returns {Promise<void>}
+ */
+async function handleInvalidate(s3Key) {
+  try {
+    const cloudfront = new CloudFrontClient();
+
+    await cloudfront.send(
+      new CreateInvalidationCommand({
+        DistributionId: DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID,
+        InvalidationBatch: {
+          CallerReference: `${Date.now()}`,
+          Paths: { Quantity: 1, Items: [`/${s3Key}`] },
+        },
+      })
+    );
+    console.log(`CloudFront cache invalidated for: ${s3Key}`);
+  } catch (error) {
+    console.error('Error invalidating CloudFront cache:', error);
+  }
+}

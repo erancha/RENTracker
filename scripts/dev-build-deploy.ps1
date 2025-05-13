@@ -78,7 +78,7 @@ try {
                 }
             }
             else {
-                # In feature branch, reuse the following resources from the main branch's stack:
+                $parameterOverrides += "EnableAdditionalMetrics='true'" # TODO: In actual production, these metrics will be more relevant than during development ..
             }
 
             # Join the parameter overrides into a single string

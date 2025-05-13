@@ -22,7 +22,10 @@ export const parseDocumentIdFromText = (text: string): string | null => {
   const urlMatch = text.match(
     /https.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b.*?\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b(?=\/rental-agreement\.pdf)/i
   );
-  return urlMatch ? urlMatch[2] : null;
+
+  const documentId = urlMatch ? urlMatch[2] : null;
+  // console.log({ text, documentId });
+  return documentId;
 };
 
 /**

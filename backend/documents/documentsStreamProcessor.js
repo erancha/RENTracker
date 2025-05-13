@@ -1,5 +1,5 @@
 const { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { CloudFrontClient, CreateInvalidationCommand } = require('@aws-sdk/client-cloudfront');
+// const { CloudFrontClient, CreateInvalidationCommand } = require('@aws-sdk/client-cloudfront');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
@@ -11,10 +11,10 @@ const AWSXRay = require('aws-xray-sdk');
 
 const STACK_NAME = process.env.STACK_NAME;
 const DOCUMENTS_BUCKET_NAME = process.env.DOCUMENTS_BUCKET_NAME;
-const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
+// const DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID = process.env.DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID;
 
 const s3Client = new S3Client();
-const cloudfront = new CloudFrontClient();
+// const cloudfront = new CloudFrontClient();
 
 //=============================================================================================================================================
 // Main handler
