@@ -101,7 +101,7 @@ const documentsSlice = createSlice({
       state.documents.unshift(action.payload);
 
       // Use our wrapper function to handle translation
-      toast.success(translate('messages.documentCreated'), { autoClose: 2000 });
+      toast.success(translate('messages.documentCreated') + '. ' + translate('documentForm.messages.shareWithTenant'), { autoClose: 5000 });
     });
     builder.addCase(createDocumentThunk.rejected, (state, action) => {
       state.loading = false;
@@ -130,7 +130,7 @@ const documentsSlice = createSlice({
         (!isDocumentCompletedByTenant
           ? ''
           : isDocumentSignedByTenant
-          ? translate('tenantDocuments.shareWithLandlord')
+          ? translate('documentForm.messages.shareWithLandlord')
           : translate('tenantDocuments.pleaseSignAndShare'));
       toast.success(updateMessage, { autoClose: 5000 });
     });

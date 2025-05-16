@@ -793,6 +793,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         fullWidth
         name={field}
         label={label}
+        InputLabelProps={{ sx: { fontSize: { xs: '0.6rem' /* small screens (mobile) */ }, color: 'gray' } }}
         value={value}
         onChange={handleChange}
         error={!!error}
@@ -811,7 +812,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           ...(options.adornment
             ? {
                 startAdornment: (
-                  <InputAdornment position='start' sx={{ '& .MuiTypography-root': { fontSize: '0.75rem' } }}>
+                  <InputAdornment position='start' sx={{ '& .MuiTypography-root': { fontSize: '0.7rem' } }}>
                     {options.adornment}
                   </InputAdornment>
                 ),
@@ -936,8 +937,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     const { t } = this.props;
     // console.log(this.state, section, this.isDocumentValid());
     if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
-      toast.warning(t('messages.tenantMustSignFirst'));
-    else if (section === 'signature' && this.documentWasSigned()) toast.warning(t('messages.agreementSignedByBoth'));
+      toast.warning(t('documentForm.messages.tenantMustSignFirst'));
+    else if (section === 'signature' && this.documentWasSigned()) toast.warning(t('documentForm.messages.agreementSignedByBoth'));
     else
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
