@@ -45,7 +45,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
   }
 
   render(): React.ReactNode {
-    const { saasTenants, t } = this.props;
+    const { saasTenants, userId, userType, t } = this.props;
     const { showNewSaaSTenant, newSaaSTenant } = this.state;
 
     return (
@@ -54,7 +54,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
           <span>{t('menu.landlordSettings')}</span>
           {
             /* allow adding SaaS tenants only by admin or only if the current user is not yet a SaaS tenant */
-            (this.props.userType === UserType.Admin || !this.props.saasTenants.some((t) => t.saas_tenant_id === this.props.userId)) && (
+            (userType === UserType.Admin || !this.props.saasTenants.some((t) => t.saas_tenant_id === userId)) && (
               <button
                 onClick={() => {
                   this.setState({
@@ -75,17 +75,15 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
             {showNewSaaSTenant && <div className='table-row saas-tenant input'>{this.renderSaaSTenant(newSaaSTenant)}</div>}
 
             {saasTenants.length > 0 ? (
-              (this.props.userType === UserType.Admin ? saasTenants : saasTenants.filter((t) => t.saas_tenant_id === this.props.userId)).map(
-                (saasTenant, index) => (
-                  <div
-                    key={saasTenant.saas_tenant_id}
-                    tabIndex={index}
-                    className={`table-row saas-tenant${saasTenant.onroute ? ' onroute' : ''}${saasTenant.is_disabled ? ' is_disabled' : ''}`}
-                  >
-                    {this.renderSaaSTenant(saasTenant)}
-                  </div>
-                )
-              )
+              (userType === UserType.Admin ? saasTenants : saasTenants.filter((t) => t.saas_tenant_id === userId)).map((saasTenant, index) => (
+                <div
+                  key={saasTenant.saas_tenant_id}
+                  tabIndex={index}
+                  className={`table-row saas-tenant${saasTenant.onroute ? ' onroute' : ''}${saasTenant.is_disabled ? ' is_disabled' : ''}`}
+                >
+                  {this.renderSaaSTenant(saasTenant)}
+                </div>
+              ))
             ) : (
               <div className='empty-message'>{t('landlordSettings.messages.notFound')}</div>
             )}
@@ -106,7 +104,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     // If tenant is being edited, use the edited values
     const displayTenant = isSaved && this.state.editedTenants[saasTenant.saas_tenant_id!] ? this.state.editedTenants[saasTenant.saas_tenant_id!] : saasTenant;
 
-    const { t } = this.props;
+    const { userType, t } = this.props;
 
     return (
       <>
@@ -188,7 +186,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
         </div>
 
         <div className='actions'>
-          {this.props.userType === UserType.Admin && (
+          {userType === UserType.Admin && (
             <div className='disabled' title={t('common.disabled')}>
               <input
                 type='checkbox'
@@ -209,9 +207,11 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
               <button onClick={() => this.handleCreateRecord()} className='action-button save' title={t('common.save')}>
                 <Save />
               </button>
-              <button onClick={this.handleCancelNewTenant} className='action-button cancel' title={t('common.cancel')}>
-                <Undo2 />
-              </button>
+              {userType === UserType.Admin && (
+                <button onClick={this.handleCancelNewTenant} className='action-button cancel' title={t('common.cancel')}>
+                  <Undo2 />
+                </button>
+              )}
             </>
           ) : (
             this.state.editedTenants[saasTenant.saas_tenant_id!] && (
@@ -230,7 +230,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
             )
           )}
 
-          {isSaved && this.props.userType === UserType.Admin && (
+          {isSaved && userType === UserType.Admin && (
             <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title={t('common.delete')}>
               <Trash2 />
             </button>

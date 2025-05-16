@@ -51,7 +51,8 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
   componentDidUpdate(prevProps: Readonly<IAppProps>): void {
     // Redirect admin users to SaaS tenants view
-    if (this.props.userType !== prevProps.userType && this.props.userType === UserType.Admin) this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
+    const { userType } = this.props;
+    if (userType !== prevProps.userType && userType === UserType.Admin) this.props.setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
   }
 
   componentWillUnmount() {
@@ -95,36 +96,34 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
   // Renders the selected page based on the menuSelectedPage prop
   private renderSelectedAuthenticatedView() {
-    const { menuSelectedPage, setMenuSelectedPageAction, t } = this.props;
+    const { menuSelectedPage, setMenuSelectedPageAction, userType, t } = this.props;
 
-    const switchToMenuSelectedPage = () => {
+    const switchToDefaultMenuSelectedPage = () => {
       setMenuSelectedPageAction(DOCUMENTS_VIEW);
     };
 
     return menuSelectedPage === ANALYTICS_VIEW ? (
       <div className='chart-container'>
         <Analytics />
-        <button onClick={switchToMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
+        <button onClick={switchToDefaultMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
           <Undo2 />
         </button>
       </div>
     ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
       <div className='saas-tenants-container'>
-        <SaaSTenants onSave={switchToMenuSelectedPage} />
-        <button onClick={switchToMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
-          <Undo2 />
-        </button>
+        <SaaSTenants onSave={switchToDefaultMenuSelectedPage} />
+        {userType !== UserType.Pending && (
+          <button onClick={switchToDefaultMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
+            <Undo2 />
+          </button>
+        )}
       </div>
-    ) : this.props.userType === UserType.Pending ? (
-      <FirstTimeLanding
-        userId={this.props.userId}
-        setUserTypeAction={this.props.setUserTypeAction}
-        setMenuSelectedPageAction={this.props.setMenuSelectedPageAction}
-      />
-    ) : this.props.userType === UserType.Tenant ? (
+    ) : userType === UserType.Pending ? (
+      <FirstTimeLanding userId={this.props.userId} setUserTypeAction={this.props.setUserTypeAction} setMenuSelectedPageAction={setMenuSelectedPageAction} />
+    ) : userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (
-      this.props.userType === UserType.Landlord && <Apartments />
+      userType === UserType.Landlord && <Apartments />
     );
   }
 

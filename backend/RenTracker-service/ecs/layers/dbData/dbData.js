@@ -243,6 +243,7 @@ const createSaasTenant = async ({ saas_tenant_id, is_disabled, email, name, phon
   validateNonEmptyString(address, 'address');
   validateNonEmptyString(israeli_id, 'israeli_id');
 
+  await invalidation_getSaasTenants(saas_tenant_id);
   return await gwData.createSaasTenant({
     saas_tenant_id,
     is_disabled,
@@ -323,7 +324,7 @@ const cache_getSaasTenants = async ({ connectedUserId }) => {
     ? await cache.get(`getSaasTenants(${connectedUserId || ''})`, () => gwData.getSaasTenants({ connectedUserId }))
     : await gwData.getSaasTenants({}); // otherwise get all saas tenants, without caching.
 };
-const invalidation_getSaasTenants = (userId) => {
+const invalidation_getSaasTenants = async (userId) => {
   // cache_getSaasTenants caches saas tenants only for non-admin users ...
   if (userId && userId !== ADMIN_USER_ID) cache.invalidateGet(`getSaasTenants(${userId})`);
 };
