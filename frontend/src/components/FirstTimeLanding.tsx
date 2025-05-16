@@ -17,7 +17,7 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [, setAutoSelectTimer] = useState<NodeJS.Timeout | null>(null);
-  const APP_KEY_NAME = 'RENTracker.v2';
+  const APP_KEY_NAME = 'RENTracker-tenants.v2';
 
   /**
    * Handles the completion of user role selection.
@@ -139,21 +139,24 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
           {t('welcome.title')}
         </Typography>
         <Typography variant='body1' paragraph align='center'>
-          {t('welcome.description', {
-            landlords: <b>{t('roles.landlordDesc')}</b>,
-            tenants: <b>{t('roles.tenantDesc')}</b>,
-          })}
+          {t('welcome.description')}
         </Typography>
         <Typography variant='body1' paragraph align='center'>
           {t('welcome.selectRole')}
         </Typography>
         <div className='buttons'>
-          <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Landlord)}>
-            {t('roles.landlord')}
-          </Button>
-          <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Tenant)} className={hasDocumentId ? 'has-document-id' : ''}>
-            {t('roles.tenant')}
-          </Button>
+          <div className='button-container'>
+            <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Landlord)}>
+              {t('welcome.landlord')}
+            </Button>
+            <p>{t('welcome.landlordsDesc')}</p>
+          </div>
+          <div className='button-container'>
+            <Button variant='contained' size='large' onClick={() => handleSelect(UserType.Tenant)} className={hasDocumentId ? 'has-document-id' : ''}>
+              {t('welcome.tenant')}
+            </Button>
+            <p>{t('welcome.tenantsDesc')}</p>
+          </div>
         </div>
         {hasDocumentId && (
           <Typography variant='body2' align='center' color='text.secondary' className='has-document-id message'>

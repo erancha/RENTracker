@@ -214,6 +214,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
                 if (!isSaved) this.handleEmptyActivityChange('description' as ActivityField, e.target.value);
               }}
               readOnly={isSaved}
+              className='required'
             />
           )}
         </div>
@@ -236,7 +237,12 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
         </div> */}
         {!isSaved ? (
           <div className='actions'>
-            <button onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)} className='action-button save' title={t('common.save')} disabled={!isValid}>
+            <button
+              onClick={() => this.handleSaveActivity(activity as INewApartmentActivity)}
+              className='action-button save'
+              title={t('common.save')}
+              disabled={!isValid}
+            >
               <Save />
             </button>
             <button onClick={() => this.handleCancelActivity()} className='action-button cancel' title={t('common.cancel')}>

@@ -342,6 +342,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       if (isNewnewSaasTenant) this.props.addSaasTenantAction(newReceivedSaasTenant);
       else {
         this.props.setSaasTenantConfirmedByBackendAction(newReceivedSaasTenant.saas_tenant_id, newReceivedSaasTenant.updated_at);
+        toast.success(this.props.t('landlordSettings.messages.createdSuccessfully'), { autoClose: 10000 });
         if (!dataCreated.saasTenants.is_disabled && this.props.userType === UserType.Tenant) {
           // toggle to landlord view
           this.props.setUserTypeAction(UserType.Landlord);
@@ -366,6 +367,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       if (!dataUpdated.apartments.is_disabled) this.props.setCurrentApartmentAction(dataUpdated.apartments.apartment_id);
     } else if (dataUpdated.saasTenants) {
       this.props.setSaasTenantConfirmedByBackendAction(dataUpdated.saasTenants.saas_tenant_id, dataUpdated.saasTenants.updated_at as string);
+      toast.success(this.props.t('landlordSettings.messages.updatedSuccessfully'));
       // toggle between landlord and tenant views
       if (dataUpdated.saasTenants.is_disabled && this.props.userType === UserType.Landlord) {
         this.props.setUserTypeAction(UserType.Tenant);

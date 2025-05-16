@@ -103,17 +103,17 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
     return menuSelectedPage === ANALYTICS_VIEW ? (
       <div className='chart-container'>
-        <button onClick={switchToMenuSelectedPage} className='action-button' title={t('common.back')}>
+        <Analytics />
+        <button onClick={switchToMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
           <Undo2 />
         </button>
-        <Analytics />
       </div>
     ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
       <div className='saas-tenants-container'>
-        <button onClick={switchToMenuSelectedPage} className='action-button' title={t('common.back')}>
+        <SaaSTenants onSave={switchToMenuSelectedPage} />
+        <button onClick={switchToMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
           <Undo2 />
         </button>
-        <SaaSTenants onSave={switchToMenuSelectedPage} />
       </div>
     ) : this.props.userType === UserType.Pending ? (
       <FirstTimeLanding

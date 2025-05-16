@@ -4,10 +4,6 @@ html[dir='rtl'] .app-name {
   margin-left: 3px;
 }
 
-html[dir='rtl'] .card .details {
-  direction: rtl;
-}
-
 html[dir='rtl'] .error-message {
   text-align: right;
 }
@@ -28,6 +24,38 @@ body {
   margin: 0;
 }
 
+input,
+textarea {
+  border-right: 0;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 5px;
+  border-width: 1px;
+  border-color: lightgray;
+  padding: 5px;
+  margin-bottom: 5px;
+
+  &:hover:not(:disabled) {
+    border: 1px solid gray;
+    cursor: pointer;
+  }
+}
+
+.required {
+  input,
+  textarea,
+  .MuiInputBase-root {
+    background-color: color-mix(in srgb, lightcyan 60%, white 80%);
+    border-bottom: 1px solid darkred;
+    border-radius: 0;
+
+    &:hover {
+      border: 1px solid gray;
+      cursor: pointer;
+    }
+  }
+}
+
 .app-name {
   color: darkslateblue;
   font-style: oblique;
@@ -43,9 +71,14 @@ body {
 
 .error-message {
   color: red;
-  font-size: 10px;
+}
+span.error-message {
+  font-size: smaller !important;
   font-weight: 400;
-  margin-top: 5px;
+  padding-bottom: 0.5rem;
+}
+input.error-message {
+  margin-bottom: 1px;
 }
 
 /* Loading Spinner */
@@ -179,9 +212,14 @@ body {
 
       > .buttons {
         display: flex;
-        gap: 1rem;
+        gap: 3rem;
         justify-content: center;
         margin: 2rem 0;
+
+        .button-container {
+          display: flex;
+          flex-direction: column;
+        }
 
         > button {
           min-width: 200px;
@@ -478,122 +516,13 @@ body {
 /* Data Container */
 .data-container {
   background-color: whitesmoke;
+  padding: 0.5rem;
 
   > .empty-message {
     padding: 5px;
     color: darkgreen;
     font-size: 0.8rem;
     font-weight: 400;
-  }
-}
-
-/* Apartments Container */
-.apartments-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  border-radius: 0.5rem;
-  margin-bottom: 2rem;
-
-  &.disconnected {
-    pointer-events: none;
-    background-color: #f0f0f0;
-  }
-}
-
-/* Apartment */
-.apartment.input {
-  margin-top: 1rem;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  margin: 1rem;
-
-  > div *:not(span):not(svg):not(label):not([type='checkbox']):not(.action-button) {
-    border: 1px solid gray;
-    border-radius: 10px;
-    height: 1.5rem;
-    padding: 0.2rem 0.4rem;
-  }
-
-  > div > select,
-  > div > input {
-    height: 100%;
-  }
-
-  .action-button {
-    color: black;
-    border: none;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    justify-self: center;
-    align-self: center;
-    scale: 100%;
-
-    &:hover {
-      color: lightblue;
-    }
-  }
-}
-
-/* Card Apartment */
-.card.apartment {
-  max-width: 30rem;
-  gap: 5px;
-  padding: 5px;
-  color: darkblue;
-  font-weight: 500;
-
-  > .apartment-id {
-    font-size: 0.6rem;
-    background-color: whitesmoke;
-  }
-
-  & > div {
-    padding: 5px;
-    border-radius: 10px;
-    transition: background-color 0.2s ease;
-  }
-
-  & > div,
-  & > div > p,
-  & .action-button:not(:hover) {
-    font-size: 0.8rem;
-  }
-
-  & > div > p {
-    margin: 2px;
-  }
-
-  &.current {
-    border-left: 4px solid #1976d2;
-
-    & .actions > .documents.activity {
-      animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
-    }
-  }
-
-  & .actions > .action-button:not(:hover) {
-    background-color: inherit;
-
-    & .highlight {
-      scale: 120%;
-    }
-  }
-
-  > .details > div:not(.actions)::before,
-  &.input > div:not(.actions)::before {
-    content: attr(data-title);
-    position: relative !important;
-    color: gray;
-    margin-right: 0.5rem;
-  }
-
-  &.admin .actions {
-    pointer-events: all;
   }
 }
 
@@ -605,41 +534,97 @@ body {
 }
 
 .table-row {
-  gap: 2px;
-  padding: 2px;
+  gap: 0.5rem;
+  padding: 5px;
+  margin: 1rem;
   align-items: center;
   color: darkblue;
   font-weight: 500;
+  width: fit-content;
+  border: 1px solid #d3d3d3;
+  border-radius: 0.5rem;
+
+  > div {
+    padding: 5px;
+
+    &:not(.actions) {
+      background-color: white;
+    }
+
+    &:not(.actions)::before {
+      content: attr(data-title);
+      display: flex;
+      flex-direction: column;
+      font-size: xx-small;
+      color: gray;
+      text-transform: capitalize;
+      padding-bottom: 3px;
+    }
+
+    &,
+    & > * {
+      width: 100%;
+      font-size: 0.8rem;
+      transition: background-color 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    & > p {
+      margin: 2px;
+      background-color: white;
+      font-size: 0.8rem;
+    }
+  }
 
   > * {
     padding: 0;
     background-color: initial;
     height: 100%;
+    overflow: auto;
   }
 
-  > div {
-    background-color: white;
-    padding: 0 5px;
-  }
-
-  > div,
-  > div > * {
-    width: 100%;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    align-content: center;
-    transition: background-color 0.2s ease;
-    box-sizing: border-box;
-  }
-
-  > div > p {
-    margin: 2px;
-    background-color: white;
-    font-size: 0.8rem;
+  .actions {
+    gap: 1px;
+    place-content: start;
   }
 
   .action-button {
     padding: 1px;
+  }
+
+  &.input {
+    border: 2px solid lightgray;
+    border-radius: 5px;
+    padding: 5px;
+    margin-inline-start: 2rem;
+    margin-bottom: 2rem;
+    grid-template-columns: 1fr !important;
+    width: 80% !important;
+  }
+
+  &.onroute {
+    color: darkred;
+    > div,
+    > div > p,
+    > div > select,
+    > div > button,
+    > div > * > svg {
+      background-color: lightgoldenrodyellow;
+      font-weight: 400;
+    }
+  }
+
+  &.is_disabled:not(.onroute) {
+    cursor: not-allowed;
+    opacity: 0.3;
+
+    & > * {
+      opacity: 0.8;
+    }
+  }
+
+  &.current {
+    border-inline-start: 4px solid #1976d2;
   }
 }
 
@@ -664,33 +649,59 @@ body {
   }
 }
 
+/* Apartments Container */
+.apartments-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 5px;
+
+  &.disconnected {
+    pointer-events: none;
+    background-color: #f0f0f0;
+  }
+}
+
+/* Apartment */
+.table-row.apartment {
+  grid-template-columns: 5rem 12rem 5rem 5rem 5rem;
+
+  &.current .actions > .documents.activity {
+    animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
+  }
+}
+
 /* Documents Container */
 .documents-container {
-  .actions {
-    margin-top: 1rem;
-    grid-template-columns: repeat(3, 2rem);
-  }
-
   > .data-container .actions {
-    margin-top: 0;
-    padding-top: 5px;
     grid-template-columns: repeat(5, 2rem);
-    gap: 2px;
   }
 
   .MuiCollapse-root .action-button {
     margin-top: 2rem;
   }
 
+  .css-1pysi21-MuiFormLabel-root-MuiInputLabel-root {
+    font-size: small;
+    color: lightgrey !important;
+  }
+
   .section-header {
     font-size: 1.1rem;
     font-weight: 700;
+  }
+
+  .actions {
+    margin-top: 1rem;
   }
 }
 
 /* Table Row / Document */
 .table-row.document {
-  grid-template-columns: 3fr 5fr 5fr minmax(12rem, 2fr);
+  grid-template-columns: 5rem 16rem 10rem 11rem;
+
   border-radius: 0.5rem;
   column-gap: 0.5rem;
 
@@ -702,7 +713,7 @@ body {
     font-weight: bold;
   }
 
-  .action-button.pending-landlord-signature {
+  .action-button.pending-signature {
     border: 1px solid darkred;
     animation: pulsate-brightness 1s ease-in-out infinite;
   }
@@ -720,6 +731,18 @@ body {
 }
 
 .table-row.activity {
+  border: initial;
+  margin: 0;
+  padding: 0;
+  & > * {
+    background-color: initial !important;
+  }
+
+  &.input {
+    border: initial;
+    margin-bottom: 1rem;
+  }
+
   .saved-at {
     font-size: x-small;
   }
@@ -731,6 +754,10 @@ body {
 
   > div {
     padding: 0 5px;
+
+    &:not(.actions)::before {
+      content: unset;
+    }
   }
 
   .action-button {
@@ -802,72 +829,6 @@ body {
     color: #dc3545;
     font-size: 1.2em;
   }
-}
-
-/* Cards List */
-.cards-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
-}
-
-/* Card */
-.card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
-.card h3 {
-  margin: 0 0 10px;
-  color: #333;
-}
-
-.card p {
-  margin: 5px 0;
-  color: #666;
-}
-
-.card .details {
-  display: grid;
-  grid-template-columns: 2fr 4fr 2fr 2fr minmax(80px, 2fr);
-  column-gap: 0.5rem;
-
-  > *:not(.actions) {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: space-between;
-    align-content: start;
-    flex-wrap: wrap;
-  }
-
-  > *:not(.actions)::before {
-    content: attr(class);
-    text-transform: capitalize;
-    color: #666;
-    font-size: 0.9em;
-    margin-bottom: 4px;
-  }
-
-  > .actions {
-    margin-left: 1rem;
-
-    > :not(::hover) * {
-      background-color: initial;
-    }
-  }
-}
-
-.card.date {
-  font-size: 0.9em;
-  color: #999 !important;
 }
 
 .page#tenant-documents {
@@ -1075,44 +1036,8 @@ body {
   }
 }
 
-/* Card and Table Row Shared Styles */
-.card.apartment > div:not(.details, .input-and-error-container)::before,
-.table-row.document > div::before,
-.table-row.activity > div::before {
-  left: 5px;
-  top: 2px;
-  font-size: 0.7rem;
-  color: gray;
-  text-transform: capitalize;
-}
-
 .table-row.document > div {
   position: relative;
-}
-
-/* Card Apartment States */
-.card,
-.table-row {
-  &.onroute {
-    color: darkred;
-    > div,
-    > div > p,
-    > div > select,
-    > div > button,
-    > div > * > svg {
-      background-color: lightgoldenrodyellow;
-      font-weight: 400;
-    }
-  }
-
-  &.is_disabled:not(.onroute) {
-    cursor: not-allowed;
-    opacity: 0.3;
-
-    & > * {
-      opacity: 0.8;
-    }
-  }
 }
 
 /* SaaS Tenants Component */
@@ -1124,11 +1049,14 @@ body {
   }
 }
 
-.table-header.saas-tenant,
 .table-row.saas-tenant {
   grid-template-columns:
     minmax(100px, 1fr) minmax(80px, 5fr) minmax(80px, 5fr) minmax(80px, 3fr)
     minmax(100px, 3fr) minmax(80px, 3fr) minmax(120px, 5fr) minmax(120px, 1fr);
+
+  &.input {
+    grid-template-columns: 1fr;
+  }
 
   .actions {
     grid-template-columns: repeat(4, 1.5rem);
@@ -1157,77 +1085,16 @@ body {
     }
   }
 
-  .saas-tenants-container {
-    .table-header {
-      display: none !important;
-    }
+  .table-row {
+    width: initial;
+  }
 
-    .table-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-
-      > div:not(.actions)::before {
-        content: attr(data-title);
-        display: flex;
-        margin-bottom: 5px;
-        flex-direction: column;
-        font-size: smaller;
-        color: gray;
-      }
-    }
+  .saas-tenants-container .table-row {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 900px) {
-  .table-row {
-    border: 1px solid #d3d3d3;
-    border-radius: 0.5rem;
-
-    &.activity .actions {
-      gap: 1px;
-    }
-  }
-
-  .card.apartment {
-    grid-template-columns: repeat(2, 1fr);
-    border: 1px solid lightgray;
-    border-radius: 0.5rem;
-
-    > .actions {
-      padding: 0.5rem;
-    }
-  }
-
-  .card.apartment > div:not(.details, .input-and-error-container)::before,
-  .table-row.document > div::before,
-  .table-row.activity > div::before {
-    left: 5px;
-    top: 2px;
-    font-size: 0.7rem;
-    color: gray;
-    text-transform: capitalize;
-  }
-
-  .table-row > div {
-    background-color: white;
-    padding: 5px;
-    border-radius: 5px;
-  }
-
-  .apartments-list {
-    gap: 10px;
-  }
-
-  .card.apartment .details {
-    gap: 5px;
-    justify-content: space-between;
-
-    .actions {
-      justify-content: end;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
 }
 
 @media (max-width: 768px) {
@@ -1236,7 +1103,7 @@ body {
   }
 
   .main-container .first-time-landing > .content {
-    max-width: 80%;
+    max-width: 90%;
   }
 
   .header-container {
@@ -1251,12 +1118,16 @@ body {
     }
   }
 
-  .apartments-container {
+  .data-container {
     padding: 5px;
   }
 
+  .table-row {
+    margin: 1rem 5px;
+  }
+
   .table-row.document {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 10rem 14rem;
   }
 }
 
@@ -1266,8 +1137,22 @@ body {
       font-size: 1.4rem;
     }
 
-    .first-time-landing > .content > .buttons {
-      flex-direction: column;
+    .first-time-landing {
+      height: 75vh;
+      padding: 0.5rem;
+
+      > .content {
+        padding: 1rem;
+
+        > .buttons {
+          flex-direction: column;
+          gap: 1.5rem;
+
+          p {
+            font-size: small;
+          }
+        }
+      }
     }
 
     .header,
@@ -1283,13 +1168,46 @@ body {
     }
   }
 
-  .card.apartment {
-    grid-template-columns: 1fr;
+  .table-row.input {
+    place-self: center;
+    width: 95% !important;
+    margin-inline-start: 0.5rem;
   }
 
-  .documents-container {
-    > .data-container .actions {
-      grid-template-columns: repeat(5, 2rem);
+  .table-row.apartment {
+    display: grid;
+
+    &:not(.input) {
+      grid-template-areas:
+        'col1 col2 col5'
+        'col3 col4 col5';
+      grid-template-columns: 5rem 10rem 5rem;
+      grid-template-rows: auto auto;
+      & > *:nth-child(1) {
+        grid-area: col1;
+      }
+      & > *:nth-child(2) {
+        grid-area: col2;
+      }
+      & > *:nth-child(3) {
+        grid-area: col3;
+      }
+      & > *:nth-child(4) {
+        grid-area: col4;
+      }
+      & > *:nth-child(5) {
+        grid-area: col5;
+      }
+
+      /* > .actions {
+        grid-template-columns: 1fr;
+        align-content: space-evenly;
+        gap: 2px;
+      } */
+    }
+
+    &.input {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -1303,5 +1221,11 @@ body {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
     }
+  }
+}
+
+@media (max-width: 450px) {
+  .table-row.document {
+    grid-template-columns: minmax(10rem, 3fr) minmax(10rem, 4fr);
   }
 }

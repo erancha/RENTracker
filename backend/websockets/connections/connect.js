@@ -41,10 +41,10 @@ exports.handler = async (event) => {
 
     // Extract user id (sub) and user name from the token
     const currentConnectionId = event.requestContext.connectionId;
-    const currentUserId = decodedJwt.sub;
-    const currentUserName = decodedJwt.name;
-    const currentUserEmail = decodedJwt.email;
-    const currentUserPhoneNumber = decodedJwt.phone_number;
+    const connectedUserId = decodedJwt.sub;
+    const connectedUserName = decodedJwt.name;
+    const connectedUserEmail = decodedJwt.email;
+    const connectedUserPhoneNumber = decodedJwt.phone_number;
     // console.log(JSON.stringify(decodedJwt, null, 2));
 
     /*
@@ -100,9 +100,9 @@ exports.handler = async (event) => {
       luaScript,
       1,
       currentConnectionId,
-      currentUserId,
-      currentUserName,
-      currentUserEmail,
+      connectedUserId,
+      connectedUserName,
+      connectedUserEmail,
       STACK_NAME,
       EXPIRATION_TIME
     );
@@ -122,22 +122,27 @@ exports.handler = async (event) => {
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
       // Read and send data to the frontend:
-      const userType = currentUserId === ADMIN_USER_ID ? 'Admin' : (await dbData.cache.isLandlordUser({ user_id: currentUserId })) ? 'Landlord' : 'Pending';
+
       let response = {
         targetConnectionIds: [currentConnectionId],
-        message: { currentUserEmail, userType, connectionsAndUsernames },
+        message: { currentUserEmail: connectedUserEmail, connectionsAndUsernames },
       };
-      if (userType === 'Landlord') {
-        response.message = {
-          ...response.message,
-          ...(await handleRead({
-            commandParams: {
-              apartments: true,
-              activity: { fromFirstApartment: true },
-            },
-            connectedUserId: currentUserId,
-          })),
-        };
+      if (connectedUserId === ADMIN_USER_ID) response.message.userType = 'Admin';
+      else {
+        const saasTenantsArray = await dbData.cache.getSaasTenants({ connectedUserId });
+        response.message.userType = saasTenantsArray.length === 0 ? 'Pending' : !saasTenantsArray[0].is_disabled ? 'Landlord' : 'Tenant';
+        if (response.message.userType === 'Landlord') {
+          response.message = {
+            ...response.message,
+            ...(await handleRead({
+              commandParams: {
+                apartments: true,
+                activity: { fromFirstApartment: true },
+              },
+              connectedUserId: connectedUserId,
+            })),
+          };
+        }
       }
       return JSON.stringify(response);
     };

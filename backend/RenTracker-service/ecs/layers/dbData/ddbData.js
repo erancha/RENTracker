@@ -548,31 +548,6 @@ const getSaasTenants = logMiddleware('ddb_getSaasTenants')(async ({ connectedUse
   }
 });
 
-/**
- * Checks if a user is a landlord by querying the SAAS_TENANTS_TABLE
- * @param {Object} params
- * @param {string} params.user_id - UUID of the user to check
- * @returns {Promise<boolean>} True if user is a landlord, false otherwise
- */
-const isLandlordUser = logMiddleware('ddb_isLandlordUser')(async ({ user_id }) => {
-  try {
-    const { Items } = await ddbDocClient.send(
-      new QueryCommand({
-        TableName: SAAS_TENANTS_TABLE_NAME,
-        KeyConditionExpression: 'saas_tenant_id = :user_id',
-        ExpressionAttributeValues: {
-          ':user_id': user_id,
-        },
-      })
-    );
-    // There can only be one record per user_id, and we need to check is_disabled
-    return Items?.[0] && !Items[0].is_disabled;
-  } catch (error) {
-    console.error('Error in ddb_isLandlordUser:', error);
-    throw error;
-  }
-});
-
 module.exports = {
   getApartmentsOfLandlord,
   createApartment,
@@ -591,5 +566,4 @@ module.exports = {
   updateSaasTenant,
   deleteSaasTenant,
   getSaasTenants,
-  isLandlordUser,
 };

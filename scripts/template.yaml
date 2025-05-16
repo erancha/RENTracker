@@ -534,6 +534,10 @@ Resources:
                 Resource:
                   - !Sub '${ApartmentsTable.Arn}/index/SaaSTenantUpdatedIndex'
                   - !Sub '${ActivityTable.Arn}/index/ApartmentCreatedIndex'
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
                   - !GetAtt SaaSTenantsTable.Arn
         # - PolicyName: LambdaRDSAccessPolicy
         #   PolicyDocument:

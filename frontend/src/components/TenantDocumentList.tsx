@@ -125,23 +125,23 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
           ) : (
             <div className='data-container'>
               {documents.length > 0 ? (
-                documents.map((doc) => (
-                  <div key={doc.document_id} className='table-row document'>
-                    <div className='updated' data-title={t('common.fields.lastUpdated')}>
-                      {timeShortDisplay(new Date(doc.updated_at))}
+                documents.map((document) => (
+                  <div key={document.document_id} className='table-row document'>
+                    <div className='updated' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
+                      {timeShortDisplay(new Date(document.updated_at))}
                     </div>
                     <div className='name' data-title={t('common.fields.name')}>
-                      '{getDocumentTitle(doc.template_fields?.tenant1Name, t('documents.rentalAgreement'))}'
+                      '{getDocumentTitle(document.template_fields?.tenant1Name, t('documents.rentalAgreement'))}'
                     </div>
-                    <div className='period' data-title={t('common.fields.period')}>
-                      {formatDate(doc.template_fields?.startDate)} - {formatDate(doc.template_fields?.endDate)}
+                    <div className='period' data-title={t('common.fields.period')} title={t('common.fields.period')}>
+                      {formatDate(document.template_fields?.startDate)} - {formatDate(document.template_fields?.endDate)}
                     </div>
                     <div className='actions' data-title={t('common.fields.actions')}>
                       <button
-                        className='action-button edit'
+                        className={`action-button edit${!document.template_fields.tenantSignature ? ' pending-signature' : ''}`}
                         title={t('common.edit')}
                         onClick={async () => {
-                          await this.props.getDocumentThunk(doc.document_id);
+                          await this.props.getDocumentThunk(document.document_id);
                           this.setState({ showForm: true, editMode: true });
                         }}
                       >
@@ -150,29 +150,30 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
 
                       <button
                         className='action-button pdf'
-                        title={t('common.tooltips.downloadPdf')}
+                        title={t('documents.downloadPdf')}
                         onClick={async () => {
-                          const pdfUrl: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
+                          const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error(t('toast.error'));
+                          else toast.error(t('messages.error'));
                         }}
                       >
                         <FileText />
                       </button>
 
-                      {doc.template_fields['tenantSignature'] /* the document was signed by the tenant */ && (
-                        <button
-                          className='action-button share'
-                          title={t('common.tooltips.shareWhatsapp')}
-                          onClick={async () => {
-                            const pdf_url: string | null = await handlePdfGeneration(doc.document_id, this.props.JWT);
-                            if (pdf_url) this.handleShareViaWhatsApp(doc.document_id, pdf_url);
-                            else toast.error(t('toast.error'));
-                          }}
-                        >
-                          <Share2 />
-                        </button>
-                      )}
+                      {!!document.template_fields.tenantSignature &&
+                        !document.template_fields.landlordSignature /* the document was signed by the tenant and not yet by the landlord */ && (
+                          <button
+                            className='action-button share'
+                            title={t('documents.shareWhatsapp')}
+                            onClick={async () => {
+                              const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                              if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
+                              else toast.error(t('messages.error'));
+                            }}
+                          >
+                            <Share2 />
+                          </button>
+                        )}
                     </div>
                   </div>
                 ))

@@ -12,7 +12,7 @@ import {
   deleteSaasTenantAction,
 } from '../redux/saasTenants/actions';
 import { Plus, Save, Trash2, Undo2 } from 'lucide-react';
-import { timeShortDisplay, validateIsraeliPhone, validateEmail, validateIsraeliId, formatPhoneNumber } from 'utils/utils';
+import { timeShortDisplay, validateIsraeliPhone, validateIsraeliId, formatPhoneNumber } from 'utils/utils';
 import { IAppState } from 'redux/store/types';
 import { setUserTypeAction } from '../redux/auth/actions';
 import { UserType } from 'redux/auth/types';
@@ -71,19 +71,8 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
         </div>
 
         <div className='saas-tenants-container'>
-          <div className='table-header saas-tenant'>
-            <div className='updated-at'>Updated At</div>
-            <div className='saas-tenant-id'>Tenant ID</div>
-            <div className='email'>Email</div>
-            <div className='name'>Name</div>
-            <div className='phone'>Phone</div>
-            <div className='israeli-id'>Israeli ID</div>
-            <div className='address'>Address</div>
-            <div className='actions'>Actions</div>
-          </div>
-
           <div className='data-container saas-tenant-list'>
-            {showNewSaaSTenant && <div className='table-row saas-tenant input'>{this.renderTenant(newSaaSTenant)}</div>}
+            {showNewSaaSTenant && <div className='table-row saas-tenant input'>{this.renderSaaSTenant(newSaaSTenant)}</div>}
 
             {saasTenants.length > 0 ? (
               (this.props.userType === UserType.Admin ? saasTenants : saasTenants.filter((t) => t.saas_tenant_id === this.props.userId)).map(
@@ -93,12 +82,12 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                     tabIndex={index}
                     className={`table-row saas-tenant${saasTenant.onroute ? ' onroute' : ''}${saasTenant.is_disabled ? ' is_disabled' : ''}`}
                   >
-                    {this.renderTenant(saasTenant)}
+                    {this.renderSaaSTenant(saasTenant)}
                   </div>
                 )
               )
             ) : (
-              <div className='empty-message'>No Landlord details found...</div>
+              <div className='empty-message'>{t('landlordSettings.messages.notFound')}</div>
             )}
           </div>
         </div>
@@ -111,7 +100,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
    * @param {Partial<ISaasTenant>} saasTenant - Tenant to render
    * @returns {JSX.Element} The rendered saasTenant row
    */
-  private renderTenant = (saasTenant: Partial<ISaasTenant>) => {
+  private renderSaaSTenant = (saasTenant: Partial<ISaasTenant>) => {
     const isSaved = 'created_at' in saasTenant;
 
     // If tenant is being edited, use the edited values
@@ -121,14 +110,14 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
 
     return (
       <>
-        <div data-title={t('common.fields.updatedAt')}>{saasTenant.updated_at ? timeShortDisplay(new Date(saasTenant.updated_at)) : ''}</div>
-        <div data-title={t('common.fields.tenantId')}>
+        {!!saasTenant.updated_at && <div data-title={t('common.fields.updatedAt')}>{timeShortDisplay(new Date(saasTenant.updated_at))}</div>}
+        <div data-title={t('common.fields.id')}>
           <span className='saas-tenant-id'>{saasTenant.saas_tenant_id}</span>
         </div>
         <div data-title={t('common.fields.email')}>
           <span className='email'>{saasTenant.email}</span>
         </div>
-        <div data-title={t('common.fields.tenantName')} className='input-and-error-container'>
+        <div data-title={t('common.fields.name')} className='input-and-error-container required'>
           <input
             type='text'
             value={displayTenant.name || ''}
@@ -139,14 +128,13 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('name', e.target.value);
               }
             }}
-            placeholder={t('common.placeholders.enterName')}
             className={`name ${this.state.errors.name ? 'error' : ''}`}
           />
           {this.state.errors.name && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.name}</span>
           )}
         </div>
-        <div data-title={t('common.fields.phone')} className='input-and-error-container'>
+        <div data-title={t('common.fields.phone')} className='input-and-error-container required'>
           <input
             type='text'
             value={displayTenant.phone || ''}
@@ -158,14 +146,13 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('phone', formattedPhone);
               }
             }}
-            placeholder={t('common.placeholders.enterPhone')}
             className={`phone ${this.state.errors.phone ? 'error' : ''}`}
           />
           {this.state.errors.phone && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.phone}</span>
           )}
         </div>
-        <div data-title={t('common.fields.israeliId')} className='input-and-error-container'>
+        <div data-title={t('common.fields.israeliId')} className='input-and-error-container required'>
           <input
             type='text'
             value={displayTenant.israeli_id || ''}
@@ -176,14 +163,13 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('israeli_id', e.target.value);
               }
             }}
-            placeholder={t('common.placeholders.enterIsraeliId')}
             className={`israeli-id ${this.state.errors.israeli_id ? 'error' : ''}`}
           />
           {this.state.errors.israeli_id && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.israeli_id}</span>
           )}
         </div>
-        <div data-title={t('common.fields.address')} className='input-and-error-container'>
+        <div data-title={t('common.fields.address')} className='input-and-error-container required'>
           <input
             type='text'
             value={displayTenant.address || ''}
@@ -194,13 +180,13 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
                 this.handleNewTenantChange('address', e.target.value);
               }
             }}
-            placeholder={t('common.placeholders.enterAddress')}
             className={`address ${this.state.errors.address ? 'error' : ''}`}
           />
           {this.state.errors.address && (!isSaved || this.isEditingTenant(saasTenant.saas_tenant_id!)) && (
             <span className='error-message'>{this.state.errors.address}</span>
           )}
         </div>
+
         <div className='actions'>
           {this.props.userType === UserType.Admin && (
             <div className='disabled' title={t('common.disabled')}>
@@ -217,6 +203,7 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
               />
             </div>
           )}
+
           {!isSaved ? (
             <>
               <button onClick={() => this.handleCreateRecord()} className='action-button save' title={t('common.save')}>
@@ -242,9 +229,12 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
               </>
             )
           )}
-          <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title={t('common.delete')}>
-            <Trash2 />
-          </button>
+
+          {isSaved && this.props.userType === UserType.Admin && (
+            <button onClick={() => this.handleDeleteRecord(saasTenant.saas_tenant_id!)} className='action-button delete' title={t('common.delete')}>
+              <Trash2 />
+            </button>
+          )}
         </div>
       </>
     );
@@ -276,35 +266,23 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
 
   validateTenant = (saasTenant: Partial<ISaasTenant>): Record<string, string> => {
     const errors: Record<string, string> = {};
+    const { t } = this.props;
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!saasTenant.saas_tenant_id) errors.saas_tenant_id = 'Landlord Id is required';
-    else if (!uuidRegex.test(saasTenant.saas_tenant_id)) errors.saas_tenant_id = 'Landlord Id must be a valid UUID';
-    else if (this.isDuplicate(saasTenant.saas_tenant_id, 'saas_tenant_id', saasTenant.saas_tenant_id)) {
-      errors.saas_tenant_id = 'This Landlord Id is in use by another landlord';
-    }
+    if (!saasTenant.name) errors.name = t('validation.required');
 
-    if (!saasTenant.email) errors.email = 'Email is required';
-    else if (!validateEmail(saasTenant.email)) errors.email = 'Invalid email address';
-    else if (this.isDuplicate(saasTenant.email, 'email', saasTenant.saas_tenant_id)) {
-      errors.email = 'This email is in use by another SaaS tenant';
-    }
-
-    if (!saasTenant.israeli_id) errors.israeli_id = 'Israeli ID is required';
-    else if (!validateIsraeliId(saasTenant.israeli_id)) errors.israeli_id = 'Invalid Israeli ID';
-    else if (this.isDuplicate(saasTenant.israeli_id, 'israeli_id', saasTenant.saas_tenant_id)) {
-      errors.israeli_id = 'This Israeli ID is in use by another SaaS tenant';
-    }
-
-    if (!saasTenant.name) errors.name = 'Name is required';
-
-    if (!saasTenant.address) errors.address = 'Address is required';
-
-    if (!saasTenant.phone) errors.phone = 'Phone number is required';
-    else if (!validateIsraeliPhone(saasTenant.phone)) errors.phone = 'Invalid phone number format (05X-XXX-XXXX)';
+    if (!saasTenant.phone) errors.phone = t('validation.required');
+    else if (!validateIsraeliPhone(saasTenant.phone)) errors.phone = t('validation.invalidPhone');
     else if (this.isDuplicate(saasTenant.phone, 'phone', saasTenant.saas_tenant_id)) {
-      errors.phone = 'This phone number is in use by another SaaS tenant';
+      errors.phone = t('landlordSettings.validation.phoneInUse');
     }
+
+    if (!saasTenant.israeli_id) errors.israeli_id = t('validation.required');
+    else if (!validateIsraeliId(saasTenant.israeli_id)) errors.israeli_id = t('validation.invalidId');
+    else if (this.isDuplicate(saasTenant.israeli_id, 'israeli_id', saasTenant.saas_tenant_id)) {
+      errors.israeli_id = t('landlordSettings.validation.israeliIdInUse');
+    }
+
+    if (!saasTenant.address) errors.address = t('validation.required');
 
     return errors;
   };

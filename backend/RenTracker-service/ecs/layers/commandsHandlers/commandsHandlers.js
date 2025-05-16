@@ -93,7 +93,6 @@ async function handleCreate({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.createSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
-    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataCreated: response };
@@ -151,7 +150,6 @@ async function handleUpdate({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id, is_disabled, email, name, phone, address, israeli_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.updateSaasTenant({ saas_tenant_id, is_disabled, email, name, phone, address, israeli_id }) };
-    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataUpdated: response };
@@ -175,7 +173,6 @@ async function handleDelete({ commandParams, connectedUserId }) {
   } else if (commandParams.saasTenants) {
     const { saas_tenant_id } = commandParams.saasTenants;
     response = { saasTenants: await dbData.deleteSaasTenant({ saas_tenant_id }) };
-    await dbData.cache.invalidation.getSaasTenants(connectedUserId);
   }
 
   if (response) return { dataDeleted: response };

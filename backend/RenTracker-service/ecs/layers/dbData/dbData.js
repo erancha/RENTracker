@@ -271,7 +271,7 @@ const updateSaasTenant = async ({ saas_tenant_id, is_disabled, email, name, phon
   validateNonEmptyString(address, 'address');
   validateNonEmptyString(israeli_id, 'israeli_id');
 
-  await invalidation_isLandlordUser(saas_tenant_id);
+  await invalidation_getSaasTenants(saas_tenant_id);
   return await gwData.updateSaasTenant({
     saas_tenant_id,
     is_disabled,
@@ -293,7 +293,7 @@ const updateSaasTenant = async ({ saas_tenant_id, is_disabled, email, name, phon
 const deleteSaasTenant = async ({ saas_tenant_id }) => {
   validateUUID(saas_tenant_id, 'saas_tenant_id');
 
-  await invalidation_isLandlordUser(saas_tenant_id);
+  await invalidation_getSaasTenants(saas_tenant_id);
   return await gwData.deleteSaasTenant({ saas_tenant_id });
 };
 
@@ -323,12 +323,10 @@ const cache_getSaasTenants = async ({ connectedUserId }) => {
     ? await cache.get(`getSaasTenants(${connectedUserId || ''})`, () => gwData.getSaasTenants({ connectedUserId }))
     : await gwData.getSaasTenants({}); // otherwise get all saas tenants, without caching.
 };
-
-const cache_isLandlordUser = async ({ user_id }) => {
-  validateUUID(user_id, 'user_id');
-  return await cache.get(`isLandlordUser(${user_id})`, () => gwData.isLandlordUser({ user_id }));
+const invalidation_getSaasTenants = (userId) => {
+  // cache_getSaasTenants caches saas tenants only for non-admin users ...
+  if (userId && userId !== ADMIN_USER_ID) cache.invalidateGet(`getSaasTenants(${userId})`);
 };
-const invalidation_isLandlordUser = (user_id) => cache.invalidateGet(`isLandlordUser(${user_id})`);
 
 module.exports = {
   healthCheck,
@@ -351,7 +349,6 @@ module.exports = {
     getApartmentActivity: cache_getApartmentActivity,
     getApartmentDocuments: cache_getApartmentDocuments,
     getSaasTenants: cache_getSaasTenants,
-    isLandlordUser: cache_isLandlordUser,
     invalidation: {
       getApartmentsOfLandlord: (saas_tenant_id) =>
         saas_tenant_id
@@ -365,11 +362,6 @@ module.exports = {
         apartment_id
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)
           : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentActivity()'),
-      getSaasTenants: (connectedUserId) => {
-        // cache_getSaasTenants caches saas tenants only for non-admin users ...
-        if (connectedUserId && connectedUserId !== ADMIN_USER_ID) cache.invalidateGet(`getSaasTenants(${connectedUserId})`);
-      },
-      isLandlordUser: invalidation_isLandlordUser,
     },
   },
 };

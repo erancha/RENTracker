@@ -11,24 +11,20 @@
     "title": "Apartment Rental Agreements",
     "confirmDelete": "Are you sure you want to delete document '{{name}}'?",
     "tooltips": {
-      "documentId": "Document {{id}}",
-      "downloadPdf": "Download PDF",
-      "shareWhatsapp": "Share via WhatsApp"
+      "documentId": "Document {{id}}"
     }
   },
   "apartments": {
     "title": "Apartments",
+    "form": "Apartment Form",
     "noApartments": "No apartments found. Create a new apartment ...",
-    "confirmDeleteOpen": "Are you sure you want to delete this open apartment?",
     "confirmDelete": "Are you sure you want to delete this apartment?",
     "fields": {
       "unitNumber": "Unit Number",
-      "roomsCount": "Number of Rooms",
       "rentAmount": "Rent Amount",
       "disable": "Disable"
     },
     "tooltips": {
-      "id": "Apartment ID",
       "saveNew": "Save the new apartment",
       "saveModified": "Save the modified apartment",
       "toggleView": "Toggle from Apartment {{from}} to {{to}}"
@@ -50,9 +46,12 @@
     "and": "and ",
     "create": "Create",
     "update": "Update",
+    "disabled": "Disabled",
     "months": "months",
+    "roomCount": "Rooms count",
     "confirmUnsavedChanges": "You have unsaved changes. Are you sure you want to cancel?",
     "fields": {
+      "id": "Identifier",
       "name": "Name",
       "address": "Address",
       "email": "Email",
@@ -61,23 +60,13 @@
       "updatedAt": "Updated At",
       "lastUpdated": "Last Updated",
       "actions": "Actions",
-      "period": "Period",
+      "period": "Lease Period",
       "description": "Description",
       "savedAt": "Saved At"
     },
     "tooltips": {
       "duplicate": "Duplicate",
       "close": "Close"
-    },
-    "placeholders": {
-      "buildingAddress": "Building address...",
-      "enterName": "Enter Name",
-      "enterPhone": "Enter Phone (05X-XXX-XXXX)",
-      "enterIsraeliId": "Enter Israeli ID",
-      "enterAddress": "Enter Address",
-      "unitNumber": "Unit number (e.g. Apt 2B)...",
-      "roomsCount": "Number of rooms...",
-      "rentAmount": "Monthly rent amount..."
     }
   },
   "documentDetection": {
@@ -88,13 +77,13 @@
   "documents": {
     "noDocumentsLandlord": "No documents found. Create a new rental agreement ...",
     "noDocumentsTenant": "No documents found.",
-    "landlordDesc": "Landlords",
-    "tenantDesc": "Tenants",
     "rentalAgreement": "Rental Agreement",
-    "pendingLandlordSignature": "Pending landlord signature"
+    "pendingLandlordSignature": "Pending landlord signature",
+    "shareWhatsapp": "Share via WhatsApp",
+    "downloadPdf": "Download PDF"
   },
   "validation": {
-    "required": "This field is required",
+    "required": "This value is required",
     "invalidId": "Invalid Israeli ID number",
     "mustStartWithZero": "Must start with 0",
     "invalidPhone": "Invalid phone number",
@@ -104,7 +93,8 @@
     "dateMustBeAfterAgreement": "Date must be after agreement date",
     "endDateMinMonths": "End date must be at least {{months}} months after start date",
     "standingOrderAfterInitial": "Standing order start date must be after initial payment period",
-    "standingOrderBeforeEnd": "Standing order start date must be before agreement end date"
+    "standingOrderBeforeEnd": "Standing order start date must be before agreement end date",
+    "roomsCount": "Expected value: Between 1 and 20, in increments of 0.5"
   },
   "documentForm": {
     "confirmSaveUnsigned": "Are you sure you want to save the document without signing?",
@@ -138,7 +128,6 @@
     },
     "fields": {
       "propertyAddress": "Property Address",
-      "roomCount": "Number of Rooms",
       "includedServices": "Included Services",
       "agreementDate": "Agreement Date",
       "rentAmount": "Rent Amount",
@@ -179,15 +168,17 @@
     "name": "Landlord Name",
     "phone": "Phone",
     "israeliId": "Israeli ID",
+    "validation": {
+      "phoneInUse": "This phone number is in use by another landlord",
+      "israeliIdInUse": "This Israeli ID is in use by another landlord"
+    },
     "address": "Address",
     "email": "Email",
     "save": "Save Settings",
-    "placeholders": {
-      "name": "Enter your full name",
-      "phone": "Enter phone number (05X-XXX-XXXX)",
-      "israeliId": "Enter Israeli ID",
-      "address": "Enter full address",
-      "email": "Enter email address"
+    "messages": {
+      "notFound": "Landlord settings not found ...",
+      "createdSuccessfully": "Your landlord settings were created successfully! Register your first apartment ..",
+      "updatedSuccessfully": "Landlord settings saved successfully"
     }
   },
   "menu": {
@@ -215,26 +206,20 @@
     "techStack": "The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates",
     "ui": "The app offers an intuitive, mobile-friendly React UI/UX"
   },
-  "roles": {
-    "landlord": "I'm a Landlord",
-    "tenant": "I'm a Tenant",
-    "landlordDesc": "Landlords",
-    "tenantDesc": "Tenants"
-  },
   "tenantDocuments": {
     "title": "Tenant Rental Agreements",
     "documentIdPlaceholder": "Enter document ID or click to paste from clipboard",
     "submitDocument": "Submit",
     "errorLinkedEmail": "You cannot edit this document. It is linked to another tenant.",
     "fetchError": "Failed to fetch document. Please check the ID and try again.",
+    "pleaseSignAndShare": "Please sign the document and share with the landlord.",
+    "shareWithLandlord": "Document signed! Please share it with your landlord for their signature.",
     "shareMessage": "Please find below a link to the *signed* rental agreement: *'{{title}}'*:\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "tooltips": {
-      "addSecondTenant": "Add second tenant",
-      "downloadPdf": "Download PDF",
-      "shareWhatsapp": "Share via WhatsApp"
+      "addSecondTenant": "Add second tenant"
     }
   },
-  "toast": {
+  "messages": {
     "documentSaved": "Document saved successfully",
     "documentDeleted": "Document deleted successfully",
     "documentCopied": "Document copied successfully",
@@ -252,12 +237,23 @@
     "title": "Welcome to RENTracker",
     "subtitle": "AWS/React/WebSockets-based application.",
     "description": "The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details and sign rental agreements.",
-    "selectRole": "Please select your role to continue:"
+    "selectRole": "Please select your role to continue:",
+    "landlord": "I'm a Landlord",
+    "tenant": "I'm a Tenant",
+    "landlordsDesc": "Manage properties, rental agreements, and activity",
+    "tenantsDesc": "Complete personal details and sign rental agreements"
   },
   "websocket": {
     "tooltips": {
       "connected": "Connected, last connections update on {{timestamp}}",
       "disconnected": "Disconnected"
+    },
+    "errors": {
+      "sendMessage": "Failed to send a message to the websocket server: {{error}}",
+      "databaseUnavailable": "The database is temporarily unavailable. Please contact webcharm.tech@gmail.com to start the database."
+    },
+    "notifications": {
+      "emailVerificationPending": "Email verification pending. Please verify your email address to continue using the application."
     }
   }
 }

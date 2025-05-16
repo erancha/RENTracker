@@ -95,12 +95,12 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
       <div className='body-container'>
         <div className={`page apartments-container${!isWsConnected ? ' disconnected' : ''}`}>
           <div className='header'>
-            {t('apartments.title')}
+            {!showApartmentForm ? t('apartments.title') : t('apartments.form')}
             <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
               {!showApartmentForm && <Plus />}
             </button>
           </div>
-          <div className='data-container cards-list apartments-list'>
+          <div className='data-container apartments-list'>
             {showApartmentForm ? (
               <ApartmentForm
                 mode={apartmentForm.id ? 'update' : 'create'}
@@ -123,46 +123,41 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
               filteredApartments.map((apartment) => (
                 <div
                   key={apartment.apartment_id}
-                  className={`card apartment${apartment.onroute ? ' onroute' : ''}${!apartment.is_disabled ? ' open' : ' is_disabled'}${
+                  className={`table-row apartment${apartment.onroute ? ' onroute' : ''}${!apartment.is_disabled ? ' open' : ' is_disabled'}${
                     userType === UserType.Landlord ? ' isLandlord' : ''
                   }${apartment.apartment_id === currentApartmentId ? ' current' : ''}`}
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
                   ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
+                  title={apartment.apartment_id}
                 >
-                  <div className='apartment-id' title={t('apartments.tooltips.id')}>
-                    {apartment.apartment_id}
+                  {apartment.updated_at && (
+                    <div className='updated-at' data-title={t('common.fields.updatedAt')}>
+                      {new Date(apartment.updated_at).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div className='address' data-title={t('common.fields.address')}>
+                    {apartment.address} {apartment.unit_number && `(${apartment.unit_number})`}
                   </div>
-                  {/* <p>{apartment.user_name}</p> */}
-                  <div className='details'>
-                    {apartment.updated_at && (
-                      <div className='updated-at' data-title={t('common.fields.updatedAt')}>
-                        {new Date(apartment.updated_at).toLocaleDateString()}
-                      </div>
-                    )}
-                    <div className='address' data-title={t('common.fields.address')}>
-                      {apartment.address} {apartment.unit_number && `(${apartment.unit_number})`}
-                    </div>
-                    <div className='rooms-count' data-title={t('apartments.fields.roomsCount')}>
-                      {apartment.rooms_count}
-                    </div>
-                    <div className='rent-amount' data-title={t('apartments.fields.rentAmount')}>
-                      {apartment.rent_amount.toLocaleString()}₪
-                    </div>
-                    {[UserType.Landlord, UserType.Admin].includes(userType) && (
-                      <div className='actions'>
-                        <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title={t('common.edit')}>
-                          <Pencil />
-                        </button>
-                        <button className='action-button' title={t('common.tooltips.duplicate')} onClick={() => this.handleDuplicateApartment(apartment)}>
-                          <Copy />
-                        </button>
-                        <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title={t('common.delete')}>
-                          <Trash2 />
-                        </button>
-                        {this.renderDocumentsToggleButton(apartment.apartment_id)}
-                      </div>
-                    )}
+                  <div className='rooms-count' data-title={t('common.roomCount')}>
+                    {apartment.rooms_count}
                   </div>
+                  <div className='rent-amount' data-title={t('apartments.fields.rentAmount')}>
+                    {apartment.rent_amount.toLocaleString()}₪
+                  </div>
+                  {/* {[UserType.Landlord, UserType.Admin].includes(userType) && ( */}
+                  <div className='actions'>
+                    <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title={t('common.edit')}>
+                      <Pencil />
+                    </button>
+                    <button className='action-button' title={t('common.tooltips.duplicate')} onClick={() => this.handleDuplicateApartment(apartment)}>
+                      <Copy />
+                    </button>
+                    <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title={t('common.delete')}>
+                      <Trash2 />
+                    </button>
+                    {this.renderDocumentsToggleButton(apartment.apartment_id)}
+                  </div>
+                  {/* )} */}
                 </div>
               ))
             ) : (
@@ -252,11 +247,14 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    */
   validateForm = (values: { address: string; rooms_count: number; rent_amount: number }) => {
     const errors: Record<string, string> = {};
+    const { t } = this.props;
 
-    if (!values.address) errors.address = 'Address is required.';
-    if (!values.rooms_count || values.rooms_count <= 0 || values.rooms_count > 20 || values.rooms_count % 0.5 !== 0)
-      errors.rooms_count = 'Valid rooms count is required (in increments of 0.5).';
-    if (!values.rent_amount || values.rent_amount <= 0) errors.rent_amount = 'Valid rent amount is required.';
+    if (!values.address) errors.address = t('validation.required');
+
+    if (!values.rooms_count) errors.rooms_count = t('validation.required');
+    else if (values.rooms_count < 1 || values.rooms_count > 20 || values.rooms_count % 0.5 !== 0) errors.rooms_count = t('validation.roomsCount');
+
+    if (!values.rent_amount || values.rent_amount <= 0) errors.rent_amount = t('validation.required');
 
     return errors;
   };
@@ -340,7 +338,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @param {IApartment} apartment - The apartment to delete
    */
   handleDeleteApartment = (apartment: IApartment) => {
-    if (window.confirm(this.props.t(!apartment.is_disabled ? 'apartments.confirmDeleteOpen' : 'apartments.confirmDelete'))) {
+    if (window.confirm(this.props.t('apartments.confirmDelete'))) {
       this.props.prepareDeleteApartmentCommandAction(apartment.apartment_id);
       this.props.deleteApartmentAction(apartment.apartment_id);
     }

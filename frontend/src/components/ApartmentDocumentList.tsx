@@ -25,7 +25,6 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     showForm: false,
     editMode: false,
     duplicateTemplateFields: null,
-    sectionsToExpand: [],
   };
 
   /**
@@ -64,9 +63,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
           {!this.state.showForm && (
             <button
               onClick={() => {
-                // Reset the selected document to ensure form starts fresh
                 this.props.setSelectedDocument(null);
-                this.setState({ showForm: true, editMode: false, duplicateTemplateFields: null, sectionsToExpand: ['landlordDetails'] });
+                this.setState({ showForm: true, editMode: false, duplicateTemplateFields: null });
               }}
               className='action-button add'
             >
@@ -82,39 +80,39 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
           ) : showForm ? (
             <DocumentForm
               documentId={this.props.selectedDocument?.document_id}
-              onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null, sectionsToExpand: [] })}
+              onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null })}
               apartmentId={this.props.apartmentId}
               apartmentInitiatedFields={{
                 propertyAddress: this.props.apartmentAddress,
-                roomsCount: this.props.roomsCount,
+                roomCount: this.props.roomCount,
                 rentAmount: this.props.rentAmount,
               }}
               initialTemplateFields={this.state.duplicateTemplateFields}
-              expandedSections={this.state.sectionsToExpand}
             />
           ) : (
             <div className='data-container'>
               {documents.length > 0 ? (
                 documents.map((document) => (
                   <div key={document.document_id} className='table-row document'>
-                    <div className='updated' data-title={t('common.fields.lastUpdated')}>
+                    <div className='updated' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
                     <div className='name' data-title={t('common.fields.name')} title={`Document ${document.document_id}`}>
                       '{getDocumentTitle(document.template_fields?.tenant1Name, t('documents.rentalAgreement'))}'
                     </div>
-                    <div className='period' data-title={t('common.fields.period')}>
+                    <div className='period' data-title={t('common.fields.period')} title={t('common.fields.period')}>
                       {formatDate(document.template_fields?.startDate)} - {formatDate(document.template_fields?.endDate)}
                     </div>
+
                     <div className='actions' data-title={t('common.fields.actions')}>
                       <button
-                        className={`action-button edit${isPendingLandlordSignature(document) ? ' pending-landlord-signature' : ''}`}
+                        className={`action-button edit${isPendingLandlordSignature(document) ? ' pending-signature' : ''}`}
                         title={`${isPendingLandlordSignature(document) ? t('documents.pendingLandlordSignature') : t('common.edit')}`}
                         onClick={async () => {
                           // First fetch the document
                           await this.props.getDocumentThunk(document.document_id);
                           // Then show the form
-                          this.setState({ showForm: true, editMode: true, sectionsToExpand: isPendingLandlordSignature(document) ? ['signature'] : [] });
+                          this.setState({ showForm: true, editMode: true });
                         }}
                       >
                         <Pencil />
@@ -127,26 +125,28 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                       </button>
                       <button
                         className='action-button documents'
-                        title={t('common.tooltips.downloadPdf')}
+                        title={t('documents.downloadPdf')}
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error(t('toast.error'));
+                          else toast.error(t('messages.error'));
                         }}
                       >
                         <FileText />
                       </button>
-                      <button
-                        className='action-button pdf'
-                        title={t('common.tooltips.shareWhatsapp')}
-                        onClick={async () => {
-                          const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
-                          if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
-                          else toast.error(t('toast.error'));
-                        }}
-                      >
-                        <Share2 />
-                      </button>
+                      {!document.template_fields.tenant1Email /* the document was linked to a tenant - it's pointless and confusing to share it again */ && (
+                        <button
+                          className='action-button pdf'
+                          title={t('documents.shareWhatsapp')}
+                          onClick={async () => {
+                            const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                            if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
+                            else toast.error(t('messages.error'));
+                          }}
+                        >
+                          <Share2 />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -197,7 +197,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     templateFields['startDate'] = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1, 12).toISOString().split('T')[0]; // + 12 hours to normalize the time zone.
 
     // Show the form with duplicated fields
-    this.setState({ showForm: true, editMode: false, duplicateTemplateFields: templateFields, sectionsToExpand: ['leaseTerms'] });
+    this.setState({ showForm: true, editMode: false, duplicateTemplateFields: templateFields });
   };
 
   /**
@@ -210,13 +210,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     ) {
       try {
         await this.props.deleteDocumentThunk(document.document_id);
-        toast.success(t('toast.documentDeleted'));
+        toast.success(t('messages.documentDeleted'));
         // Refresh the documents list
         if (this.props.apartmentId) {
           await this.props.getApartmentDocumentsThunk(this.props.apartmentId);
         }
       } catch (error) {
-        toast.error(t('toast.error'));
+        toast.error(t('messages.error'));
       }
     }
   };
@@ -232,7 +232,7 @@ interface DocumentListProps {
   tReady: boolean;
   apartmentId: string;
   apartmentAddress: string;
-  roomsCount: number;
+  roomCount: number;
   rentAmount: number;
   selectedDocument: IDocument | null;
   documents: IDocument[];
@@ -260,7 +260,7 @@ const mapStateToProps = (state: RootState) => {
     username: state.auth.userName,
     apartmentId: state.apartments.currentApartmentId || '',
     apartmentAddress: currentApartment?.address || '',
-    roomsCount: currentApartment?.rooms_count || 0,
+    roomCount: currentApartment?.rooms_count || 0,
     rentAmount: currentApartment?.rent_amount || 0,
   };
 };
@@ -280,7 +280,6 @@ interface DocumentListState {
   showForm: boolean;
   editMode: boolean;
   duplicateTemplateFields: Record<string, any> | null;
-  sectionsToExpand: string[];
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(withTranslation()(ApartmentDocumentList));

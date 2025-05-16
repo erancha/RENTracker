@@ -101,7 +101,7 @@ const documentsSlice = createSlice({
       state.documents.unshift(action.payload);
 
       // Use our wrapper function to handle translation
-      toast.success(translate('toast.documentCreated'), { autoClose: 2000 });
+      toast.success(translate('messages.documentCreated'), { autoClose: 2000 });
     });
     builder.addCase(createDocumentThunk.rejected, (state, action) => {
       state.loading = false;
@@ -121,10 +121,18 @@ const documentsSlice = createSlice({
       // Add updated document at the beginning since we sort by updated_at desc
       state.documents.unshift(action.payload);
 
-      const isDocumentSigned = action.payload.template_fields['tenantSignature'];
-
-      // Use our wrapper function to handle translation
-      toast.success(translate('toast.documentUpdated'), { autoClose: isDocumentSigned ? 2000 : 5000 });
+      // Translate:
+      const isDocumentCompletedByTenant = !!action.payload.template_fields['tenant1Id'];
+      const isDocumentSignedByTenant = !!action.payload.template_fields['tenantSignature']; // TODO: this condition doesn't take into consideration updates by the landlord ..
+      const updateMessage =
+        translate('messages.documentUpdated') +
+        '. ' +
+        (!isDocumentCompletedByTenant
+          ? ''
+          : isDocumentSignedByTenant
+          ? translate('tenantDocuments.shareWithLandlord')
+          : translate('tenantDocuments.pleaseSignAndShare'));
+      toast.success(updateMessage, { autoClose: 5000 });
     });
     builder.addCase(updateDocumentThunk.rejected, (state, action) => {
       state.loading = false;
