@@ -317,7 +317,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
             <FormControlLabel
               control={
-                <Checkbox checked={this.state.formData.petsAllowed || false} onChange={(e) => this.handleCheckboxChange('petsAllowed', e.target.checked)} />
+                <Checkbox
+                  checked={Boolean(this.state.formData.petsAllowed)}
+                  onChange={(e) => this.handleCheckboxChange('petsAllowed', e.target.checked)}
+                  disabled={this.props.userType === UserType.Tenant || !!this.state.formData.tenantSignature || !!this.state.formData.landlordSignature}
+                />
               }
               label={t('documentForm.fields.petsAllowed')}
             />
@@ -438,7 +442,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.securityRequired)}
                         onChange={(e) => this.handleCheckboxChange('securityRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant || this.documentWasSigned()}
+                        disabled={this.props.userType === UserType.Tenant || !!this.state.formData.tenantSignature || !!this.state.formData.landlordSignature}
                       />
                     }
                     label={t('documentForm.fields.requireSecurityDeposit')}
@@ -469,7 +473,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                       <Checkbox
                         checked={Boolean(this.state.formData.guarantorRequired)}
                         onChange={(e) => this.handleCheckboxChange('guarantorRequired', e.target.checked)}
-                        disabled={this.props.userType === UserType.Tenant || this.documentWasSigned()}
+                        disabled={this.props.userType === UserType.Tenant || !!this.state.formData.tenantSignature || !!this.state.formData.landlordSignature}
                       />
                     }
                     label={t('documentForm.fields.requireGuarantor')}
@@ -695,7 +699,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * Determines if a field should be disabled based on document state
    */
   private isFieldDisabled = (field: string) => {
-    let isDisabled = this.documentWasSigned();
+    let isDisabled = !!this.state.formData.tenantSignature || !!this.state.formData.landlordSignature;
     if (!isDisabled) {
       const section = fieldToSection[field];
       // console.log({ field, section });
@@ -946,14 +950,20 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   //   });
   // };
 
-  private documentWasSigned = (): boolean => !!this.state.formData.landlordSignature;
-
+  /**
+   * Handles the expansion/collapse of accordion sections in the document form.
+   * For the signature section, implements special validation:
+   * - Prevents landlord from signing before tenant
+   * - Prevents modifications if document is already signed by both parties
+   * @param section - The section identifier being toggled
+   * @returns A function that handles the actual accordion change event
+   */
   private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     const { t } = this.props;
     // console.log(this.state, section, this.isDocumentValid());
     if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
       toast.warning(t('documentForm.messages.tenantMustSignFirst'));
-    else if (section === 'signature' && this.documentWasSigned()) toast.warning(t('documentForm.messages.agreementSignedByBoth'));
+    else if (section === 'signature' && isExpanded && !!this.state.formData.landlordSignature) toast.warning(t('documentForm.messages.agreementSignedByBoth'));
     else
       this.setState((prevState) => ({
         expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
@@ -1024,8 +1034,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         const { userType } = this.props;
         if (
           userType === UserType.Landlord ||
-          this.documentWasSigned() ||
-          this.state.formData.tenantSignature ||
+          !!this.state.formData.landlordSignature ||
+          !!this.state.formData.tenantSignature ||
           window.confirm(t('documentForm.confirmSaveUnsigned'))
         ) {
           savedDocument = await updateDocumentThunk({

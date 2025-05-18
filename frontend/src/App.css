@@ -51,6 +51,7 @@ textarea {
 
     &:hover {
       border: 1px solid gray;
+      border-radius: 5px;
       cursor: pointer;
     }
   }
@@ -567,7 +568,7 @@ form > .actions {
     }
     &.actions:not(:empty) {
       border: 2px solid white;
-      place-content: center;
+      align-content: center;
     }
 
     &:not(.actions)::before {
@@ -622,7 +623,7 @@ form > .actions {
 
     *,
     * * {
-      font-size: x-large;
+      font-size: large;
     }
 
     *[data-title]::before,
@@ -796,10 +797,6 @@ form > .actions {
     &:not(.actions)::before {
       content: unset;
     }
-  }
-
-  .action-button {
-    scale: 0.6;
   }
 }
 
@@ -1067,8 +1064,9 @@ form > .actions {
     align-content: center;
   }
 
-  > .disabled {
+  .disabled {
     text-align: center;
+    display: flex;
   }
 }
 
@@ -1128,6 +1126,11 @@ form > .actions {
 
   .table-row {
     margin: 0.2rem 0.2rem 1rem 0.2rem;
+
+    .required *:not(.error-message),
+    &.input *:not(span) {
+      font-size: x-large !important;
+    }
   }
 
   .table-row.document {

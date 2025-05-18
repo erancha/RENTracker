@@ -122,14 +122,14 @@ const documentsSlice = createSlice({
       state.documents.unshift(action.payload);
 
       // Translate:
-      const isDocumentCompletedByTenant = !!action.payload.template_fields['tenant1Id'];
-      const isDocumentSignedByTenant = !!action.payload.template_fields['tenantSignature']; // TODO: this condition doesn't take into consideration updates by the landlord ..
       const updateMessage =
         translate('messages.documentUpdated') +
         '. ' +
-        (!isDocumentCompletedByTenant
+        (action.payload.template_fields.landlordSignature
+          ? translate('documentForm.messages.agreementSignedByBoth') // signed by both the landlord (and the tenant)
+          : !action.payload.template_fields.tenant1Id // not yet filled by the tenant
           ? ''
-          : isDocumentSignedByTenant
+          : action.payload.template_fields.tenantSignature // signed by the tenant
           ? translate('documentForm.messages.shareWithLandlord')
           : translate('tenantDocuments.pleaseSignAndShare'));
       toast.success(updateMessage, { autoClose: 5000 });
