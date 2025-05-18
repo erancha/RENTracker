@@ -269,11 +269,14 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     return (
       <Paper sx={{ p: 2 }}>
         <form onSubmit={this.handleSubmit} noValidate>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant='h5' gutterBottom>
-              {getDocumentTitle(this.state.formData?.tenant1Name, t('documents.rentalAgreement'))}
-            </Typography>
-          </Box>
+          <div className='header-container'>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant='h5' gutterBottom>
+                {getDocumentTitle(this.state.formData?.tenant1Name, t('documents.rentalAgreement'))}
+              </Typography>
+            </Box>
+            {this.renderCancelButton()}
+          </div>
 
           {/* Property Details */}
           <Accordion expanded={this.isSectionExpanded('propertyDetails')} onChange={this.handleAccordionChange('propertyDetails')}>
@@ -513,9 +516,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     <Save />
                   </button>
                 )}
-                <button type='button' className='action-button cancel' title={t('common.cancel')} onClick={this.handleCancel}>
-                  <Undo2 />
-                </button>
+
+                {this.renderCancelButton()}
               </div>
             )
           }
@@ -523,6 +525,12 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       </Paper>
     );
   }
+
+  private renderCancelButton = () => (
+    <button type='button' className='action-button cancel' title={this.props.t('common.cancel')} onClick={this.handleCancel}>
+      <Undo2 />
+    </button>
+  );
 
   /**
    * Handles changes in form fields

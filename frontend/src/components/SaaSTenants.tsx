@@ -49,8 +49,8 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
     const { showNewSaaSTenant, newSaaSTenant } = this.state;
 
     return (
-      <div className='page body-container saas-tenants'>
-        <div className='header m-n-relation'>
+      <div className='page body-container'>
+        <header className='header'>
           <span>{t('menu.landlordSettings')}</span>
           {
             /* allow adding SaaS tenants only by admin or only if the current user is not yet a SaaS tenant */
@@ -68,26 +68,24 @@ class SaaSTenants extends React.Component<ISaaSTenantsProps, ISaaSTenantsState> 
               </button>
             )
           }
-        </div>
+        </header>
 
-        <div className='saas-tenants-container'>
-          <div className='data-container saas-tenant-list'>
-            {showNewSaaSTenant && <div className='table-row saas-tenant input'>{this.renderSaaSTenant(newSaaSTenant)}</div>}
+        <div className='data-container'>
+          {showNewSaaSTenant && <div className='table-row saas-tenant input'>{this.renderSaaSTenant(newSaaSTenant)}</div>}
 
-            {saasTenants.length > 0 ? (
-              (userType === UserType.Admin ? saasTenants : saasTenants.filter((t) => t.saas_tenant_id === userId)).map((saasTenant, index) => (
-                <div
-                  key={saasTenant.saas_tenant_id}
-                  tabIndex={index}
-                  className={`table-row saas-tenant${saasTenant.onroute ? ' onroute' : ''}${saasTenant.is_disabled ? ' is_disabled' : ''}`}
-                >
-                  {this.renderSaaSTenant(saasTenant)}
-                </div>
-              ))
-            ) : (
-              <div className='empty-message'>{t('landlordSettings.messages.notFound')}</div>
-            )}
-          </div>
+          {saasTenants.length > 0 ? (
+            (userType === UserType.Admin ? saasTenants : saasTenants.filter((t) => t.saas_tenant_id === userId)).map((saasTenant, index) => (
+              <div
+                key={saasTenant.saas_tenant_id}
+                tabIndex={index}
+                className={`table-row saas-tenant${saasTenant.onroute ? ' onroute' : ''}${saasTenant.is_disabled ? ' is_disabled' : ''}`}
+              >
+                {this.renderSaaSTenant(saasTenant)}
+              </div>
+            ))
+          ) : (
+            <div className='empty-message'>{t('landlordSettings.messages.notFound')}</div>
+          )}
         </div>
       </div>
     );

@@ -17,7 +17,7 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [, setAutoSelectTimer] = useState<NodeJS.Timeout | null>(null);
-  const APP_KEY_NAME = 'RENTracker-tenants.v2';
+  const APP_KEY_NAME = 'RENTracker-tenants.v3';
 
   /**
    * Handles the completion of user role selection.

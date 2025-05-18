@@ -94,12 +94,12 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     return (
       <div className='body-container'>
         <div className={`page apartments-container${!isWsConnected ? ' disconnected' : ''}`}>
-          <div className='header'>
+          <header className='header'>
             {!showApartmentForm ? t('apartments.title') : t('apartments.form')}
             <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
               {!showApartmentForm && <Plus />}
             </button>
-          </div>
+          </header>
           <div className='data-container apartments-list'>
             {showApartmentForm ? (
               <ApartmentForm
@@ -166,9 +166,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
           </div>
         </div>
 
-        {!showApartmentForm && filteredApartments.length > 0 && (
-          <>{showDocuments ? <div className='documents-container'>{currentApartmentId && <ApartmentDocumentList />}</div> : <ApartmentActivity />}</>
-        )}
+        {!showApartmentForm && filteredApartments.length > 0 && <>{showDocuments ? currentApartmentId && <ApartmentDocumentList /> : <ApartmentActivity />}</>}
       </div>
     );
   }

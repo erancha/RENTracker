@@ -55,11 +55,12 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     const { documents = [], loading, error, t } = this.props;
     const { showForm } = this.state;
     const isPendingLandlordSignature = (document: IDocument) => document.template_fields.tenantSignature && !document.template_fields.landlordSignature;
+    const documentWasSigned = (document: IDocument) => !!document.template_fields.landlordSignature;
 
     return (
       <div className='page body-container'>
         <div className='header m-n-relation'>
-          <span>{t('apartmentDocuments.title')}</span>
+          <span>{t('documents.title')}</span>
           {!this.state.showForm && (
             <button
               onClick={() => {
@@ -72,12 +73,9 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
             </button>
           )}
         </div>
+
         <div className='documents-container'>
-          {loading ? (
-            <Spinner />
-          ) : error ? (
-            <span className='error-message'>{error}</span>
-          ) : showForm ? (
+          {showForm ? (
             <DocumentForm
               documentId={this.props.selectedDocument?.document_id}
               onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null })}
@@ -93,7 +91,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
             <div className='data-container'>
               {documents.length > 0 ? (
                 documents.map((document) => (
-                  <div key={document.document_id} className='table-row document'>
+                  <div key={document.document_id} className={`table-row document${(documentWasSigned(document) && ' signed') || ''}`}>
                     <div className='updated' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
@@ -150,6 +148,10 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                     </div>
                   </div>
                 ))
+              ) : loading ? (
+                <Spinner />
+              ) : error ? (
+                <span className='error-message'>{error}</span>
               ) : (
                 <div className='empty-message'>{t('documents.noDocumentsLandlord')}</div>
               )}

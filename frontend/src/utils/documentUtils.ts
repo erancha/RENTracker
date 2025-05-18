@@ -36,5 +36,4 @@ export const handlePdfGeneration = async (documentId: string, JWT: string | null
  * @param baseTitle - Base title for the rental agreement (e.g. "Rental Agreement" or "הסכם שכירות")
  * @returns A string in the format "{baseTitle} - {tenant1Name}" or just "{baseTitle}" if no tenant name provided
  */
-export const getDocumentTitle = (tenant1Name?: string, baseTitle: string = 'Rental Agreement') => 
-  `${baseTitle}${tenant1Name ? ` - ${tenant1Name}` : ''}`;
+export const getDocumentTitle = (tenant1Name?: string, baseTitle: string = 'Rental Agreement') => `${baseTitle}${tenant1Name ? ` : ${tenant1Name}` : ''}`;

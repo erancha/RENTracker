@@ -33,7 +33,8 @@ const BarCustomLabel = (props: LabelProps) => {
         style={{
           fontSize: '11px',
           fontWeight: 'bold',
-        }}>
+        }}
+      >
         {typeof value === 'number' ? value.toLocaleString() : value}$
       </text>
     </g>
@@ -59,7 +60,8 @@ const LineCustomLabel = (props: LabelProps) => {
           fontSize: '12px',
           fontWeight: 'bold',
           background: '#fff',
-        }}>
+        }}
+      >
         {typeof value === 'number' ? value.toLocaleString() : value}
       </text>
     </g>
@@ -103,8 +105,8 @@ class Analytics extends Component<IAnalyticsProps> {
     };
 
     return (
-      <div className='page charts-container'>
-        <header className='page-header'>Analytics : TODO !!</header>
+      <div className='page'>
+        <header className='header'>Analytics : TODO !!</header>
         <ResponsiveContainer width={`${Math.min(Math.max(chartData.length * itemWidthPercentage, minScreenWidthPercentage), 100)}%`} height={300}>
           <BarChart data={chartData} style={{ backgroundColor: '#fafafa' }} margin={{ top: 30, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray='3 3' />

@@ -102,14 +102,7 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
       setMenuSelectedPageAction(DOCUMENTS_VIEW);
     };
 
-    return menuSelectedPage === ANALYTICS_VIEW ? (
-      <div className='chart-container'>
-        <Analytics />
-        <button onClick={switchToDefaultMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
-          <Undo2 />
-        </button>
-      </div>
-    ) : menuSelectedPage === SAAS_TENANTS_VIEW ? (
+    return menuSelectedPage === SAAS_TENANTS_VIEW ? (
       <div className='saas-tenants-container'>
         <SaaSTenants onSave={switchToDefaultMenuSelectedPage} />
         {userType !== UserType.Pending && (
@@ -117,6 +110,13 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
             <Undo2 />
           </button>
         )}
+      </div>
+    ) : menuSelectedPage === ANALYTICS_VIEW ? (
+      <div className='analytics-container'>
+        <Analytics />
+        <button onClick={switchToDefaultMenuSelectedPage} className='action-button cancel' title={t('common.back')}>
+          <Undo2 />
+        </button>
       </div>
     ) : userType === UserType.Pending ? (
       <FirstTimeLanding userId={this.props.userId} setUserTypeAction={this.props.setUserTypeAction} setMenuSelectedPageAction={setMenuSelectedPageAction} />
@@ -248,7 +248,7 @@ export const App = () => {
 
   // render
   return auth.isLoading ? (
-    <Spinner />
+    <Spinner className='center-screen' />
   ) : (
     <Provider store={store}>
       <ConnectedApp auth={auth} />

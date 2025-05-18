@@ -81,15 +81,16 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   render() {
     const { documents = [], error, t } = this.props;
     const { showForm, showDocumentIdInput, documentIdInput } = this.state;
+    const documentWasSigned = (document: IDocument) => !!document.template_fields.landlordSignature;
 
     return (
       <div className='page body-container' id='tenant-documents'>
-        <div className='header'>
-          {t('tenantDocuments.title')}
+        <header className='header'>
+          {t('documents.title')}
           <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
             {!this.state.showDocumentIdInput && <Plus />}
           </button>
-        </div>
+        </header>
 
         <div className='documents-container'>
           {showDocumentIdInput ? (
@@ -126,7 +127,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
             <div className='data-container'>
               {documents.length > 0 ? (
                 documents.map((document) => (
-                  <div key={document.document_id} className='table-row document'>
+                  <div key={document.document_id} className={`table-row document${(documentWasSigned(document) && ' signed') || ''}`}>
                     <div className='updated' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>

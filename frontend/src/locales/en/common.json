@@ -7,8 +7,7 @@
     "confirmDelete": "Are you sure you want to delete activity '{{description}}'?"
   },
   "apartmentDocuments": {
-    "shareMessage": "\nPlease find below a link to your rental agreement: *'{{title}}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at *{{origin}}*\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
-    "title": "Apartment Rental Agreements",
+    "shareMessage": "*'{{title}}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at:\n\n*{{origin}}*\n\nPlease find below a link to your rental agreement: \n{{url}}\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "confirmDelete": "Are you sure you want to delete document '{{name}}'?",
     "tooltips": {
       "documentId": "Document {{id}}"
@@ -75,6 +74,7 @@
     "countdown_plural": "{{count}} seconds"
   },
   "documents": {
+    "title": "Rental Agreements",
     "noDocumentsLandlord": "No documents found. Create a new rental agreement ...",
     "noDocumentsTenant": "No documents found.",
     "rentalAgreement": "Rental Agreement",
@@ -210,7 +210,6 @@
     "ui": "The app offers an intuitive, mobile-friendly UI/UX"
   },
   "tenantDocuments": {
-    "title": "Tenant Rental Agreements",
     "documentIdPlaceholder": "Enter document ID or click to paste from clipboard",
     "submitDocument": "Submit",
     "errorLinkedEmail": "You cannot edit this document. It is linked to another tenant.",
