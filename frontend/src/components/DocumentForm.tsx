@@ -109,11 +109,11 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     rentAmount: '',
     paymentDay: '1',
     initialPaymentMonths: '',
-    standingOrderStart: new Date(new Date().getFullYear(), new Date().getMonth() + 2, 1, 12).toISOString().split('T')[0],
+    standingOrderStart: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1, 12).toISOString().split('T')[0],
     waterLimit: '150',
     electricityLimit: '250',
     includedServices: 'יס וקו אינטרנט',
-    includedEquipment: 'מקרר, מכונת כביסה, מייבש',
+    includedEquipment: 'מקרר, ספה ושולחן ,מכונת כביסה, מייבש, טלוויזיה, מזגן, מיטה, מזרון, ארון',
     securityRequired: false,
     securityDeposit: '',
     guarantorRequired: false,
@@ -314,6 +314,14 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography className='section-header'>{t('documentForm.sections.lease')}</Typography>
             </AccordionSummary>
+
+            <FormControlLabel
+              control={
+                <Checkbox checked={this.state.formData.petsAllowed || false} onChange={(e) => this.handleCheckboxChange('petsAllowed', e.target.checked)} />
+              }
+              label={t('documentForm.fields.petsAllowed')}
+            />
+
             <AccordionDetails>
               <Grid container spacing={2}>
                 <Grid item xs={6} sm={6} md={4}>
@@ -343,7 +351,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 </Grid>
               </Grid>
             </AccordionDetails>
-
             {/* Utility Limits */}
             <Accordion expanded={this.isSectionExpanded('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
               <AccordionSummary expandIcon={<ExpandMore />}>
@@ -929,15 +936,15 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param formData - The form data to validate
    * @returns boolean indicating if the document is valid
    */
-  private isDocumentValid = (): boolean => {
-    // Check if all required fields have values
-    return this.requiredFields.every((field) => {
-      const value = this.state.formData[field];
-      const isFieldValid = value !== undefined && value !== null && value !== '';
-      // if (!isFieldValid) console.warn({ field, value, isFieldValid });
-      return isFieldValid;
-    });
-  };
+  // private isDocumentValid = (): boolean => {
+  //   // Check if all required fields have values
+  //   return this.requiredFields.every((field) => {
+  //     const value = this.state.formData[field];
+  //     const isFieldValid = value !== undefined && value !== null && value !== '';
+  //     // if (!isFieldValid) console.warn({ field, value, isFieldValid });
+  //     return isFieldValid;
+  //   });
+  // };
 
   private documentWasSigned = (): boolean => !!this.state.formData.landlordSignature;
 

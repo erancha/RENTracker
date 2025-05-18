@@ -707,6 +707,10 @@ form > .actions {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+
+    .cancel {
+      color: black !important;
+    }
   }
 
   > .data-container .actions {

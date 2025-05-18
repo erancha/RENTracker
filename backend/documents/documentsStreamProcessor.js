@@ -295,6 +295,9 @@ const interpolateTemplate = (template, fields) => {
   let result = template;
 
   // Handle strikethrough for optional sections
+  if (fields.petsAllowed) {
+    result = result.replace(/^(8\.13 לא להכניס למושכר ו\/או לבית ו\/או למתחם בעל חיים)/m, '~~$1~~');
+  }
   if (!fields.securityRequired) {
     result = result.replace(/^12\.1.*$/m, '~~$&~~');
   }
