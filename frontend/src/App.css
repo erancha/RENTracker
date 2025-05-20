@@ -720,9 +720,9 @@ form > .actions {
     grid-template-columns: repeat(5, 2rem);
   }
 
-  .MuiCollapse-root .action-button {
+  /* .MuiCollapse-root .action-button {
     margin-top: 2rem;
-  }
+  } */
 
   .css-1pysi21-MuiFormLabel-root-MuiInputLabel-root {
     font-size: small;

@@ -31,6 +31,7 @@
   },
   "auth": {
     "signInWithGoogle": "Sign In with Google",
+    "signIn": "Sign In",
     "signOut": "Sign Out"
   },
   "common": {
@@ -160,8 +161,8 @@
       "utilityLimitsNote": "Note: If you set a value of 0 for any of the following items, the item will not appear in the agreement.",
       "shareWithTenant": "Please share it with your tenant for their details and signature.",
       "tenantMustSignFirst": "Please share the document with the tenant and have the document signed first",
-      "agreementSignedByBoth": "The agreement was signed by the tenant and the landlord",
-      "shareWithLandlord": "Document signed! Please share it with your landlord for their signature."
+      "shareWithLandlord": "Document signed! Please share it with your landlord for their signature.",
+      "agreementSignedByBoth": "The agreement was signed by the tenant and the landlord"
     },
     "tooltips": {
       "addSecondTenant": "Add Second Tenant"
@@ -199,7 +200,6 @@
     "authDescription": "The app provides",
     "secureAuth": "secure authentication",
     "throughGoogle": "through Google:",
-    "signIn": "Sign In",
     "showMore": "Show more",
     "showLess": "Show less",
     "roles": {
@@ -235,18 +235,21 @@
     "confirmDelete": "Are you sure you want to delete this document?",
     "fileUploaded": "File '{{fileName}}' uploaded successfully!"
   },
+  "signature": {
+    "tapToStartDrawing": "Touch anywhere to begin your signature"
+  },
   "welcome": {
-    "confirmTitle": "Confirm User Type Selection",
+    "confirmTitle": "Confirm User Type",
     "confirmMessage": "Please note that this selection is irreversible. To use the application with a different user type, you will need to sign in with another email account.",
     "confirmCheckbox": "I understand that this selection is irreversible and will require a different email for another user type",
     "title": "Welcome to RENTracker",
     "subtitle": "AWS/React/WebSockets-based application.",
     "description": "The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details and sign rental agreements.",
     "selectRole": "Please select your role to continue:",
-    "landlord": "I'm a Landlord",
-    "tenant": "I'm a Tenant",
+    "landlord": "Landlord",
+    "tenant": "Tenant",
     "landlordsDesc": "Manage properties, rental agreements, and activity",
-    "tenantsDesc": "Complete personal details and sign rental agreements"
+    "tenantsDesc": "Completes personal details and signs rental agreements"
   },
   "websocket": {
     "tooltips": {

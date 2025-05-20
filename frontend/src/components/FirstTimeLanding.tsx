@@ -20,7 +20,7 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   const [selectedType, setSelectedType] = useState<UserType | null>(null);
   const [confirmationChecked, setConfirmationChecked] = useState(false);
   const [, setAutoSelectTimer] = useState<NodeJS.Timeout | null>(null);
-  const APP_KEY_NAME = 'RENTracker-tenants.v3';
+  const APP_KEY_NAME = 'RENTracker-tenants.v4';
 
   /**
    * Handles the completion of user role selection.
@@ -176,18 +176,18 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
         )}
       </div>
       <Dialog open={confirmationOpen} onClose={() => setConfirmationOpen(false)}>
-        <DialogTitle>{t('welcome.confirmTitle')}</DialogTitle>
+        <DialogTitle>
+          {t('welcome.confirmTitle')} : {selectedType === UserType.Landlord ? t('welcome.landlord') : t('welcome.tenant')}
+          <Typography variant='body2' paragraph>
+            ({selectedType === UserType.Landlord ? t('welcome.landlordsDesc') : t('welcome.tenantsDesc')})
+          </Typography>
+        </DialogTitle>
         <DialogContent>
           <Typography variant='body1' paragraph>
             {t('welcome.confirmMessage')}
           </Typography>
           <FormControlLabel
-            control={
-              <Checkbox
-                checked={confirmationChecked}
-                onChange={(e) => setConfirmationChecked(e.target.checked)}
-              />
-            }
+            control={<Checkbox checked={confirmationChecked} onChange={(e) => setConfirmationChecked(e.target.checked)} />}
             label={t('welcome.confirmCheckbox')}
           />
         </DialogContent>

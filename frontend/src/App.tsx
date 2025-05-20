@@ -145,7 +145,7 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
             {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
             {this.t('overview.throughGoogle')}{' '}
             <span className='text-link sign-in-from-overview draw-attention-during-overview' onClick={() => loginWithGoogleAction(auth)}>
-              {this.t('overview.signIn')}
+              {this.t('auth.signIn')}
             </span>
           </p>
 
