@@ -45,6 +45,7 @@
     "and": "and ",
     "create": "Create",
     "update": "Update",
+    "confirm": "Confirm",
     "disabled": "Disabled",
     "months": "months",
     "roomCount": "Rooms count",
@@ -194,6 +195,7 @@
   },
   "overview": {
     "description": "is a property rent tracking app that streamlines rent agreements and activity.",
+    "maySwitchLanguage": "Want to switch language?",
     "authDescription": "The app provides",
     "secureAuth": "secure authentication",
     "throughGoogle": "through Google:",
@@ -207,12 +209,12 @@
       "tenants": "Tenants",
       "tenantsDesc": "who complete their details and sign rental agreements"
     },
+    "architecture": "Architecture",
     "techStack": "The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates",
     "ui": "The app offers an intuitive, mobile-friendly UI/UX"
   },
   "tenantDocuments": {
     "documentIdPlaceholder": "Enter document ID or click to paste from clipboard",
-    "submitDocument": "Submit",
     "errorLinkedEmail": "You cannot edit this document. It is linked to another tenant.",
     "fetchError": "Failed to fetch document. Please check the ID and try again.",
     "pleaseSignAndShare": "Please sign the document and share with the landlord.",
@@ -234,6 +236,9 @@
     "fileUploaded": "File '{{fileName}}' uploaded successfully!"
   },
   "welcome": {
+    "confirmTitle": "Confirm User Type Selection",
+    "confirmMessage": "Please note that this selection is irreversible. To use the application with a different user type, you will need to sign in with another email account.",
+    "confirmCheckbox": "I understand that this selection is irreversible and will require a different email for another user type",
     "title": "Welcome to RENTracker",
     "subtitle": "AWS/React/WebSockets-based application.",
     "description": "The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details and sign rental agreements.",

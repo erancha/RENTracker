@@ -106,7 +106,11 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
 
             {activity.length > 0 ? (
               activity.map((activity, index) => (
-                <div key={activity.activity_id} tabIndex={index} className={`table-row activity${activity.onroute ? ' onroute' : ''}`}>
+                <div
+                  key={activity.activity_id}
+                  tabIndex={index}
+                  className={`table-row activity${this.props.userType === UserType.Admin ? ' admin' : ''}${activity.onroute ? ' onroute' : ''}`}
+                >
                   {this.renderActivity(activity)}
                 </div>
               ))
@@ -204,7 +208,7 @@ class ApartmentActivity extends React.Component<IApartmentActivityProps, { showE
         <div className='saved-at'>{isSaved ? timeShortDisplay(new Date(activity.created_at!)) : ''}</div>
         <div className='description' data-title={t('common.fields.description')}>
           {isSaved ? (
-            activity.description
+            <div className='saved-text'>{activity.description}</div>
           ) : (
             <textarea
               ref={this.newActivityAmountRef}

@@ -81,7 +81,7 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
               {auth.isAuthenticated && !showConnections && <WebSocketService />}
             </div>
 
-            {!auth.isAuthenticated ? <LanguageSwitcher className='language-switcher' /> : showConnections && <WebSocketService />}
+            {showConnections && <WebSocketService />}
 
             <div className={`menu-container${auth.isAuthenticated ? ' authenticated' : ''}`}>
               <Menu />
@@ -138,43 +138,48 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
           <p>
             <span className='app-name'>RENTracker</span> {this.t('overview.description')}
           </p>
+          <span className='may-switch-language'>{this.t('overview.maySwitchLanguage')}</span>
+          <LanguageSwitcher className='language-switcher' />
           <hr />
           <p>
             {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
             {this.t('overview.throughGoogle')}{' '}
-            <span className='text-link sign-in-from-overview' onClick={() => loginWithGoogleAction(auth)}>
+            <span className='text-link sign-in-from-overview draw-attention-during-overview' onClick={() => loginWithGoogleAction(auth)}>
               {this.t('overview.signIn')}
             </span>
           </p>
+
+          <div className={`header3 ${showOverview ? 'visible' : 'hidden'}`}>
+            {!showOverview && (
+              <span>
+                <span className='text-link toggle-overview' onClick={() => toggleOverviewAction(!showOverview)}>
+                  {showOverview ? this.t('overview.showLess') : this.t('overview.showMore')}
+                </span>
+                ...
+              </span>
+            )}
+            <ul>
+              <li>
+                {this.t('overview.roles.title')} <b>{this.t('overview.roles.landlords')}</b> {this.t('overview.roles.landlordsDesc')}, {this.t('common.and')}
+                <b>{this.t('overview.roles.tenants')}</b> {this.t('overview.roles.tenantsDesc')}.
+              </li>
+              <li>{this.t('overview.techStack')}.</li>
+              <li>{this.t('overview.ui')}.</li>
+            </ul>
+
+            <div className='link-container'>
+              <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>
+                LinkedIn
+              </a>
+              <a href='https://github.com/erancha' target='_blank' rel='noopener noreferrer'>
+                GitHub
+              </a>
+            </div>
+          </div>
         </div>
 
         <div className={`header2 more ${showOverview ? 'visible' : 'hidden'}`}>
-          {!showOverview && (
-            <span>
-              <span className='text-link toggle-overview' onClick={() => toggleOverviewAction(!showOverview)}>
-                {showOverview ? this.t('overview.showLess') : this.t('overview.showMore')}
-              </span>
-              ...
-            </span>
-          )}
-          <ul>
-            <li>
-              {this.t('overview.roles.title')} <b>{this.t('overview.roles.landlords')}</b> {this.t('overview.roles.landlordsDesc')}, {this.t('common.and')}
-              <b>{this.t('overview.roles.tenants')}</b> {this.t('overview.roles.tenantsDesc')}.
-            </li>
-            <li>{this.t('overview.techStack')}.</li>
-            <li>{this.t('overview.ui')}.</li>
-          </ul>
-          <div className='link-container'>
-            <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>
-              LinkedIn
-            </a>
-            <a href='https://github.com/erancha' target='_blank' rel='noopener noreferrer'>
-              GitHub
-            </a>
-          </div>
-
-          <p className='diagram'>API Gateway + Lambda</p>
+          <p className='diagram-caption'>{this.t('overview.architecture')}</p>
           <a href='https://lucid.app/publicSegments/view/3c5a66a2-7a1d-4ca0-9c1b-f79361f76804/image.jpeg' target='_blank' rel='noopener noreferrer'>
             <img src='https://lucid.app/publicSegments/view/3c5a66a2-7a1d-4ca0-9c1b-f79361f76804/image.jpeg' alt='**API Gateway + Lambda**' />
           </a>

@@ -76,13 +76,26 @@ const SignatureMaker: React.FC<SignatureMakerProps> = ({ onSave, onCancel, t }) 
         width={window.innerWidth * 0.9}
         height={300}
         onMouseDown={handleMouseDown}
-        onTouchStart={handleMouseDown}
+        onTouchStart={(e) => {
+          e.evt.preventDefault();
+          handleMouseDown(e);
+        }}
         onMousemove={handleMouseMove}
-        onTouchMove={handleMouseMove}
+        onTouchMove={(e) => {
+          e.evt.preventDefault();
+          handleMouseMove(e);
+        }}
         onMouseup={handleMouseUp}
-        onTouchEnd={handleMouseUp}
+        onTouchEnd={(e) => {
+          e.evt.preventDefault();
+          handleMouseUp();
+        }}
         ref={stageRef}
-        style={{ border: '1px solid black', margin: '0 auto', touchAction: 'none' }} // Prevent default touch behavior
+        style={{
+          border: '1px solid black',
+          margin: '0 auto',
+          touchAction: 'none',
+        }}
       >
         <Layer>
           {lines.map((line, i) => (

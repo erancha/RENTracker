@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Typography } from '@mui/material';
+import { Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox } from '@mui/material';
 import { getClipboardDocumentId } from '../utils/clipboard';
 import { UserType } from 'redux/auth/types';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,9 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   const { t } = useTranslation();
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<UserType | null>(null);
+  const [confirmationChecked, setConfirmationChecked] = useState(false);
   const [, setAutoSelectTimer] = useState<NodeJS.Timeout | null>(null);
   const APP_KEY_NAME = 'RENTracker-tenants.v3';
 
@@ -27,15 +30,23 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   const handleSelect = useCallback(
     (selectedUserType: UserType) => {
       if (!userId) return;
-
-      if (selectedUserType === UserType.Tenant) {
-        // Save to localStorage
-        saveTenantUserTypeToStorage(userId, selectedUserType);
-        setUserTypeAction(selectedUserType);
-      } else setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
+      setSelectedType(selectedUserType);
+      setConfirmationOpen(true);
     },
-    [userId, setUserTypeAction, setMenuSelectedPageAction]
+    [userId]
   );
+
+  const handleConfirm = useCallback(() => {
+    if (!userId || !selectedType || !confirmationChecked) return;
+
+    if (selectedType === UserType.Tenant) {
+      // Save to localStorage
+      saveTenantUserTypeToStorage(userId, selectedType);
+      setUserTypeAction(selectedType);
+    } else setMenuSelectedPageAction(SAAS_TENANTS_VIEW);
+
+    setConfirmationOpen(false);
+  }, [userId, selectedType, confirmationChecked, setUserTypeAction, setMenuSelectedPageAction]);
 
   // Check for stored user type on mount
   useEffect(() => {
@@ -164,6 +175,29 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
           </Typography>
         )}
       </div>
+      <Dialog open={confirmationOpen} onClose={() => setConfirmationOpen(false)}>
+        <DialogTitle>{t('welcome.confirmTitle')}</DialogTitle>
+        <DialogContent>
+          <Typography variant='body1' paragraph>
+            {t('welcome.confirmMessage')}
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={confirmationChecked}
+                onChange={(e) => setConfirmationChecked(e.target.checked)}
+              />
+            }
+            label={t('welcome.confirmCheckbox')}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmationOpen(false)}>{t('common.cancel')}</Button>
+          <Button onClick={handleConfirm} disabled={!confirmationChecked} variant='contained'>
+            {t('common.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

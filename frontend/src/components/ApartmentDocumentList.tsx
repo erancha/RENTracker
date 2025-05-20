@@ -77,7 +77,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
         <div className='documents-container'>
           {showForm ? (
             <DocumentForm
-              documentId={this.props.selectedDocument?.document_id}
+              documentId={this.state.editMode ? this.props.selectedDocument?.document_id : undefined}
+              initialTemplateFields={this.state.duplicateTemplateFields}
               onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null })}
               apartmentId={this.props.apartmentId}
               apartmentInitiatedFields={{
@@ -85,7 +86,6 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                 roomCount: this.props.roomCount,
                 rentAmount: this.props.rentAmount,
               }}
-              initialTemplateFields={this.state.duplicateTemplateFields}
             />
           ) : (
             <div className='data-container'>
@@ -190,16 +190,13 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     this.props.setSelectedDocument(null);
 
     // Create a new template fields object without tenant fields
-    const templateFields = { ...document.template_fields };
+    const fromTemplateFields = { ...document.template_fields };
     fieldsToResetOnDuplicate.forEach((field) => {
-      templateFields[field] = '';
+      fromTemplateFields[field] = '';
     });
-    const currentDate = new Date();
-    templateFields['date'] = currentDate.toISOString().split('T')[0];
-    templateFields['startDate'] = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1, 12).toISOString().split('T')[0]; // + 12 hours to normalize the time zone.
 
     // Show the form with duplicated fields
-    this.setState({ showForm: true, editMode: false, duplicateTemplateFields: templateFields });
+    this.setState({ showForm: true, editMode: false, duplicateTemplateFields: fromTemplateFields });
   };
 
   /**

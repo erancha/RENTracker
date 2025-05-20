@@ -4,15 +4,18 @@ import { Button, ButtonGroup } from '@mui/material';
 
 interface Props {
   className?: string;
+  onLanguageChange?: () => void;
 }
 
-const LanguageSwitcher: React.FC<Props> = ({ className }) => {
+const LanguageSwitcher: React.FC<Props> = ({ className, onLanguageChange }) => {
   const { i18n } = useTranslation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     // Update document direction for RTL support
     document.documentElement.dir = lng === 'he' ? 'rtl' : 'ltr';
+    // Close menu if callback provided
+    if (onLanguageChange) onLanguageChange();
   };
 
   return (

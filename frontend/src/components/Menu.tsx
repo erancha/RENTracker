@@ -97,7 +97,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
     const { auth, menuOpen, anchorEl, isAuthenticated, userType, t } = this.props;
 
     return (
-      <div className='menu-trigger'>
+      <div className={`menu-trigger ${!isAuthenticated ? 'draw-attention-during-overview' : ''}`}>
         <Button
           ref={this.buttonRef}
           aria-controls={menuOpen ? 'menu' : undefined}
@@ -115,7 +115,7 @@ class ConnectedMenu extends React.Component<ConnectedMenuProps> {
         <MuiMenu anchorEl={anchorEl ? anchorEl : this.buttonRef.current} open={menuOpen} onClose={this.handleMenuClose}>
           <div className='menu-content-inner'>
             <div style={{ padding: '8px 16px' }}>
-              <LanguageSwitcher />
+              <LanguageSwitcher onLanguageChange={this.handleMenuClose} />
             </div>
             <hr />
             {!isAuthenticated ? (

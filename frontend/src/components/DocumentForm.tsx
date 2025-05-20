@@ -87,7 +87,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @private
    */
   private defaultTemplateFields: Record<string, any> = {
-    date: new Date().toISOString().split('T')[0],
     landlordName: '',
     landlordId: '',
     landlordEmail: '',
@@ -104,12 +103,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     propertyAddress: '',
     roomCount: '',
     leasePeriod: '12',
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1, 12).toISOString().split('T')[0],
-    endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 13, 0, 12).toISOString().split('T')[0],
     rentAmount: '',
     paymentDay: '1',
     initialPaymentMonths: '',
-    standingOrderStart: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1, 12).toISOString().split('T')[0],
     waterLimit: '150',
     electricityLimit: '250',
     includedServices: 'יס וקו אינטרנט',
@@ -154,14 +150,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     super(props);
 
     // Initialize default fields with apartment-specific values if available
-    this.defaultTemplateFields = {
-      ...this.defaultTemplateFields,
-      ...(props.apartmentInitiatedFields && {
-        propertyAddress: props.apartmentInitiatedFields.propertyAddress,
-        roomCount: props.apartmentInitiatedFields.roomCount,
-        rentAmount: props.apartmentInitiatedFields.rentAmount,
-      }),
-    };
+    this.defaultTemplateFields = { ...this.defaultTemplateFields, ...props.apartmentInitiatedFields };
 
     // Start with either selected document fields or initial fields
     let templateFields = props.selectedDocument?.template_fields || props.initialTemplateFields || this.defaultTemplateFields;
@@ -188,9 +177,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   componentDidMount() {
     const { documentId, selectedDocument, initialTemplateFields } = this.props;
 
-    if (initialTemplateFields) this.updateFormState(initialTemplateFields); // Duplicate mode:
-    else if (documentId && selectedDocument) this.updateFormState(selectedDocument.template_fields); // Edit mode:
-    else if (!documentId) this.updateFormState(this.defaultTemplateFields); // Create mode
+    const defaultsForNewDocument = {
+      date: new Date().toISOString().split('T')[0],
+      startDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1, 12).toISOString().split('T')[0],
+      endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 13, 0, 12).toISOString().split('T')[0],
+      standingOrderStart: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1, 12).toISOString().split('T')[0],
+    };
+
+    if (initialTemplateFields) this.updateFormState({ ...initialTemplateFields, ...defaultsForNewDocument }); // Duplicate mode:
+    else if (!documentId) this.updateFormState({ ...this.defaultTemplateFields, ...defaultsForNewDocument }); // Create mode
+    else if (selectedDocument) this.updateFormState(selectedDocument.template_fields); // Edit mode:
   }
 
   /**
@@ -219,7 +215,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     templateFields = this.populateCurrentUserFields(templateFields, userType, auth.email as string);
     this.setState((prevState) => ({
       formData: templateFields,
-      expandedSections: this.decideExpandedSections(prevState.expandedSections, templateFields, userType),
+      expandedSections: this.decideExpandedSections(prevState.expandedSections, prevState.errors, templateFields, userType),
     }));
   };
 
@@ -245,16 +241,29 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     return retTemplateFields;
   };
 
-  private decideExpandedSections = (prevExpandedSections: string[], templateFields: Record<string, any>, userType: UserType): string[] => {
+  private decideExpandedSections = (
+    prevExpandedSections: string[],
+    errors: Record<string, string>,
+    templateFields: Record<string, any>,
+    userType: UserType
+  ): string[] => {
     let retExpandedSections: string[] = [...prevExpandedSections];
 
     if (userType === UserType.Landlord) {
       if (!templateFields.initialPaymentMonths) retExpandedSections.push('leaseTerms');
-      else if (!templateFields.tenant1Name) retExpandedSections.push('tenant1Details');
+      if (!templateFields.tenant1Name) retExpandedSections.push('tenant1Details');
       else if (!!templateFields.tenantSignature && !templateFields.landlordSignature) retExpandedSections.push('signature');
     } else {
-      if (!templateFields.tenant1Phone) retExpandedSections.push('tenant1Details', 'tenant1Attachments');
-      else if (!!templateFields.tenant1IdCard && !!templateFields.tenant1Salary1 && !!templateFields.tenant1Salary2 && !templateFields.tenantSignature)
+      // console.log(JSON.stringify(errors, null, 2), Object.keys(errors).length);
+      if (!templateFields.tenant1Name || !templateFields.tenant1Phone || !templateFields.tenant1Id)
+        retExpandedSections.push('tenant1Details', 'tenant1Attachments');
+      else if (
+        !!templateFields.tenant1IdCard &&
+        !!templateFields.tenant1Salary1 &&
+        !!templateFields.tenant1Salary2 &&
+        !templateFields.tenantSignature &&
+        Object.keys(errors).length === 0
+      )
         retExpandedSections.push('signature');
     }
 
@@ -506,7 +515,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 <SignatureMaker
                   onSave={async (imageData) => {
                     await this.handleSignatureUpload(imageData);
-                    this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the current section.
+                    this.handleAccordionChange('signature')(new Event('dummy') as any, false); // collapses the signature section.
                     await this.handleSubmit(new Event('dummy') as any);
                   }}
                   onCancel={() => this.handleAccordionChange('signature')(new Event('dummy') as any, false)} // collapses the current section.
@@ -545,40 +554,41 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
 
   /**
    * Handles changes in form fields
-   * @param {string} field - Field name
-   * @param {string} value - New value
+   * @param {string} fieldName - Field name
+   * @param {string} fieldValue - New value
    */
-  handleFieldChange = (field: string, value: string) => {
+  handleFieldChange = (fieldName: string, fieldValue: string) => {
     const { formData } = this.state;
     let newFormData = { ...formData };
 
     // For date fields, ensure we get YYYY-MM-DD format
-    if (field === 'startDate' || field === 'endDate' || field === 'standingOrderStart') {
-      if (value && !isNaN(new Date(value).getTime())) {
-        value = value.split('T')[0]; // Just keep the date part
-      }
-    }
+    if ((fieldName === 'startDate' || fieldName === 'endDate' || fieldName === 'standingOrderStart') && fieldValue && !isNaN(new Date(fieldValue).getTime()))
+      fieldValue = fieldValue.split('T')[0]; // Just keep the date part
 
     // Auto-calculate endDate when startDate or leasePeriod changes
-    if (field === 'startDate' || field === 'leasePeriod') {
-      newFormData[field] = value;
-      if (this.isValidDate(newFormData.startDate) && newFormData.leasePeriod) {
+    if (fieldName === 'startDate' || fieldName === 'leasePeriod') {
+      newFormData[fieldName] = fieldValue;
+      if (this.isValidDate(newFormData.startDate) && newFormData.leasePeriod)
         newFormData.endDate = this.calculateEndDate(newFormData.startDate, newFormData.leasePeriod);
-      }
-      if (field === 'startDate') newFormData.standingOrderStart = value;
-    } else {
-      newFormData[field] = value;
-    }
+      if (fieldName === 'startDate') newFormData.standingOrderStart = fieldValue;
+    } else newFormData[fieldName] = fieldValue;
 
     // Validate field based on type and requirements
     const errors = { ...this.state.errors };
     Object.keys(newFormData).forEach((key) => {
-      if (['startDate', 'endDate', 'standingOrderStart'].includes(key)) {
-        errors[key] = this.validateField(key, newFormData[key]);
+      if (['startDate', 'endDate', 'standingOrderStart', 'tenant1Id', 'tenant1Phone'].includes(key)) {
+        const fieldError = this.validateField(key, newFormData[key]);
+        if (fieldError) errors[key] = fieldError;
+        else delete errors[key];
       }
     });
+    // console.log(fieldName, fieldValue, JSON.stringify(errors, null, 2));
 
-    this.setState({ formData: newFormData, errors });
+    this.setState({
+      formData: newFormData,
+      errors,
+      expandedSections: this.decideExpandedSections(this.state.expandedSections, errors, newFormData, this.props.userType),
+    });
   };
 
   /**
@@ -936,50 +946,18 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   };
 
   /**
-   * Validates if all required fields in the document are filled
-   * @param formData - The form data to validate
-   * @returns boolean indicating if the document is valid
-   */
-  // private isDocumentValid = (): boolean => {
-  //   // Check if all required fields have values
-  //   return this.requiredFields.every((field) => {
-  //     const value = this.state.formData[field];
-  //     const isFieldValid = value !== undefined && value !== null && value !== '';
-  //     // if (!isFieldValid) console.warn({ field, value, isFieldValid });
-  //     return isFieldValid;
-  //   });
-  // };
-
-  /**
    * Handles the expansion/collapse of accordion sections in the document form.
    * For the signature section, implements special validation:
    * - Prevents landlord from signing before tenant
    * - Prevents modifications if document is already signed by both parties
    * @param section - The section identifier being toggled
+   * @param expand - true/false to expand the section.
    * @returns A function that handles the actual accordion change event
    */
-  private handleAccordionChange = (section: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    const { t } = this.props;
-    // console.log(this.state, section, this.isDocumentValid());
-    if (section === 'signature' && this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature)
-      toast.warning(t('documentForm.messages.tenantMustSignFirst'));
-    else if (section === 'signature' && isExpanded && !!this.state.formData.landlordSignature) toast.warning(t('documentForm.messages.agreementSignedByBoth'));
-    else
-      this.setState((prevState) => ({
-        expandedSections: isExpanded ? [...prevState.expandedSections, section] : prevState.expandedSections.filter((s) => s !== section),
-      }));
-  };
-
   /**
-   * Handles form submission
-   * Validates required fields and submits data to create or update document
-   * @param {React.FormEvent} e - Form submit event
+   * Validates all form fields and returns any errors and affected sections
    */
-  private handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { documentId, createDocumentThunk, updateDocumentThunk, onSave, onClose, apartmentId, t } = this.props;
-
-    // Validate all fields
+  private validateFormFields = () => {
     const errors: Record<string, string> = {};
     const sectionsWithErrors: string[] = [];
 
@@ -994,18 +972,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     ]);
 
     const fieldsToValidateArray = Array.from(fieldsToValidate);
-    // console.log(
-    //   JSON.stringify(
-    //     {
-    //       fieldsToValidate: fieldsToValidateArray,
-    //       formData: this.state.formData,
-    //       requiredFields: this.requiredFields,
-    //     },
-    //     null,
-    //     2
-    //   )
-    // );
-
     fieldsToValidate.forEach((field) => {
       const value = this.state.formData[field] || '';
       const error = this.validateField(field, value, fieldsToValidateArray);
@@ -1019,9 +985,41 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       }
     });
 
-    // If there are errors, show them and expand relevant sections
+    if (Object.keys(errors).length > 0) console.log(JSON.stringify({ errors, sectionsWithErrors }, null, 2));
+    return { errors, sectionsWithErrors };
+  };
+
+  private handleAccordionChange = (sectionId: string) => (event: React.SyntheticEvent, expand: boolean) => {
+    const { t } = this.props;
+
+    let canChangeSection = sectionId !== 'signature' || !expand;
+    if (!canChangeSection) {
+      if (this.props.userType === UserType.Landlord && !this.state.formData.tenantSignature) toast.warning(t('documentForm.messages.tenantMustSignFirst'));
+      else if (!!this.state.formData.landlordSignature) toast.warning(t('documentForm.messages.agreementSignedByBoth'));
+      else {
+        const { errors, sectionsWithErrors } = this.validateFormFields();
+        if (Object.keys(errors).length === 0) canChangeSection = true;
+        else this.setState({ errors, expandedSections: sectionsWithErrors });
+      }
+    }
+
+    if (canChangeSection)
+      this.setState((prevState) => ({
+        expandedSections: expand ? [...prevState.expandedSections, sectionId] : prevState.expandedSections.filter((s) => s !== sectionId),
+      }));
+  };
+
+  /**
+   * Handles form submission
+   * Validates required fields and submits data to create or update document
+   * @param {React.FormEvent} e - Form submit event
+   */
+  private handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { documentId, createDocumentThunk, updateDocumentThunk, onSave, onClose, apartmentId, t } = this.props;
+
+    const { errors, sectionsWithErrors } = this.validateFormFields();
     if (Object.keys(errors).length > 0) {
-      console.log(JSON.stringify({ errors, sectionsWithErrors }, null, 2));
       this.setState({ errors, expandedSections: sectionsWithErrors });
       return;
     }
@@ -1123,11 +1121,20 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             ...prevState.formData,
             [fileName]: file.name,
           },
-          errors: { ...prevState.errors, [fileName]: '' },
-          expandedSections: this.decideExpandedSections(prevState.expandedSections, { ...prevState.formData, [fileName]: file.name }, this.props.userType),
+          errors: (() => {
+            const newErrors = { ...prevState.errors };
+            delete newErrors[fileName];
+            return newErrors;
+          })(),
+          expandedSections: this.decideExpandedSections(
+            prevState.expandedSections,
+            prevState.errors,
+            { ...prevState.formData, [fileName]: file.name },
+            this.props.userType
+          ),
         }));
 
-        toast.success(t('messages.fileUploaded', { fileName: file.name }));
+        toast.success(t('messages.fileUploaded', { fileName: file.name }), { autoClose: 2000 });
       } catch (error) {
         console.error('Error uploading file:', error);
         toast.error(t('messages.error'));

@@ -489,7 +489,7 @@ async function sendRentalAgreementEmail(templateFields) {
     JSON.stringify({
       emailParams: {
         toAddresses: [templateFields.landlordEmail, ...(templateFields.tenant1Email ? [templateFields.tenant1Email] : [])],
-        subject: `Rental Agreement - ${templateFields.propertyAddress}`,
+        subject: `Rental Agreement: ${templateFields.propertyAddress} - ${templateFields.landlordName || ''} : ${templateFields.tenant1Name || ''}`,
         message: `
           <h2>Rental Agreement Details</h2>
           <p>Property: ${templateFields.propertyAddress}</p>
