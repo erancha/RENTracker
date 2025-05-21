@@ -97,9 +97,13 @@ async function handleCreate(record) {
   };
 
   let signatureUrl = await getSignatureImageUrl('landlord');
-  templateFields.landlordSignatureImage = signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />` : '';
+  templateFields.landlordSignatureImage = signatureUrl
+    ? `<span>${templateFields.landlordSignature}</span><img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`
+    : '';
   signatureUrl = await getSignatureImageUrl('tenant');
-  templateFields.tenantSignatureImage = signatureUrl ? `<img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />` : '';
+  templateFields.tenantSignatureImage = signatureUrl
+    ? `<span>${templateFields.tenantSignature}</span><img src="${signatureUrl}" alt="Signature" style="height: 50px; margin: 10px 0;" />`
+    : '';
 
   templateFields.signatureUnderline = '_'.repeat(50);
 

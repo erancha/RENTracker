@@ -1207,7 +1207,15 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           (prevState) => ({
             formData: {
               ...prevState.formData,
-              [fileName]: `${fileName}-${new Date().toISOString()}`,
+              [fileName]: new Date().toLocaleString('en-GB', {
+                // Example output: "15:54 21/05/25"
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour12: false,
+              }),
             },
           }),
           resolve
