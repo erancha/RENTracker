@@ -10,16 +10,17 @@
     "shareMessage": "*'{{title}}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at:\n\n*{{origin}}*\n\nPlease find below a link to your rental agreement: \n{{url}}\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "confirmDelete": "Are you sure you want to delete document '{{name}}'?",
     "tooltips": {
-      "documentId": "Document {{id}}"
+      "documentId": "Rental agreement {{id}}"
     }
   },
   "apartments": {
     "title": "Apartments",
     "form": "Apartment Form",
     "noApartments": "No apartments found. Create a new apartment ...",
+    "warnDeleteWithData": "Cannot delete an apartment with rental agreements",
     "confirmDelete": "Are you sure you want to delete this apartment?",
     "fields": {
-      "unitNumber": "Unit Number",
+      "unitNumber": "Apartment / Unit Number",
       "rentAmount": "Rent Amount",
       "disable": "Disable"
     },
@@ -71,14 +72,14 @@
     }
   },
   "documentDetection": {
-    "message": "Document ID detected - Tenant mode will be auto-selected in",
+    "message": "Rental agreement ID detected - Tenant mode will be auto-selected in",
     "countdown": "{{count}} second",
     "countdown_plural": "{{count}} seconds"
   },
   "documents": {
     "title": "Rental Agreements",
-    "noDocumentsLandlord": "No documents found. Create a new rental agreement ...",
-    "noDocumentsTenant": "No documents found.",
+    "noDocumentsLandlord": "No rental agreements found. Create a new rental agreement ...",
+    "noDocumentsTenant": "No rental agreements found.",
     "rentalAgreement": "Rental Agreement",
     "pendingLandlordSignature": "Pending landlord signature",
     "shareWhatsapp": "Share via WhatsApp",
@@ -161,7 +162,7 @@
       "utilityLimitsNote": "Note: If you set a value of 0 for any of the following items, the item will not appear in the agreement.",
       "shareWithTenant": "Please share it with your tenant for their details and signature.",
       "tenantMustSignFirst": "Please share the document with the tenant and have the document signed first",
-      "shareWithLandlord": "Document signed! Please share it with your landlord for their signature.",
+      "shareWithLandlord": "Rental agreement signed! Please share it with your landlord for their signature.",
       "agreementSignedByBoth": "The agreement was signed by the tenant and the landlord"
     },
     "tooltips": {
@@ -189,7 +190,7 @@
   },
   "menu": {
     "dashboard": "Dashboard",
-    "documents": "Documents",
+    "documents": "Rental Agreements",
     "activities": "Activities",
     "analytics": "Apartments Analytics",
     "landlordSettings": "Landlord Settings"
@@ -224,12 +225,12 @@
     }
   },
   "messages": {
-    "documentSaved": "Document saved successfully",
-    "documentDeleted": "Document deleted successfully",
-    "documentCopied": "Document copied successfully",
-    "documentShared": "Document shared successfully",
-    "documentCreated": "Document created successfully",
-    "documentUpdated": "Document updated successfully",
+    "documentSaved": "Rental agreement saved successfully",
+    "documentDeleted": "Rental agreement deleted successfully",
+    "documentCopied": "Rental agreement copied successfully",
+    "documentShared": "Rental agreement shared successfully",
+    "documentCreated": "Rental agreement created successfully",
+    "documentUpdated": "Rental agreement updated successfully",
     "error": "An error occurred",
     "noChanges": "No changes to save",
     "confirmDelete": "Are you sure you want to delete this document?",

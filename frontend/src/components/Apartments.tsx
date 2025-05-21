@@ -29,6 +29,8 @@ import { ApartmentForm } from './ApartmentForm';
 import ApartmentDocumentList from './ApartmentDocumentList';
 import ApartmentActivity from './ApartmentActivity';
 import { v4 as uuidv4 } from 'uuid';
+import { IDocument } from 'redux/documents/types';
+import { toast } from 'react-toastify';
 
 /**
  * Component for displaying and managing apartments
@@ -86,8 +88,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { userType, showApartmentForm, toggleApartmentFormAction, resetApartmentFormAction, isWsConnected, currentApartmentId, apartmentForm, t } =
-      this.props;
+    const { userType, showApartmentForm, isWsConnected, currentApartmentId, apartmentForm, t } = this.props;
     const { showDocuments } = this.state;
     const filteredApartments = this.getFilteredApartments();
 
@@ -96,14 +97,14 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
         <div className={`page apartments-container${!isWsConnected ? ' disconnected' : ''}`}>
           <header className='header'>
             {!showApartmentForm ? t('apartments.title') : t('apartments.form')}
-            <button onClick={() => toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
+            <button onClick={() => this.props.toggleApartmentFormAction(!showApartmentForm)} className='action-button add'>
               {!showApartmentForm && <Plus />}
             </button>
           </header>
           <div className='data-container apartments-list'>
             {showApartmentForm ? (
               <ApartmentForm
-                mode={apartmentForm.id ? 'update' : 'create'}
+                mode={apartmentForm.id ? 'edit' : 'create'}
                 initialValues={{
                   address: apartmentForm.address,
                   unit_number: apartmentForm.unit_number,
@@ -114,8 +115,8 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                 errors={apartmentForm.errors}
                 onSubmit={apartmentForm.id ? this.handleUpdateApartment : this.handleCreateApartment}
                 onCancel={() => {
-                  toggleApartmentFormAction(false);
-                  resetApartmentFormAction();
+                  this.props.toggleApartmentFormAction(false);
+                  this.props.resetApartmentFormAction();
                 }}
                 inputRef={this.newApartmentInputRef}
               />
@@ -136,7 +137,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     </div>
                   )}
                   <div className='address' data-title={t('common.fields.address')}>
-                    {apartment.address} {apartment.unit_number && `(${apartment.unit_number})`}
+                    {apartment.address} {apartment.unit_number && `, ${apartment.unit_number}`}
                   </div>
                   <div className='rooms-count' data-title={t('common.roomCount')}>
                     {apartment.rooms_count}
@@ -144,7 +145,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                   <div className='rent-amount' data-title={t('apartments.fields.rentAmount')}>
                     {apartment.rent_amount.toLocaleString()}₪
                   </div>
-                  {/* {[UserType.Landlord, UserType.Admin].includes(userType) && ( */}
                   <div className='actions'>
                     <button onClick={() => this.handleEditApartment(apartment)} className='action-button edit' title={t('common.edit')}>
                       <Pencil />
@@ -157,7 +157,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     </button>
                     {this.renderDocumentsToggleButton(apartment.apartment_id)}
                   </div>
-                  {/* )} */}
                 </div>
               ))
             ) : (
@@ -200,12 +199,9 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * Toggles between documents and activity view
    */
   handleToggleDocumentsActivity = (apartment_id: string) => {
-    // toggle only if the apartment_id of the current apartment is the same as the apartment_id last saved in redux (to avoid toggling when the user just wants to select another apartment)
-    if (apartment_id === this.props.currentApartmentId) {
-      const prevShowDocuments = this.state.showDocuments;
-      this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
-      if (prevShowDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
-    }
+    const prevShowDocuments = this.state.showDocuments;
+    this.setState((prevState) => ({ showDocuments: !prevState.showDocuments }));
+    if (prevShowDocuments) this.props.prepareReadApartmentActivityCommandAction(apartment_id);
   };
 
   handleShowActivity = () => {
@@ -336,7 +332,10 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @param {IApartment} apartment - The apartment to delete
    */
   handleDeleteApartment = (apartment: IApartment) => {
-    if (window.confirm(this.props.t('apartments.confirmDelete'))) {
+    const { t } = this.props;
+
+    if (this.props.currentApartmentDocuments.length > 0) toast.warn(t('apartments.warnDeleteWithData'));
+    else if (window.confirm(t('apartments.confirmDelete'))) {
       this.props.prepareDeleteApartmentCommandAction(apartment.apartment_id);
       this.props.deleteApartmentAction(apartment.apartment_id);
     }
@@ -356,6 +355,7 @@ interface IApartmentsProps {
   userId: string | null;
   apartments: IApartment[];
   currentApartmentId: string | null;
+  currentApartmentDocuments: IDocument[];
   noApartmentsNotified: boolean;
   showApartmentForm: boolean;
   apartmentForm: {
@@ -392,6 +392,7 @@ const mapStateToProps = (state: IAppState) => ({
   isWsConnected: state.websockets.isConnected,
   apartments: state.apartments.apartments,
   currentApartmentId: state.apartments.currentApartmentId,
+  currentApartmentDocuments: state.documents.documents,
   noApartmentsNotified: state.apartments.noApartmentsNotified,
   showApartmentForm: state.apartments.showApartmentForm,
   apartmentForm: state.apartments.apartmentForm,

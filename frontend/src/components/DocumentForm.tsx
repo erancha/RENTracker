@@ -539,7 +539,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                   <button
                     type='submit'
                     className={`action-button save${this.hasUnsavedChanges() ? ' has-changes' : ''}`}
-                    title={this.props.documentId ? 'Update' : 'Create'}
+                    title={this.props.documentId ? 'Edit' : 'Create'}
                   >
                     <Save />
                   </button>
@@ -1025,7 +1025,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       }
     });
 
-    if (Object.keys(errors).length > 0) console.log(JSON.stringify({ errors, sectionsWithErrors }, null, 2));
+    // if (Object.keys(errors).length > 0) console.warn(JSON.stringify({ errors, sectionsWithErrors }, null, 2));
     return { errors, sectionsWithErrors };
   };
 

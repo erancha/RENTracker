@@ -622,6 +622,7 @@ form > .actions {
     margin-bottom: 2rem;
     grid-template-columns: 1fr !important;
     width: 80% !important;
+    max-width: 30rem;
 
     *,
     * * {
@@ -696,8 +697,18 @@ form > .actions {
 .table-row.apartment {
   grid-template-columns: 5rem 12rem 5rem 5rem 5rem;
 
-  &.current .actions > .documents.activity {
-    animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
+  .actions {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  &.current .actions {
+    opacity: initial;
+    pointer-events: initial;
+
+    > .documents.activity {
+      animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
+    }
   }
 }
 

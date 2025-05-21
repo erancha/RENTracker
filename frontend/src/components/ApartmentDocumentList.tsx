@@ -31,8 +31,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * Fetches apartment documents when the component mounts
    */
   componentDidMount(): void {
-    if (this.props.apartmentId) {
-      this.props.getApartmentDocumentsThunk(this.props.apartmentId);
+    if (this.props.currentApartmentDetails.id) {
+      this.props.getApartmentDocumentsThunk(this.props.currentApartmentDetails.id);
     }
   }
 
@@ -41,9 +41,9 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
    * @param {DocumentListProps} prevProps - Previous component props
    */
   componentDidUpdate(prevProps: DocumentListProps) {
-    if (this.props.apartmentId !== prevProps.apartmentId) {
+    if (this.props.currentApartmentDetails.id !== prevProps.currentApartmentDetails.id) {
       this.setState({ showForm: false });
-      this.props.getApartmentDocumentsThunk(this.props.apartmentId);
+      this.props.getApartmentDocumentsThunk(this.props.currentApartmentDetails.id);
     }
   }
 
@@ -80,11 +80,11 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
               documentId={this.state.editMode ? this.props.selectedDocument?.document_id : undefined}
               initialTemplateFields={this.state.duplicateTemplateFields}
               onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null })}
-              apartmentId={this.props.apartmentId}
+              apartmentId={this.props.currentApartmentDetails.id}
               apartmentInitiatedFields={{
-                propertyAddress: this.props.apartmentAddress,
-                roomCount: this.props.roomCount,
-                rentAmount: this.props.rentAmount,
+                propertyAddress: this.props.currentApartmentDetails.address,
+                roomCount: this.props.currentApartmentDetails.roomCount,
+                rentAmount: this.props.currentApartmentDetails.rentAmount,
               }}
             />
           ) : (
@@ -211,8 +211,8 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
         await this.props.deleteDocumentThunk(document.document_id);
         toast.success(t('messages.documentDeleted'));
         // Refresh the documents list
-        if (this.props.apartmentId) {
-          await this.props.getApartmentDocumentsThunk(this.props.apartmentId);
+        if (this.props.currentApartmentDetails.id) {
+          await this.props.getApartmentDocumentsThunk(this.props.currentApartmentDetails.id);
         }
       } catch (error) {
         toast.error(t('messages.error'));
@@ -229,10 +229,12 @@ interface DocumentListProps {
   t: (key: string, options?: any) => string;
   i18n: i18n;
   tReady: boolean;
-  apartmentId: string;
-  apartmentAddress: string;
-  roomCount: number;
-  rentAmount: number;
+  currentApartmentDetails: {
+    id: string;
+    address: string;
+    roomCount: number;
+    rentAmount: number;
+  };
   selectedDocument: IDocument | null;
   documents: IDocument[];
   loading: boolean;
@@ -257,10 +259,12 @@ const mapStateToProps = (state: RootState) => {
     error: state.documents.error,
     JWT: state.auth.JWT,
     username: state.auth.userName,
-    apartmentId: state.apartments.currentApartmentId || '',
-    apartmentAddress: currentApartment?.address || '',
-    roomCount: currentApartment?.rooms_count || 0,
-    rentAmount: currentApartment?.rent_amount || 0,
+    currentApartmentDetails: {
+      id: state.apartments.currentApartmentId || '',
+      address: currentApartment?.address ? `${currentApartment.address}${currentApartment.unit_number && `, ${currentApartment.unit_number}`}` : '',
+      roomCount: currentApartment?.rooms_count || 0,
+      rentAmount: currentApartment?.rent_amount || 0,
+    },
   };
 };
 

@@ -8,20 +8,21 @@
   },
   "apartmentDocuments": {
     "shareMessage": "*'{{title}}'*.\n\nכדי להשלים את הפרטים האישיים ולחתום על ההסכם, יש להעתיק הודעת וואטסאפ זאת ולהתחבר לאפליקציה בכתובת:\n\n *{{origin}}*\n\nמצורף קישור להסכם השכירות:\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
-    "confirmDelete": "האם אתם בטוחים שברצונכם למחוק מסמך '{{name}}'?",
+    "confirmDelete": "האם אתם בטוחים שברצונכם למחוק הסכם שכירות '{{name}}'?",
     "tooltips": {
-      "documentId": "מסמך {{id}}"
+      "documentId": "הסכם שכירות {{id}}"
     }
   },
   "apartments": {
     "title": "דירות",
     "form": "טופס דירה",
     "noApartments": "לא נמצאו דירות. יש ליצור דירה חדשה ...",
+    "warnDeleteWithData": "לא ניתן למחוק דירה עם הסכמי שכירות",
     "confirmDelete": "האם אתם בטוחים שברצונכם למחוק דירה זאת?",
     "fields": {
-      "unitNumber": "מספר דירה",
+      "unitNumber": "מספר דירה / יחידת דיור",
       "rentAmount": "סכום שכירות",
-      "disable": "השבתה"
+      "disable": "הקפאה"
     },
     "tooltips": {
       "saveNew": "שמירת הדירה החדשה",
@@ -71,14 +72,14 @@
     }
   },
   "documentDetection": {
-    "message": "זוהה מזהה מסמך - מצב שוכר יבחר אוטומטית בעוד",
+    "message": "זוהה מזהה הסכם שכירות - מצב שוכר יבחר אוטומטית בעוד",
     "countdown": "שנייה {{count}}",
     "countdown_plural": "{{count}} שניות"
   },
   "documents": {
     "title": "הסכמי שכירות",
-    "noDocumentsLandlord": "לא נמצאו מסמכים. צור הסכם שכירות חדש ...",
-    "noDocumentsTenant": "לא נמצאו מסמכים.",
+    "noDocumentsLandlord": "לא נמצאו הסכמי שכירות. צור הסכם שכירות חדש ...",
+    "noDocumentsTenant": "לא נמצאו הסכמי שכירות.",
     "rentalAgreement": "הסכם שכירות",
     "pendingLandlordSignature": "בהמתנה לחתימת המשכיר",
     "shareWhatsapp": "שיתוף בוואטסאפ",
@@ -189,7 +190,7 @@
   },
   "menu": {
     "dashboard": "לוח בקרה",
-    "documents": "מסמכים",
+    "documents": "הסכמי שכירות",
     "activities": "פעילויות",
     "analytics": "אנליטיקת דירות",
     "landlordSettings": "הגדרות משכיר"
@@ -214,8 +215,8 @@
     "ui": "האפליקציה מציעה ממשק משתמש אינטואיטיבי ומותאם למסכים קטנים"
   },
   "tenantDocuments": {
-    "documentIdPlaceholder": "הזנת מזהה מסמך או הדבקה מהלוח",
-    "errorLinkedEmail": "אינך יכול לערוך מסמך זה. הוא מקושר לשוכר אחר.",
+    "documentIdPlaceholder": "הזנת מזהה הסכם שכירות או הדבקה מהלוח",
+    "errorLinkedEmail": "אינך יכול לערוך הסכם שכירות זה. הוא מקושר לשוכר אחר.",
     "fetchError": "כשלון בהבאת המסמך. אנא בדקו את המזהה ונסו שוב.",
     "pleaseSignAndShare": "אנא חתמו על המסמך ושתפו אותו עם המשכיר/ים.",
     "shareMessage": "מצורף קישור להסכם השכירות החתום: *'{{title}}'*:\n\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
@@ -232,7 +233,7 @@
     "documentUpdated": "המסמך עודכן בהצלחה",
     "error": "אירעה שגיאה",
     "noChanges": "אין שינויים לשמירה",
-    "confirmDelete": "האם אתם בטוחים שברצונכם למחוק מסמך זה?",
+    "confirmDelete": "האם אתם בטוחים שברצונכם למחוק הסכם שכירות זה?",
     "fileUploaded": "הקובץ '{{fileName}}' הועלה בהצלחה!"
   },
   "signature": {

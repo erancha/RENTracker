@@ -7,7 +7,7 @@ interface IApartmentFormProps {
   t: (key: string, options?: any) => string;
   i18n: i18n;
   tReady: boolean;
-  mode: 'create' | 'update';
+  mode: 'create' | 'edit';
   initialValues: {
     address: string;
     unit_number: string;
@@ -59,9 +59,10 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
   render() {
     const { mode, errors, inputRef, t } = this.props;
     const { address, unit_number, rooms_count, rent_amount, is_disabled } = this.state;
+    const isEditMode = mode === 'edit';
 
     return (
-      <div className={`table-row apartment input${(mode === 'update' && ' update') || ''}`}>
+      <div className={`table-row apartment input${(mode === 'edit' && ' update') || ''}`}>
         <div className='address required input-and-error-container' data-title={t('common.fields.address')}>
           <input
             type='text'
@@ -105,7 +106,7 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
           {errors.rent_amount && <span className='error-message'>{errors.rent_amount}</span>}
         </div>
 
-        {mode === 'update' && (
+        {isEditMode && (
           <div className='disabled-toggle' data-title={t('apartments.fields.disable')}>
             <label>
               <input
