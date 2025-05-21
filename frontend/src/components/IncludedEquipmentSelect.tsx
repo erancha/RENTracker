@@ -2,6 +2,11 @@ import React from 'react';
 import { FormGroup, FormControlLabel, Checkbox, FormControl, FormLabel, FormHelperText, TextField } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
+interface EquipmentValue {
+  fixed: string[];
+  free: string;
+}
+
 interface IncludedEquipmentSelectProps {
   value: string;
   onChange: (value: string) => void;
@@ -26,12 +31,19 @@ const EQUIPMENT_OPTIONS = [
 
 export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = ({ value, onChange, error, disabled = false }) => {
   const { t } = useTranslation();
-  // Parse the comma-separated string into an array and separate checkbox items from free text
-  const allItems = value ? value.split(',').map((item) => item.trim()) : [];
-  const selectedEquipment = allItems.filter((item) => EQUIPMENT_OPTIONS.some((option) => t('documentForm.equipment.' + option.key, { lng: 'he' }) === item));
-  const freeTextItems = allItems
-    .filter((item) => !EQUIPMENT_OPTIONS.some((option) => t('documentForm.equipment.' + option.key, { lng: 'he' }) === item))
-    .join(', ');
+  // Parse value - handle both old and new formats
+  let equipmentValue: EquipmentValue;
+  try {
+    equipmentValue = value ? JSON.parse(value) : { fixed: [], free: '' };
+  } catch (e) {
+    // Handle old format: items are comma-delimited
+    equipmentValue = {
+      fixed: value ? value.split(',').map(item => item.trim()) : [],
+      free: ''
+    };
+  }
+  const selectedEquipment = equipmentValue.fixed;
+  const freeTextItems = equipmentValue.free;
 
   const handleChange = (equipmentKey: string) => {
     const equipmentValue = t('documentForm.equipment.' + equipmentKey, { lng: 'he' });
@@ -39,11 +51,11 @@ export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = (
       ? selectedEquipment.filter((item) => item !== equipmentValue)
       : [...selectedEquipment, equipmentValue];
 
-    const allEquipment = [...newSelected];
-    if (freeTextItems) {
-      allEquipment.push(...freeTextItems.split(',').map((item) => item.trim()));
-    }
-    onChange(allEquipment.join(', '));
+    const newValue: EquipmentValue = {
+      fixed: newSelected,
+      free: freeTextItems
+    };
+    onChange(JSON.stringify(newValue));
   };
 
   return (
@@ -81,12 +93,11 @@ export const IncludedEquipmentSelect: React.FC<IncludedEquipmentSelectProps> = (
         label={t('documentForm.equipment.additionalEquipment')}
         value={freeTextItems}
         onChange={(e) => {
-          const newFreeText = e.target.value;
-          const allEquipment = [...selectedEquipment];
-          if (newFreeText) {
-            allEquipment.push(...newFreeText.split(',').map((item) => item.trim()));
-          }
-          onChange(allEquipment.join(', '));
+          const newValue: EquipmentValue = {
+            fixed: selectedEquipment,
+            free: e.target.value
+          };
+          onChange(JSON.stringify(newValue));
         }}
         disabled={disabled}
         placeholder={t('documentForm.equipment.additionalEquipmentPlaceholder')}

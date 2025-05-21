@@ -106,10 +106,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     rentAmount: '',
     paymentDay: '1',
     initialPaymentMonths: '',
-    waterLimit: '150',
-    electricityLimit: '250',
-    includedServices: 'יס וקו אינטרנט',
-    includedEquipment: 'מקרר, ספה ושולחן ,מכונת כביסה, מייבש, טלוויזיה, מזגן, מיטה, מזרון, ארון',
+    waterLimit: '',
+    electricityLimit: '',
+    includedServices: '',
+    includedEquipment: 'מזגן',
     securityRequired: false,
     securityDeposit: '',
     guarantorRequired: false,
@@ -133,8 +133,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       : ['tenant1Name']),
     'roomCount',
     'propertyAddress',
-    'includedEquipment',
-    'includedServices',
     'leasePeriod',
     'startDate',
     'endDate',
@@ -142,8 +140,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     'paymentDay',
     'initialPaymentMonths',
     'standingOrderStart',
-    'waterLimit',
-    'electricityLimit',
   ];
 
   constructor(props: DocumentFormProps) {
@@ -290,7 +286,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
           {!this.state.expandedSections.includes('signature') && (
             <>
               {/* Property Details */}
-              <Accordion expanded={this.isSectionExpanded('propertyDetails')} onChange={this.handleAccordionChange('propertyDetails')}>
+              <Accordion
+                expanded={this.isSectionExpanded('propertyDetails') || this.isSectionExpanded('utilityLimits')}
+                onChange={this.handleAccordionChange('propertyDetails')}
+              >
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography className='section-header'>{t('documentForm.sections.property')}</Typography>
                 </AccordionSummary>
@@ -315,13 +314,28 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     </Grid>
                   </Grid>
                 </AccordionDetails>
+
+                {/* Utility Limits */}
+                <Accordion expanded={this.isSectionExpanded('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                    <Typography className='section-header'>{t('documentForm.sections.utilities')}</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <p>{t('documentForm.messages.utilityLimitsNote')}</p>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6} sm={6} md={4}>
+                        {this.renderNumberField('waterLimit', t('documentForm.fields.waterLimit'), { min: 0, step: '50', adornment: '₪' })}
+                      </Grid>
+                      <Grid item xs={6} sm={6} md={4}>
+                        {this.renderNumberField('electricityLimit', t('documentForm.fields.electricityLimit'), { min: 0, step: '50', adornment: '₪' })}
+                      </Grid>
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
               </Accordion>
 
               {/* Lease & Financial Terms */}
-              <Accordion
-                expanded={this.isSectionExpanded('leaseTerms') || this.isSectionExpanded('utilityLimits')}
-                onChange={this.handleAccordionChange('leaseTerms')}
-              >
+              <Accordion expanded={this.isSectionExpanded('leaseTerms')} onChange={this.handleAccordionChange('leaseTerms')}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography className='section-header'>{t('documentForm.sections.lease')}</Typography>
                 </AccordionSummary>
@@ -366,23 +380,6 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     </Grid>
                   </Grid>
                 </AccordionDetails>
-                {/* Utility Limits */}
-                <Accordion expanded={this.isSectionExpanded('utilityLimits')} onChange={this.handleAccordionChange('utilityLimits')}>
-                  <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Typography className='section-header'>{t('documentForm.sections.utilities')}</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <p>{t('documentForm.messages.utilityLimitsNote')}</p>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6} sm={6} md={4}>
-                        {this.renderNumberField('waterLimit', t('documentForm.fields.waterLimit'), { min: 0, step: '50', adornment: '₪' })}
-                      </Grid>
-                      <Grid item xs={6} sm={6} md={4}>
-                        {this.renderNumberField('electricityLimit', t('documentForm.fields.electricityLimit'), { min: 0, step: '50', adornment: '₪' })}
-                      </Grid>
-                    </Grid>
-                  </AccordionDetails>
-                </Accordion>
               </Accordion>
 
               {/* Landlord Details */}
@@ -398,10 +395,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                     <Grid item xs={5} sm={6} md={2}>
                       {this.renderNumberField('landlordId', t('documentForm.fields.israeliId'), { isIsraeliId: true })}
                     </Grid>
-                    <Grid item xs={7} sm={6} md={3}>
+                    <Grid item xs={12} sm={6} md={3}>
                       {this.renderTextField('landlordEmail', t('documentForm.fields.email'), { type: 'email', isDisabled: true })}
                     </Grid>
-                    <Grid item xs={5} sm={6} md={2}>
+                    <Grid item xs={12} sm={6} md={2}>
                       {this.renderNumberField('landlordPhone', t('documentForm.fields.phone'), { isPhoneNumber: true })}
                     </Grid>
                     <Grid item xs={12} sm={12} md={3}>
@@ -566,6 +563,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param {string} fieldValue - New value
    */
   handleFieldChange = (fieldName: string, fieldValue: string) => {
+    // console.log('handleFieldChange', { fieldName, fieldValue });
     const newFormData = { ...this.state.formData, [fieldName]: fieldValue };
     this.setState({ formData: newFormData });
   };
@@ -576,6 +574,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
    * @param {string} fieldValue - Current field value
    */
   handleFieldBlur = (fieldName: string, fieldValue: string) => {
+    // console.log('handleFieldBlur', { fieldName, fieldValue });
     let newFormData = { ...this.state.formData };
 
     //----------------

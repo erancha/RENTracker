@@ -360,17 +360,34 @@ const interpolateTemplate = (template, fields) => {
   }
 
   // Compose included in payment text
-  const includedItems = [];
+  const includedInPayment = [];
   if (fields.waterLimit && fields.waterLimit !== '0') {
-    includedItems.push(`מים (מוגבל לעד ${formatNumber(fields.waterLimit, true)} לחודש)`);
+    includedInPayment.push(`מים (מוגבל לעד ${formatNumber(fields.waterLimit, true)} לחודש)`);
   }
   if (fields.electricityLimit && fields.electricityLimit !== '0') {
-    includedItems.push(`חשמל (מוגבל לעד ${formatNumber(fields.electricityLimit, true)} לחודש)`);
+    includedInPayment.push(`חשמל (מוגבל לעד ${formatNumber(fields.electricityLimit, true)} לחודש)`);
   }
-  if (fields.includedServices) {
-    includedItems.push(fields.includedServices);
+  const waterAndElecticity =
+    includedInPayment.length > 0
+      ? `התשלום בסעיף 5.1 כולל: ${includedInPayment.join(', ')}. הפרשים בגין צריכה עודפת יחושבו ע"פ מונים, בתדירות לפי רצון המשכיר. `
+      : '';
+  const includedServices = fields.includedServices ? `${fields.includedServices} כלולים בדירה כבונוס. ` : '';
+
+  // Format included equipment from JSON to comma-delimited string
+  if (fields.includedEquipment) {
+    try {
+      const equipmentValue = JSON.parse(fields.includedEquipment);
+      const items = [...equipmentValue.fixed];
+      if (equipmentValue.free) items.push(equipmentValue.free);
+      fields.includedEquipment = items.join(', ');
+    } catch (e) {
+      // If parsing fails, assume it's already in the correct format
+    }
   }
-  fields.includedInPayment = includedItems.join(', ');
+
+  fields.includedInPayment = waterAndElecticity + includedServices;
+  if (fields.includedInPayment) fields.includedInPayment += 'בנוסף, ';
+  else fields.includedInPayment = 'למען הסר ספק, ';
 
   // Format dates before interpolation
   if (fields.date) fields.date = formatDate(fields.date);

@@ -119,10 +119,10 @@
       "additionalEquipmentHelper": "Example: מאוורר, שולחן עבודה, כסא משרדי"
     },
     "sections": {
+      "property": "Property and Equipment Details",
       "includedEquipment": "Included Equipment",
-      "property": "Property Details",
-      "lease": "Lease Terms",
       "utilities": "Utility Limits",
+      "lease": "Lease Terms",
       "landlord": "Landlord Details",
       "tenant": "Tenant Details",
       "security": "Security & Guarantees (Optional)",
