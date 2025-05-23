@@ -157,9 +157,9 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     // Initialize state
     this.state = {
       expandedSections: [],
+      initialFormData: templateFields,
       formData: templateFields,
       errors: {},
-      initialFormData: templateFields, // Store the initial populated fields
       showImagesViewer: false,
       showSecondTenant: !!templateFields.tenant2Name,
       expandSecondTenant: false,
@@ -210,6 +210,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     const { userType, auth } = this.props;
     templateFields = this.populateCurrentUserFields(templateFields, userType, auth.email as string);
     this.setState((prevState) => ({
+      initialFormData: templateFields,
       formData: templateFields,
       expandedSections: this.decideExpandedSections(prevState.expandedSections, prevState.errors, templateFields, userType),
     }));
@@ -253,6 +254,8 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       // console.log(JSON.stringify(errors, null, 2), Object.keys(errors).length);
       if (!templateFields.tenant1Name || !templateFields.tenant1Phone || !templateFields.tenant1Id)
         retExpandedSections.push('tenant1Details', 'tenant1Attachments');
+      else if (this.state.showSecondTenant && (!templateFields.tenant2Name || !templateFields.tenant2Phone || !templateFields.tenant2Id))
+        retExpandedSections.push('tenant2Details');
       else if (
         !!templateFields.tenant1IdCard &&
         !!templateFields.tenant1Salary1 &&
@@ -276,11 +279,12 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         <form onSubmit={this.handleSubmit} noValidate>
           <div className='header-container'>
             <Box sx={{ mb: !this.state.expandedSections.includes('signature') ? 2 : 0 }}>
-              <Typography variant='h5' gutterBottom>
-                {getDocumentTitle(this.state.formData?.tenant1Name, t('documents.rentalAgreement'))}
-              </Typography>
+              <Typography variant='h5'>{getDocumentTitle(this.state.formData?.tenant1Name, t('documents.rentalAgreement'))}</Typography>
             </Box>
-            {this.renderCancelButton()}
+            {
+              /* To avoid closing the form unintentionally instead of the signature accordion */ !this.isSectionExpanded('signature') &&
+                this.renderCancelButton()
+            }
           </div>
 
           {!this.state.expandedSections.includes('signature') && (
@@ -1118,22 +1122,30 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
     return Object.keys(this.state.formData).some((field) => {
       const currentValue = this.state.formData[field];
       const initialValue = this.state.initialFormData[field] || '';
-      // console.log({ field, currentValue, initialValue });
 
       // Handle special case for dates to normalize format
       if (['startDate', 'endDate', 'standingOrderStart', 'date'].includes(field)) {
         const currentDate = currentValue ? new Date(currentValue).toISOString().split('T')[0] : '';
         const initialDate = initialValue ? new Date(initialValue).toISOString().split('T')[0] : '';
-        return currentDate !== initialDate;
+        if (currentDate !== initialDate) {
+          // console.log({ field, currentValue, initialValue });
+          return true;
+        }
       }
 
       // Handle boolean values
-      if (typeof currentValue === 'boolean') {
-        return currentValue !== Boolean(initialValue);
+      if (typeof currentValue === 'boolean' && currentValue !== Boolean(initialValue)) {
+        // console.log({ field, currentValue, initialValue, BooleanInitialValue: Boolean(initialValue) });
+        return true;
       }
 
       // Handle all other values
-      return String(currentValue) !== String(initialValue);
+      if (typeof currentValue === 'string' && String(currentValue) !== String(initialValue)) {
+        // console.log({ field, currentValue, initialValue });
+        return true;
+      }
+
+      return false;
     });
   };
 

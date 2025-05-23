@@ -7,10 +7,6 @@ Parameters:
     Description: 'User id of the admin'
     Type: String
     Default: '53b408f2-d071-70e2-f4da-24618fa52c03'
-  SaasTenantUserId:
-    Type: String
-    Description: 'User id of the SaaS tenant (acts as a landlord)'
-    Default: '23743842-4061-709b-44f8-4ef9a527509d' # erancha@gmail.com
   ExistingVpcId:
     Type: String
     Description: 'ID of an existing VPC'
@@ -1170,7 +1166,6 @@ Resources:
   #         DB_NAME: !Ref CrudDatabaseName
   #         DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
   #         DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-  #         SAAS_TENANT_ID: !Ref SaasTenantUserId
   #     VpcConfig:
   #       SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
   #       SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]

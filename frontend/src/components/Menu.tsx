@@ -28,7 +28,7 @@ interface ConnectedMenuProps extends IMenuProps {
   auth: AuthContextProps;
 }
 
-const WEBSOCKETS_SESSION_ERROR_EVENT_NAME = 'websocket-session-error';
+export const WEBSOCKETS_SESSION_ERROR_EVENT_NAME = 'websocket-session-error';
 
 class ConnectedMenu extends React.Component<ConnectedMenuProps> {
   private buttonRef = React.createRef<HTMLButtonElement>();

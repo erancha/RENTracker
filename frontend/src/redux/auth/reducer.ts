@@ -1,5 +1,5 @@
 import initialState from '../store/initialState';
-import { IAuthState, UserType } from './types';
+import { IAuthState } from './types';
 import { SET_AUTH_LOGIN_SUCCESS, ISetAuthLoginSuccessAction, SET_USER_TYPE, ISetUserTypeAction, SET_AUTH_LOGOUT, ISetAuthLogoutAction } from './actions';
 
 type HandledActions = ISetAuthLoginSuccessAction | ISetUserTypeAction | ISetAuthLogoutAction;
@@ -17,14 +17,7 @@ export const authReducer = (state: IAuthState = initialState.auth, action: Handl
       return { ...state, userType: action.payload };
 
     case SET_AUTH_LOGOUT:
-      return {
-        ...state,
-        isAuthenticated: false,
-        JWT: null,
-        userId: null,
-        userName: null,
-        userType: UserType.Tenant,
-      };
+      return initialState.auth;
 
     default:
       return state;

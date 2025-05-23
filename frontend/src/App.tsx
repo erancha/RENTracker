@@ -138,10 +138,15 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
           <p>
             <span className='app-name'>RENTracker</span> {this.t('overview.description')}
           </p>
+          <p className='subtext'>
+            {this.t('overview.roles.title')} <span className='role'>{this.t('overview.roles.landlords')}</span> {this.t('overview.roles.landlordsDesc')},{' '}
+            {this.t('common.and')}
+            <span className='role'>{this.t('overview.roles.tenants')}</span> {this.t('overview.roles.tenantsDesc')}.
+          </p>
           <span className='may-switch-language'>{this.t('overview.maySwitchLanguage')}</span>
           <LanguageSwitcher className='language-switcher' />
           <hr />
-          <p>
+          <p className='signin'>
             {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
             {this.t('overview.throughGoogle')}{' '}
             <span className='text-link sign-in-from-overview draw-attention-during-overview' onClick={() => loginWithGoogleAction(auth)}>
@@ -159,22 +164,20 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
               </span>
             )}
             <ul>
-              <li>
-                {this.t('overview.roles.title')} <b>{this.t('overview.roles.landlords')}</b> {this.t('overview.roles.landlordsDesc')}, {this.t('common.and')}
-                <b>{this.t('overview.roles.tenants')}</b> {this.t('overview.roles.tenantsDesc')}.
-              </li>
               <li>{this.t('overview.techStack')}.</li>
               <li>{this.t('overview.ui')}.</li>
+              <li>
+                <div className='link-container'>
+                  {this.t('overview.additionalDetails')}:
+                  <a href='https://github.com/erancha' target='_blank' rel='noopener noreferrer'>
+                    GitHub
+                  </a>
+                  <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>
+                    LinkedIn
+                  </a>
+                </div>
+              </li>
             </ul>
-
-            <div className='link-container'>
-              <a href='http://www.linkedin.com/in/eran-hachmon' target='_blank' rel='noopener noreferrer'>
-                LinkedIn
-              </a>
-              <a href='https://github.com/erancha' target='_blank' rel='noopener noreferrer'>
-                GitHub
-              </a>
-            </div>
           </div>
         </div>
 

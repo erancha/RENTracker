@@ -73,12 +73,9 @@ try {
 
             if ($commonConstants.isMainBranch) {
                 $parameterOverrides += "StageName='prod'"
-                if ($commonConstants.saasTenantUserId) {
-                    $parameterOverrides += " SaasTenantUserId='$($commonConstants.saasTenantUserId)'"
-                }
             }
             else {
-                $parameterOverrides += "EnableAdditionalMetrics='true'" # TODO: In actual production, these metrics will be more relevant than during development ..
+                # $parameterOverrides += "EnableAdditionalMetrics='true'" # TODO: In actual production, these metrics will be more relevant than during development ..
             }
 
             # Join the parameter overrides into a single string

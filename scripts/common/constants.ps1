@@ -9,16 +9,6 @@ try {
     $stackNameMain = $appName
     if ($isMainBranch) {
         $stackName = $appName
-
-        # Get tenant information from environment or use defaults
-        $saasTenantUserId = $env:SAAS_TENANT_USER_ID
-        $saasTenantShortName = $env:SAAS_TENANT_SHORT_NAME
-        if ($saasTenantUserId) {
-            if (-not $saasTenantShortName) {
-                $saasTenantShortName = $saasTenantUserId
-            }
-            $stackName = "$stackName-$saasTenantShortName"
-        }
     }
     else {
         $stackName = "${appName}-fb"
@@ -30,7 +20,6 @@ try {
         isMainBranch          = $isMainBranch
         stackName             = $stackName
         stackNameMain         = $stackNameMain
-        saasTenantUserId      = $saasTenantUserId
         configFilePath        = "${appFolder}/frontend/src/appConfig.json"
         lastDevConfigFilePath = "${appFolder}/frontend/appConfigDev.json"
         region                = "eu-central-1" # aws configure get region

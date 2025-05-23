@@ -34,6 +34,7 @@ import { IConnectionAndUsername } from 'redux/websockets/types';
 import { UserType } from '../redux/auth/types';
 import { ISaasTenant } from 'redux/saasTenants/types';
 import { DOCUMENTS_VIEW } from 'redux/menu/types';
+import { WEBSOCKETS_SESSION_ERROR_EVENT_NAME } from './Menu';
 
 class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> {
   private webSocket: WebSocket | null = null;
@@ -267,7 +268,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
       this.props.setWSConnectedAction(false);
 
       // Trigger re-authentication flow through Menu component
-      window.dispatchEvent(new Event('websocket-session-error'));
+      window.dispatchEvent(new Event(WEBSOCKETS_SESSION_ERROR_EVENT_NAME));
     };
   }
 

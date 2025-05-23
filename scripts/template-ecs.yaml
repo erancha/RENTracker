@@ -7,10 +7,6 @@ Parameters:
     Description: 'User id of the admin'
     Type: String
     Default: '53b408f2-d071-70e2-f4da-24618fa52c03' # bettyadm100@gmail.com TODO: Allow to configure from the app
-  SaasTenantUserId:
-    Type: String
-    Description: 'User id of the SaaS tenant (acts as a landlord)'
-    Default: '23743842-4061-709b-44f8-4ef9a527509d' # erancha@gmail.com
 
   ExistingVpcId:
     Type: String
@@ -640,8 +636,6 @@ Resources:
               Value: !Ref RentTrackingSavedActivityQueue
             - Name: ELASTICACHE_REDIS_ADDRESS
               Value: !Ref ExistingElasticacheRedisClusterAddress
-            - Name: SAAS_TENANT_ID
-              Value: !Ref SaasTenantUserId
             - Name: STACK_NAME
               Value: !Ref AWS::StackName
             - Name: ADMIN_USER_ID

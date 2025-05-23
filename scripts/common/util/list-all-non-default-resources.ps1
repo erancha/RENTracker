@@ -287,6 +287,42 @@ try {
         $nonDefaultResources += "CloudWatch Dashboard: $($dashboard.Name)"
     }
 
+    #======== List CloudWatch Custom Metrics ========================================================
+    Write-Host "`n$(Get-Date -Format 'HH:mm:ss') : Retrieving CloudWatch custom metrics..." -ForegroundColor Yellow
+    
+    # Get all metric namespaces
+    $allNamespaces = aws cloudwatch list-metrics --region $region --query "Metrics[].Namespace" --output json | ConvertFrom-Json | Sort-Object -Unique
+    
+    # Filter to custom namespaces (those not starting with "AWS/")
+    $customNamespaces = $allNamespaces | Where-Object { -not $_.StartsWith("AWS/") }
+    
+    if ($customNamespaces.Count -gt 0) {
+        foreach ($namespace in $customNamespaces) {
+            # Get metrics for this custom namespace
+            $customMetrics = aws cloudwatch list-metrics --namespace $namespace --region $region --query "Metrics[].{MetricName:MetricName,Dimensions:Dimensions}" --output json | ConvertFrom-Json
+            
+            # Group metrics by name to get count per metric
+            $metricGroups = $customMetrics | Group-Object -Property MetricName
+            
+            foreach ($metricGroup in $metricGroups) {
+                $metricName = $metricGroup.Name
+                $dimensionCount = $metricGroup.Count
+                
+                # Show sample dimensions if available
+                $sampleDimensions = ""
+                if ($metricGroup.Group[0].Dimensions -and $metricGroup.Group[0].Dimensions.Count -gt 0) {
+                    $dimString = ($metricGroup.Group[0].Dimensions | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ", "
+                    $sampleDimensions = " | Sample dimensions: $dimString"
+                }
+                
+                $nonDefaultResources += "CloudWatch Custom Metric: Namespace=$namespace | Metric=$metricName | Count=$dimensionCount$sampleDimensions"
+            }
+        }
+    }
+    else {
+        $nonDefaultResources += "CloudWatch Custom Metric: No custom metrics found (only AWS service metrics detected)"
+    }
+
     #===========================================================================================================
     # Output the non-default resources in sorted order
     $nonDefaultResources | Sort-Object | ForEach-Object -Begin { $index = 1 } -Process {

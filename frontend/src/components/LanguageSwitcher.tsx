@@ -12,24 +12,28 @@ const LanguageSwitcher: React.FC<Props> = ({ className, onLanguageChange }) => {
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
-    // Update document direction for RTL support
     document.documentElement.dir = lng === 'he' ? 'rtl' : 'ltr';
-    // Close menu if callback provided
     if (onLanguageChange) onLanguageChange();
   };
 
   return (
-    <ButtonGroup size="small" aria-label="language switcher" className={className}>
-      <Button
-        variant={i18n.language === 'en' ? 'contained' : 'outlined'}
-        onClick={() => changeLanguage('en')}
-      >
+    <ButtonGroup
+      size='small'
+      aria-label='language switcher'
+      className={className}
+      sx={{
+        '& .MuiButton-root': {
+          order: document.documentElement.dir === 'rtl' ? 2 : 1,
+          '&:nth-of-type(2)': {
+            order: document.documentElement.dir === 'rtl' ? 1 : 2,
+          },
+        },
+      }}
+    >
+      <Button variant={i18n.language === 'en' ? 'contained' : 'outlined'} onClick={() => changeLanguage('en')}>
         EN
       </Button>
-      <Button
-        variant={i18n.language === 'he' ? 'contained' : 'outlined'}
-        onClick={() => changeLanguage('he')}
-      >
+      <Button variant={i18n.language === 'he' ? 'contained' : 'outlined'} onClick={() => changeLanguage('he')}>
         עב
       </Button>
     </ButtonGroup>
