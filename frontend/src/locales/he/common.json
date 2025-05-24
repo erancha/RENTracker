@@ -20,9 +20,11 @@
     "warnDeleteWithData": "לא ניתן למחוק דירה עם הסכמי שכירות",
     "confirmDelete": "האם אתם בטוחים שברצונכם למחוק דירה זאת?",
     "fields": {
-      "unitNumber": "מספר דירה / יחידת דיור",
+      "unitNumber": "מספר",
       "rentAmount": "סכום שכירות",
-      "disable": "הקפאה"
+      "disable": "הקפאה",
+      "apartment": "דירה",
+      "housingUnit": "יחידת דיור"
     },
     "tooltips": {
       "saveNew": "שמירת הדירה החדשה",
@@ -100,7 +102,7 @@
     "roomsCount": "ערך נדרש: בין 1 ל-20, בקפיצות של 0.5"
   },
   "documentForm": {
-    "confirmSaveUnsigned": "האם אתם בטוחים שברצונכם לשמור את המסמך מבלי לחתום?",
+    "confirmSaveUnsigned": "האם אתם בטוחים שברצונכם לשמור את הסכם השכירות מבלי לחתום?",
     "equipment": {
       "refrigerator": "מקרר",
       "oven": "תנור",
@@ -161,8 +163,8 @@
     "messages": {
       "utilityLimitsNote": "שימו לב: אם לא תקבעו ערך לאחד מהסעיפים הבאים, הסעיף לא יופיע בהסכם.",
       "shareWithTenant": "אנא שתפו אותו עם השוכר/ים להזנת פרטים וחתימה.",
-      "tenantMustSignFirst": "אנא שתפו את המסמך ובקשו מהשוכר/ים לחתום תחילה",
-      "shareWithLandlord": "המסמך נחתם! אנא שתפו אותו עם המשכיר/ים לחתימה.",
+      "tenantMustSignFirst": "אנא שתפו את הסכם השכירות ובקשו מהשוכר/ים לחתום תחילה",
+      "shareWithLandlord": "הסכם השכירות נחתם! אנא שתפו אותו עם המשכיר/ים לחתימה.",
       "agreementSignedByBoth": "ההסכם נחתם על ידי השוכר/ים והמשכיר/ים"
     },
     "tooltips": {
@@ -218,20 +220,20 @@
   "tenantDocuments": {
     "documentIdPlaceholder": "הדבקת ההודעה ששותפה דרך וואטסאפ או הזנת מזהה הסכם השכירות ...",
     "errorLinkedEmail": "אינך יכול לערוך הסכם שכירות זה. הוא מקושר לשוכר אחר.",
-    "fetchError": "כשלון בהבאת המסמך. אנא בדקו את המזהה ונסו שוב.",
-    "pleaseSignAndShare": "אנא חתמו על המסמך ושתפו אותו עם המשכיר/ים.",
+    "fetchError": "כשלון בקריאת הסכם השכירות. אנא בדקו את המזהה ונסו שוב.",
+    "pleaseSignAndShare": "אנא חתמו על הסכם השכירות ושתפו אותו עם המשכיר/ים.",
     "shareMessage": "מצורף קישור להסכם השכירות החתום: *'{{title}}'*:\n\n{{url}}\n\nשימו לב שהקישור יהיה *תקף למשך יום אחד*. לאחר מכן ניתן לגשת למסמך דרך האפליקציה.",
     "tooltips": {
       "addSecondTenant": "הוספת דייר שני"
     }
   },
   "messages": {
-    "documentSaved": "המסמך נשמר בהצלחה",
-    "documentDeleted": "המסמך נמחק בהצלחה",
-    "documentCopied": "המסמך הועתק בהצלחה",
-    "documentShared": "המסמך שותף בהצלחה",
-    "documentCreated": "המסמך נוצר בהצלחה",
-    "documentUpdated": "המסמך עודכן בהצלחה",
+    "documentSaved": "הסכם השכירות נשמר בהצלחה",
+    "documentDeleted": "הסכם השכירות נמחק בהצלחה",
+    "documentCopied": "הסכם השכירות הועתק בהצלחה",
+    "documentShared": "הסכם השכירות שותף בהצלחה",
+    "documentCreated": "הסכם השכירות נוצר בהצלחה",
+    "documentUpdated": "הסכם השכירות עודכן בהצלחה",
     "error": "אירעה שגיאה",
     "noChanges": "אין שינויים לשמירה",
     "confirmDelete": "האם אתם בטוחים שברצונכם למחוק הסכם שכירות זה?",

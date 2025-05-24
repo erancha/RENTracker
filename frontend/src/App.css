@@ -725,6 +725,23 @@ form > .actions {
       animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
     }
   }
+
+  .apartment-housing-unit-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(8rem, 1fr));
+    width: fit-content;
+    overflow-x: hidden;
+
+    &::before {
+      content: unset;
+    }
+
+    > *::before {
+      content: attr(data-title);
+      display: flex;
+      flex-direction: column;
+    }
+  }
 }
 
 /* Documents Container */

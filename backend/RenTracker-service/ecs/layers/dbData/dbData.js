@@ -23,19 +23,33 @@ const healthCheck = logMiddleware('healthCheck')(async () => {
  * @param {Object} params
  * @param {string} params.apartment_id - Apartment's unique identifier
  * @param {string} params.address - Apartment's address
+ * @param {boolean} params.is_housing_unit - Is this an apartment or a housing unit?
  * @param {string} params.unit_number - Apartment's unit number
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {string} params.rent_amount - Apartment's rent amount
  * @param {string} params.saas_tenant_id - SaaS tenant identifier
  * @returns {Promise<Object>} Created/updated apartment data
  */
-const createApartment = logMiddleware('createApartment')(async ({ apartment_id, address, unit_number, rooms_count, rent_amount, saas_tenant_id }) => {
-  validateUUID(apartment_id, 'apartment_id');
-  validatePositiveInteger(rent_amount);
-  validateRoomsCount(rooms_count);
-  validateUUID(saas_tenant_id, 'saas_tenant_id');
-  return await gwData.createApartment({ apartment_id, address, unit_number, rooms_count, rent_amount, created_at: new Date().toISOString(), saas_tenant_id });
-});
+const createApartment = logMiddleware('createApartment')(
+  async ({ apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount, saas_tenant_id }) => {
+    validateUUID(apartment_id, 'apartment_id');
+    validateBoolean(is_housing_unit, 'is_housing_unit');
+    validateNonEmptyString(unit_number, 'unit_number');
+    validateRoomsCount(rooms_count);
+    validatePositiveInteger(rent_amount);
+    validateUUID(saas_tenant_id, 'saas_tenant_id');
+    return await gwData.createApartment({
+      apartment_id,
+      address,
+      is_housing_unit,
+      unit_number,
+      rooms_count,
+      rent_amount,
+      created_at: new Date().toISOString(),
+      saas_tenant_id,
+    });
+  }
+);
 
 /**
  * Gets all apartments for a given tenant
@@ -53,6 +67,7 @@ const getAllApartments = logMiddleware('getAllApartments')(async ({ saas_tenant_
  * @param {Object} params
  * @param {string} params.apartment_id - Unique identifier for the apartment
  * @param {string} params.address - Building/house address
+ * @param {boolean} params.is_housing_unit - Is this an apartment or a housing unit?
  * @param {string} params.unit_number - Unit number within the building
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {number} params.rent_amount - Monthly rent amount
@@ -61,8 +76,10 @@ const getAllApartments = logMiddleware('getAllApartments')(async ({ saas_tenant_
  * @returns {Promise<Object>} Updated apartment data
  */
 const updateApartment = logMiddleware('updateApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id }) => {
+  async ({ apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount, is_disabled, saas_tenant_id }) => {
     validateUUID(apartment_id, 'apartment_id');
+    validateBoolean(is_housing_unit, 'is_housing_unit');
+    validateNonEmptyString(unit_number, 'unit_number');
     validateRoomsCount(rooms_count);
     validatePositiveInteger(rent_amount);
     validateBoolean(is_disabled, 'is_disabled');
@@ -70,6 +87,7 @@ const updateApartment = logMiddleware('updateApartment')(
     return await gwData.updateApartment({
       apartment_id,
       address,
+      is_housing_unit,
       unit_number,
       rooms_count,
       rent_amount,
@@ -114,6 +132,7 @@ const createDocument = async ({ document_id, apartment_id, template_name, templa
   validateTemplateFields(template_fields);
   validateUUID(saas_tenant_id, 'saas_tenant_id');
 
+  await invalidation_getApartmentDocuments(apartment_id);
   return await gwData.createDocument({ document_id, apartment_id, template_name, template_fields, created_at: new Date().toISOString(), saas_tenant_id });
 };
 
@@ -160,7 +179,10 @@ const updateDocument = async ({ document_id, template_fields, senderUserId, tena
 
   const updateParams = { document_id, template_fields, updated_at: new Date().toISOString(), senderUserId };
   if (tenantUserId) updateParams.tenantUserId = tenantUserId;
-  return await gwData.updateDocument(updateParams);
+
+  const result = await gwData.updateDocument(updateParams);
+  await invalidation_getApartmentDocuments(result.apartment_id);
+  return result;
 };
 
 /**
@@ -174,7 +196,9 @@ const deleteDocument = async ({ document_id, saas_tenant_id }) => {
   validateUUID(document_id, 'document_id');
   validateUUID(saas_tenant_id, 'saas_tenant_id');
 
-  return await gwData.deleteDocument({ document_id, saas_tenant_id });
+  const result = await gwData.deleteDocument({ document_id, saas_tenant_id });
+  await invalidation_getApartmentDocuments(result.apartment_id);
+  return result.document_id;
 };
 
 // ============================================================================================
@@ -317,6 +341,10 @@ const cache_getApartmentDocuments = async ({ apartment_id, saas_tenant_id }) => 
   validateUUID(saas_tenant_id, 'saas_tenant_id');
   return await cache.get(`getApartmentDocuments(${apartment_id})`, () => gwData.getApartmentDocuments({ apartment_id, saas_tenant_id }));
 };
+const invalidation_getApartmentDocuments = async (apartment_id) =>
+  apartment_id
+    ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
+    : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentDocuments()');
 
 const cache_getSaasTenants = async ({ connectedUserId }) => {
   // Cache saas tenants only for non-admin users, since every specific user invalidation would also invalidate by definition the cache of all saas tenants, and admin doesn't worth the effort - the usage isn't expected to high enough, and we'll need pagination anyway.
@@ -355,10 +383,6 @@ module.exports = {
         saas_tenant_id
           ? cache.invalidateGet(`getApartmentsOfLandlord(${saas_tenant_id})`)
           : console.warn('saas_tenant_id is undefined, cannot invalidate cache for getApartmentsOfLandlord()'),
-      getApartmentDocuments: (apartment_id) =>
-        apartment_id
-          ? cache.invalidateGet(`getApartmentDocuments(${apartment_id})`)
-          : console.warn('apartment_id is undefined, cannot invalidate cache for getApartmentDocuments()'),
       getApartmentActivity: (apartment_id) =>
         apartment_id
           ? cache.invalidateGet(`getApartmentActivity(${apartment_id})`)

@@ -24,6 +24,7 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
  * @param {Object} params
  * @param {string} params.apartment_id - Unique identifier of the apartment
  * @param {string} params.address - Physical address of the apartment
+ * @param {boolean} params.is_housing_unit - Is this an apartment or a housing unit?
  * @param {string} params.unit_number - Unit number within the building
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {number} params.rent_amount - Monthly rent amount
@@ -31,12 +32,13 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
  * @returns {Promise<Object>} Created apartment data
  */
 const createApartment = logMiddleware('ddb_createApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, created_at, saas_tenant_id }) => {
+  async ({ apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount, created_at, saas_tenant_id }) => {
     try {
       const item = {
         apartment_id,
         saas_tenant_id,
         address,
+        is_housing_unit,
         unit_number,
         rooms_count,
         rent_amount,
@@ -92,6 +94,7 @@ const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(asy
  * @param {Object} params
  * @param {string} params.apartment_id - Unique identifier of the apartment
  * @param {string} params.address - Physical address of the apartment
+ * @param {boolean} params.is_housing_unit - Is this an apartment or a housing unit?
  * @param {string} params.unit_number - Unit number within the building
  * @param {number} params.rooms_count - Number of rooms in the apartment
  * @param {number} params.rent_amount - Monthly rent amount
@@ -100,16 +103,17 @@ const getApartmentsOfLandlord = logMiddleware('ddb_getApartmentsOfLandlord')(asy
  * @returns {Promise<Object>} Updated apartment data
  */
 const updateApartment = logMiddleware('ddb_updateApartment')(
-  async ({ apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled, updated_at, saas_tenant_id }) => {
+  async ({ apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount, is_disabled, updated_at, saas_tenant_id }) => {
     try {
       const command = new UpdateCommand({
         TableName: APARTMENTS_TABLE_NAME,
         Key: { apartment_id },
         UpdateExpression:
-          'SET address = :address, unit_number = :unit_number, rooms_count = :rooms_count, rent_amount = :rent_amount, is_disabled = :is_disabled, updated_at = :updated_at',
+          'SET address = :address, is_housing_unit = :is_housing_unit, unit_number = :unit_number, rooms_count = :rooms_count, rent_amount = :rent_amount, is_disabled = :is_disabled, updated_at = :updated_at',
         ConditionExpression: 'saas_tenant_id = :saas_tenant_id',
         ExpressionAttributeValues: {
           ':address': address,
+          ':is_housing_unit': is_housing_unit,
           ':unit_number': unit_number,
           ':rooms_count': rooms_count,
           ':rent_amount': rent_amount,
@@ -333,7 +337,7 @@ const deleteDocument = logMiddleware('ddb_deleteDocument')(async ({ document_id,
     const result = await ddbClient.send(command);
     if (!result.Attributes) throw new Error('Document not found');
 
-    return result.Attributes.document_id;
+    return result.Attributes;
   } catch (error) {
     console.error('Error deleting document:', error);
     throw error;

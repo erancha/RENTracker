@@ -6,7 +6,6 @@ const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
 const { prepareS3RentalAgreementKey, prepareS3DocumentFolderPrefix } = require('/opt/prepareS3Keys');
-const dbData = require('/opt/dbData');
 const AWSXRay = require('aws-xray-sdk');
 
 const STACK_NAME = process.env.STACK_NAME;
@@ -77,7 +76,6 @@ marked.use({
  */
 async function handleCreate(record) {
   const newImage = record.dynamodb.NewImage;
-  await dbData.cache.invalidation.getApartmentDocuments(newImage.apartment_id.S);
 
   const templateName = newImage.template_name.S;
   const templateFields = convertDynamoMapToObject(newImage.template_fields.M);
@@ -154,8 +152,6 @@ async function handleDelete(record) {
   const s3DocumentFolderPrefix = prepareS3DocumentFolderPrefix(oldImage.document_id.S, oldImage.saas_tenant_id.S);
 
   try {
-    await dbData.cache.invalidation.getApartmentDocuments(record.dynamodb.OldImage.apartment_id.S);
-
     // List all objects with the folder prefix
     const listCommand = new ListObjectsV2Command({
       Bucket: DOCUMENTS_BUCKET_NAME,
@@ -298,10 +294,16 @@ function formatNumber(value, isCurrency = false) {
 const interpolateTemplate = (template, fields) => {
   let result = template;
 
-  // Handle strikethrough for optional sections
+  //========================================================
+  // petsAllowed: Handle strikethrough for optional sections
+  //========================================================
   if (fields.petsAllowed) {
     result = result.replace(/^8\.13 (לא להכניס למושכר ו\/או לבית ו\/או למתחם בעל חיים)/m, '8.13 ~~$1~~');
   }
+
+  //===================================================================================
+  // securityRequired and guarantorRequired: Handle strikethrough for optional sections
+  //===================================================================================
   if (!fields.securityRequired) {
     result = result.replace(/^12\.1.*$/m, '~~$&~~');
   }
@@ -311,7 +313,20 @@ const interpolateTemplate = (template, fields) => {
     result = result.replace(/<!-- guarantorDetails-start -->[\s\S]*?<!-- guarantorDetails-end -->/m, '');
   }
 
-  // Pre-calculate derived values
+  //======================================================================
+  // Apartment vs housing unit: Handle strikethrough for optional sections
+  //======================================================================
+  if (!fields.isHousingUnit) {
+    result = result.replace(/^8\.8.*$/m, '~~$&~~');
+    result = result.replace(/^8\.9.*$/m, '~~$&~~');
+    result = result.replace(/^\*\*8\.10.*\*\*$/m, '~~$&~~');
+    result = result.replace(/^\*\*8\.11.*\*\*$/m, '~~$&~~');
+  }
+  fields.isHousingUnitText = fields.isHousingUnit ? 'יחידת דיור' : 'דירה';
+
+  //===========
+  // LeaseTerms
+  //===========
   if (fields.initialPaymentMonths && fields.rentAmount) {
     fields.initialPayment = Number(fields.initialPaymentMonths) * Number(fields.rentAmount);
   }
@@ -359,7 +374,9 @@ const interpolateTemplate = (template, fields) => {
     );
   }
 
-  // Compose included in payment text
+  //====================
+  // Included in payment
+  //====================
   const includedInPayment = [];
   if (fields.waterLimit && fields.waterLimit !== '0') {
     includedInPayment.push(`מים (מוגבל לעד ${formatNumber(fields.waterLimit, true)} לחודש)`);
@@ -389,18 +406,24 @@ const interpolateTemplate = (template, fields) => {
   if (fields.includedInPayment) fields.includedInPayment += 'בנוסף, ';
   else fields.includedInPayment = 'למען הסר ספק, ';
 
+  //==================================
   // Format dates before interpolation
+  //==================================
   if (fields.date) fields.date = formatDate(fields.date);
   if (fields.startDate) fields.startDate = formatDate(fields.startDate);
   if (fields.endDate) fields.endDate = formatDate(fields.endDate);
   if (fields.standingOrderStart) fields.standingOrderStart = formatDate(fields.standingOrderStart);
 
+  //=======================
   // Format monetary values
+  //=======================
   if (fields.rentAmount) fields.rentAmount = formatNumber(fields.rentAmount, true);
   if (fields.initialPayment) fields.initialPayment = formatNumber(fields.initialPayment, true);
   if (fields.securityDeposit) fields.securityDeposit = formatNumber(fields.securityDeposit, true);
 
+  //===================================================================
   // Handle standard {{key}} replacements with highlighting and italics
+  //===================================================================
   result = result.replace(/\{\{([^}]+)\}\}/g, (match, field) => {
     const trimmedField = field.trim();
     const value = fields[trimmedField];
@@ -411,7 +434,9 @@ const interpolateTemplate = (template, fields) => {
       : '_'.repeat(3);
   });
 
+  //==============================================
   // Log any remaining uninterpolated placeholders
+  //==============================================
   const remaining = result.match(/\{\{(\w+)\}\}/g);
   if (remaining) {
     console.log('Warning: Uninterpolated placeholders:', remaining);

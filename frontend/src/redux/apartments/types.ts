@@ -8,6 +8,7 @@ export interface IApartmentsState {
   apartmentForm: {
     id: string;
     address: string;
+    is_housing_unit: boolean;
     unit_number: string;
     rooms_count: number;
     rent_amount: number;
@@ -24,6 +25,7 @@ export interface IApartment extends IOnRoute {
   apartment_id: string;
   user_id: string;
   address: string;
+  is_housing_unit: boolean;
   unit_number: string;
   rooms_count: number;
   rent_amount: number;

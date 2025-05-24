@@ -34,12 +34,20 @@ export const setNoApartmentsNotifiedAction = (notified: boolean): ISetNoApartmen
 });
 
 // Apartment-specific action creators
-export const prepareCreateApartmentCommandAction = (apartment_id: string, address: string, unit_number: string, rooms_count: number, rent_amount: number) =>
+export const prepareCreateApartmentCommandAction = (
+  apartment_id: string,
+  address: string,
+  is_housing_unit: boolean,
+  unit_number: string,
+  rooms_count: number,
+  rent_amount: number
+) =>
   prepareCreateCommandAction({
     type: 'apartments' as CommandSubject,
     params: {
       apartment_id,
       address,
+      is_housing_unit,
       unit_number,
       rooms_count,
       rent_amount,

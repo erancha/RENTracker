@@ -82,7 +82,10 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
               onClose={() => this.setState({ showForm: false, editMode: false, duplicateTemplateFields: null })}
               apartmentId={this.props.currentApartmentDetails.id}
               apartmentInitiatedFields={{
-                propertyAddress: this.props.currentApartmentDetails.address,
+                propertyAddress: `${this.props.currentApartmentDetails.address}, ${
+                  this.props.currentApartmentDetails.isHousingUnit ? t('apartments.fields.housingUnit') : t('apartments.fields.apartment')
+                } ${this.props.currentApartmentDetails.unitNumber}`,
+                isHousingUnit: this.props.currentApartmentDetails.isHousingUnit,
                 roomCount: this.props.currentApartmentDetails.roomCount,
                 rentAmount: this.props.currentApartmentDetails.rentAmount,
               }}
@@ -232,6 +235,8 @@ interface DocumentListProps {
   currentApartmentDetails: {
     id: string;
     address: string;
+    isHousingUnit: boolean;
+    unitNumber: string;
     roomCount: number;
     rentAmount: number;
   };
@@ -260,8 +265,10 @@ const mapStateToProps = (state: RootState) => {
     JWT: state.auth.JWT,
     username: state.auth.userName,
     currentApartmentDetails: {
-      id: state.apartments.currentApartmentId || '',
-      address: currentApartment?.address ? `${currentApartment.address}${currentApartment.unit_number && `, ${currentApartment.unit_number}`}` : '',
+      id: currentApartment?.apartment_id || '',
+      address: currentApartment?.address || '',
+      isHousingUnit: currentApartment?.is_housing_unit || false,
+      unitNumber: currentApartment?.unit_number || '',
       roomCount: currentApartment?.rooms_count || 0,
       rentAmount: currentApartment?.rent_amount || 0,
     },

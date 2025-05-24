@@ -64,12 +64,13 @@ async function handleCreate({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
-    const { apartment_id, address, unit_number, rooms_count, rent_amount } = commandParams.apartments;
+    const { apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount } = commandParams.apartments;
     response = {
       apartments: (
         await dbData.createApartment({
           apartment_id,
           address,
+          is_housing_unit,
           unit_number,
           rooms_count,
           rent_amount,
@@ -134,11 +135,12 @@ async function handleUpdate({ commandParams, connectedUserId }) {
   let response; // to the client socket
 
   if (commandParams.apartments) {
-    const { apartment_id, address, unit_number, rooms_count, rent_amount, is_disabled } = commandParams.apartments;
+    const { apartment_id, address, is_housing_unit, unit_number, rooms_count, rent_amount, is_disabled } = commandParams.apartments;
     response = {
       apartments: await dbData.updateApartment({
         apartment_id,
         address,
+        is_housing_unit,
         unit_number,
         rooms_count,
         rent_amount,

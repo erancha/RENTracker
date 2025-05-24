@@ -38,6 +38,7 @@ const initialState: IAppState = {
     apartmentForm: {
       id: '',
       address: '',
+      is_housing_unit: false,
       unit_number: '',
       rooms_count: 0,
       rent_amount: 0,

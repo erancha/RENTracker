@@ -3,32 +3,6 @@ import { withTranslation } from 'react-i18next';
 import type { i18n } from 'i18next';
 import { Save, Undo2 } from 'lucide-react';
 
-interface IApartmentFormProps {
-  t: (key: string, options?: any) => string;
-  i18n: i18n;
-  tReady: boolean;
-  mode: 'create' | 'edit';
-  initialValues: {
-    address: string;
-    unit_number: string;
-    rooms_count: number;
-    rent_amount: number;
-    is_disabled?: boolean;
-  };
-  errors: Record<string, string>;
-  onSubmit: (values: { address: string; unit_number: string; rooms_count: number; rent_amount: number; is_disabled?: boolean }) => void;
-  onCancel: () => void;
-  inputRef?: React.RefObject<HTMLInputElement>;
-}
-
-interface IApartmentFormState {
-  address: string;
-  unit_number: string;
-  rooms_count: number;
-  rent_amount: number;
-  is_disabled: boolean;
-}
-
 /**
  * A form component for creating and editing apartments.
  * Handles both creation of new apartments and modification of existing ones,
@@ -44,6 +18,7 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
     super(props);
     this.state = {
       address: props.initialValues.address || '',
+      is_housing_unit: props.initialValues.is_housing_unit || false,
       unit_number: props.initialValues.unit_number || '',
       rooms_count: props.initialValues.rooms_count || 0,
       rent_amount: props.initialValues.rent_amount || 0,
@@ -58,7 +33,7 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
    */
   render() {
     const { mode, errors, inputRef, t } = this.props;
-    const { address, unit_number, rooms_count, rent_amount, is_disabled } = this.state;
+    const { address, is_housing_unit, unit_number, rooms_count, rent_amount, is_disabled } = this.state;
     const isEditMode = mode === 'edit';
 
     return (
@@ -74,14 +49,27 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
           {errors.address && <span className='error-message'>{errors.address}</span>}
         </div>
 
-        <div className='unit-number input-and-error-container' data-title={t('apartments.fields.unitNumber')}>
-          <input
-            type='text'
-            value={unit_number}
-            onChange={(e) => this.setState({ unit_number: e.target.value })}
-            className={`unit ${errors.unit_number ? 'error-message' : ''}`}
-          />
-          {errors.unit_number && <span className='error-message'>{errors.unit_number}</span>}
+        <div className='apartment-housing-unit-container'>
+          <div className='is-housing-unit' data-title={t('apartments.fields.housingUnit')}>
+            <label>
+              <input
+                type='checkbox'
+                title={t('apartments.fields.housingUnit')}
+                checked={is_housing_unit}
+                onChange={(e) => this.setState({ is_housing_unit: e.target.checked })}
+              />
+            </label>
+          </div>
+
+          <div className='unit-number input-and-error-container' data-title={t('apartments.fields.unitNumber')}>
+            <input
+              type='text'
+              value={unit_number}
+              onChange={(e) => this.setState({ unit_number: e.target.value })}
+              className={`unit ${errors.unit_number ? 'error-message' : ''}`}
+            />
+            {errors.unit_number && <span className='error-message'>{errors.unit_number}</span>}
+          </div>
         </div>
 
         <div className='rooms-count required input-and-error-container' data-title={t('common.roomCount')}>
@@ -137,6 +125,7 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
   handleSubmit = () => {
     this.props.onSubmit({
       address: this.state.address,
+      is_housing_unit: this.state.is_housing_unit,
       unit_number: this.state.unit_number,
       rooms_count: this.state.rooms_count,
       rent_amount: this.state.rent_amount,
@@ -164,12 +153,43 @@ class ApartmentFormBase extends React.Component<IApartmentFormProps, IApartmentF
     const { initialValues } = this.props;
     return (
       this.state.address !== (initialValues.address || '') ||
+      this.state.is_housing_unit !== (initialValues.is_housing_unit || false) ||
       this.state.unit_number !== (initialValues.unit_number || '') ||
       this.state.rooms_count !== (initialValues.rooms_count || 0) ||
       this.state.rent_amount !== (initialValues.rent_amount || 0) ||
       this.state.is_disabled !== (initialValues.is_disabled || false)
     );
   };
+}
+
+interface IApartmentFormValues {
+  address: string;
+  is_housing_unit: boolean;
+  unit_number: string;
+  rooms_count: number;
+  rent_amount: number;
+  is_disabled?: boolean;
+}
+
+interface IApartmentFormProps {
+  t: (key: string, options?: any) => string;
+  i18n: i18n;
+  tReady: boolean;
+  mode: 'create' | 'edit';
+  initialValues: IApartmentFormValues;
+  errors: Record<string, string>;
+  onSubmit: (values: IApartmentFormValues) => void;
+  onCancel: () => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
+}
+
+interface IApartmentFormState {
+  address: string;
+  is_housing_unit: boolean;
+  unit_number: string;
+  rooms_count: number;
+  rent_amount: number;
+  is_disabled: boolean;
 }
 
 export const ApartmentForm = withTranslation()(ApartmentFormBase);

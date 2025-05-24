@@ -20,9 +20,11 @@
     "warnDeleteWithData": "Cannot delete an apartment with rental agreements",
     "confirmDelete": "Are you sure you want to delete this apartment?",
     "fields": {
-      "unitNumber": "Apartment / Unit Number",
+      "unitNumber": "Number",
       "rentAmount": "Rent Amount",
-      "disable": "Disable"
+      "disable": "Disable",
+      "apartment": "Apartment",
+      "housingUnit": "Housing Unit"
     },
     "tooltips": {
       "saveNew": "Save the new apartment",

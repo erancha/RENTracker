@@ -114,15 +114,7 @@ export const apartmentsReducer = (state: IApartmentsState = initialState.apartme
       // Reset apartment form to initial state
       return {
         ...state,
-        apartmentForm: {
-          id: '',
-          address: '',
-          unit_number: '',
-          rooms_count: 0,
-          rent_amount: 0,
-          is_disabled: false,
-          errors: {},
-        },
+        apartmentForm: initialState.apartments.apartmentForm,
       };
 
     default:

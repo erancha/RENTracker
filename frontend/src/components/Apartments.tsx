@@ -107,6 +107,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                 mode={apartmentForm.id ? 'edit' : 'create'}
                 initialValues={{
                   address: apartmentForm.address,
+                  is_housing_unit: apartmentForm.is_housing_unit,
                   unit_number: apartmentForm.unit_number,
                   rooms_count: apartmentForm.rooms_count,
                   rent_amount: apartmentForm.rent_amount,
@@ -137,7 +138,9 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     </div>
                   )}
                   <div className='address' data-title={t('common.fields.address')}>
-                    {apartment.address} {apartment.unit_number && `, ${apartment.unit_number}`}
+                    {`${apartment.address}, ${apartment.is_housing_unit ? t('apartments.fields.housingUnit') : t('apartments.fields.apartment')} ${
+                      apartment.unit_number
+                    }`}
                   </div>
                   <div className='rooms-count' data-title={t('common.roomCount')}>
                     {apartment.rooms_count}
@@ -212,12 +215,19 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * Creates a new apartment if form validation passes
    * @param {object} values - Form values for new apartment
    */
-  handleCreateApartment = (values: { address: string; unit_number: string; rooms_count: number; rent_amount: number }) => {
+  handleCreateApartment = (values: { address: string; is_housing_unit: boolean; unit_number: string; rooms_count: number; rent_amount: number }) => {
     const errors = this.validateForm(values);
 
     if (Object.keys(errors).length === 0) {
       const apartment_id = uuidv4();
-      this.props.prepareCreateApartmentCommandAction(apartment_id, values.address, values.unit_number, values.rooms_count, values.rent_amount);
+      this.props.prepareCreateApartmentCommandAction(
+        apartment_id,
+        values.address,
+        values.is_housing_unit,
+        values.unit_number,
+        values.rooms_count,
+        values.rent_amount
+      );
       this.props.toggleApartmentFormAction(false);
       this.props.addApartmentAction({
         ...values,
@@ -239,11 +249,13 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @param {object} values - Form values to validate
    * @returns {Record<string, string>} Validation errors if any
    */
-  validateForm = (values: { address: string; rooms_count: number; rent_amount: number }) => {
+  validateForm = (values: { address: string; unit_number: string; rooms_count: number; rent_amount: number }) => {
     const errors: Record<string, string> = {};
     const { t } = this.props;
 
     if (!values.address) errors.address = t('validation.required');
+
+    if (!values.unit_number) errors.unit_number = t('validation.required');
 
     if (!values.rooms_count) errors.rooms_count = t('validation.required');
     else if (values.rooms_count < 1 || values.rooms_count > 20 || values.rooms_count % 0.5 !== 0) errors.rooms_count = t('validation.roomsCount');
@@ -275,6 +287,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
     toggleApartmentFormAction(true); // Ensure form is hidden first
     updateApartmentFieldAction('id', apartment.apartment_id);
     updateApartmentFieldAction('address', apartment.address);
+    updateApartmentFieldAction('is_housing_unit', apartment.is_housing_unit);
     updateApartmentFieldAction('unit_number', apartment.unit_number);
     updateApartmentFieldAction('rooms_count', apartment.rooms_count);
     updateApartmentFieldAction('rent_amount', apartment.rent_amount);
@@ -285,7 +298,14 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * Updates an existing apartment if validation passes
    * @param {object} values - Updated apartment values
    */
-  handleUpdateApartment = (values: { address: string; unit_number: string; rooms_count: number; rent_amount: number; is_disabled?: boolean }) => {
+  handleUpdateApartment = (values: {
+    address: string;
+    is_housing_unit: boolean;
+    unit_number: string;
+    rooms_count: number;
+    rent_amount: number;
+    is_disabled?: boolean;
+  }) => {
     const { prepareUpdateApartmentCommandAction, apartmentForm, setApartmentStateAction, setApartmentFormErrorsAction } = this.props;
 
     // Validate form
@@ -323,6 +343,8 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   handleDuplicateApartment = async (apartment: IApartment) => {
     this.props.toggleApartmentFormAction(true);
     this.props.updateApartmentFieldAction('address', apartment.address);
+    this.props.updateApartmentFieldAction('is_housing_unit', apartment.is_housing_unit);
+    this.props.updateApartmentFieldAction('unit_number', apartment.unit_number);
     this.props.updateApartmentFieldAction('rooms_count', apartment.rooms_count);
     this.props.updateApartmentFieldAction('rent_amount', apartment.rent_amount);
   };
@@ -361,6 +383,7 @@ interface IApartmentsProps {
   apartmentForm: {
     id: string;
     address: string;
+    is_housing_unit: boolean;
     unit_number: string;
     rooms_count: number;
     rent_amount: number;

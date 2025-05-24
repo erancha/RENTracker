@@ -1369,6 +1369,7 @@ interface OwnProps {
   initialTemplateFields?: Record<string, any> | null; // Initial template fields for the document
   apartmentInitiatedFields?: {
     propertyAddress: string;
+    isHousingUnit: boolean;
     roomCount: number;
     rentAmount: number;
   };
