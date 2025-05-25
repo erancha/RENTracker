@@ -64,7 +64,15 @@ try {
                 "ExistingAppPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
                 "ExistingAppSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
                 "ExistingElasticacheRedisClusterAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'", # https://eu-central-1.console.aws.amazon.com/cognito/v2/idp/user-pools/eu-central-1_OHq1aZYju/branding/domain?region=eu-central-1
-                "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'"
+                "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'",
+                # Lambda Layer ARNs
+                "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:AwsSdkV3Layer:154'",
+                "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:RedisClientLayer:49'",
+                "ExistingConnectionsUsernamesLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:ConnectionsUsernamesLayer:118'",
+                "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CommandsHandlersLayer:157'",
+                "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DbDataLayer:389'",
+                "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DocumentUtilsLayer:45'",
+                "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'"
                 # "DisableAppCache='true'",
                 # "ExistingRDSEndpoint='crud-rds.ctqgw46o4gm3.eu-central-1.rds.amazonaws.com'", # crud-rds
                 # "ExistingRDSSecurityGroupId='sg-0280f7af5f31cb24d'", # crud-RDSSG

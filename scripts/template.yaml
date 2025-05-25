@@ -27,14 +27,44 @@ Parameters:
     Description: 'RDS security group (leave empty to create a new one)'
     Default: 'sg-d3289ca9'
 
-  DeveloperIP:
-    Type: String
-    Description: 'Developer IP address for RDS access via DBeaver (CIDR format, e.g., 1.2.3.4/32)'
-    Default: ''
+  # DeveloperIP:
+  #   Type: String
+  #   Description: 'Developer IP address for RDS access via DBeaver (CIDR format, e.g., 1.2.3.4/32)'
+  #   Default: ''
 
   ExistingElasticacheRedisClusterAddress:
     Type: String
     Description: 'Address of an existing Redis cluster'
+
+  # Lambda Layer ARNs
+  ExistingAwsSdkV3LayerArn:
+    Type: String
+    Description: 'ARN of existing AWS SDK v3 Layer'
+    Default: ''
+  ExistingRedisClientLayerArn:
+    Type: String
+    Description: 'ARN of existing Redis Client Layer'
+    Default: ''
+  ExistingConnectionsUsernamesLayerArn:
+    Type: String
+    Description: 'ARN of existing Connections Usernames Layer'
+    Default: ''
+  ExistingCommandsHandlersLayerArn:
+    Type: String
+    Description: 'ARN of existing Commands Handlers Layer'
+    Default: ''
+  ExistingDbDataLayerArn:
+    Type: String
+    Description: 'ARN of existing DB Data Layer'
+    Default: ''
+  ExistingDocumentUtilsLayerArn:
+    Type: String
+    Description: 'ARN of existing Document Utils Layer'
+    Default: ''
+  ExistingCorsHeadersLayerArn:
+    Type: String
+    Description: 'ARN of existing CORS Headers Layer'
+    Default: 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
 
   StageName:
     Type: String
@@ -77,10 +107,10 @@ Parameters:
     Default: "'*'" # TODO
     Description: 'Allowed origins for CORS'
 
-  CrudDatabaseName:
-    Type: String
-    Default: cruddb
-    Description: Name of a testing database name
+  # CrudDatabaseName:
+  #   Type: String
+  #   Default: cruddb
+  #   Description: Name of a testing database name
 
   DisableAppCache:
     Description: 'Disable the redis cache by the backend'
@@ -114,6 +144,13 @@ Conditions:
     - !Condition HasCertificateArn
   EnableAdditionalMetricsCondition: !Equals [!Ref EnableAdditionalMetrics, 'true']
   AllowOnlyCloudfrontOriginCondition: !Equals [!Ref AllowOnlyCloudfrontOrigin, 'true']
+  # Lambda Layer ARNs
+  CreateAwsSdkV3Layer: !Equals [!Ref ExistingAwsSdkV3LayerArn, '']
+  CreateRedisClientLayer: !Equals [!Ref ExistingRedisClientLayerArn, '']
+  CreateConnectionsUsernamesLayer: !Equals [!Ref ExistingConnectionsUsernamesLayerArn, '']
+  CreateCommandsHandlersLayer: !Equals [!Ref ExistingCommandsHandlersLayerArn, '']
+  CreateDbDataLayer: !Equals [!Ref ExistingDbDataLayerArn, '']
+  CreateDocumentUtilsLayer: !Equals [!Ref ExistingDocumentUtilsLayerArn, '']
 
 Globals:
   Function:
@@ -313,6 +350,7 @@ Resources:
   # ------------------------------------------------------------------------------
   AwsSdkV3Layer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateAwsSdkV3Layer
     Properties:
       Description: AWS SDK v3 Layer
       ContentUri: ../backend/layers/awssdkv3-layer.zip
@@ -320,6 +358,7 @@ Resources:
 
   RedisClientLayer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateRedisClientLayer
     Properties:
       Description: Redis Layer
       ContentUri: ../backend/RenTracker-service/ecs/layers/redisClient
@@ -327,6 +366,7 @@ Resources:
 
   ConnectionsUsernamesLayer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateConnectionsUsernamesLayer
     Properties:
       Description: Layer for collecting an array [{connection, username}].
       ContentUri: ../backend/websockets/layers/connections
@@ -334,6 +374,7 @@ Resources:
 
   CommandsHandlersLayer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateCommandsHandlersLayer
     Properties:
       Description: Layer for processing commands from the frontend.
       ContentUri: ../backend/RenTracker-service/ecs/layers/commandsHandlers
@@ -341,6 +382,7 @@ Resources:
 
   DbDataLayer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateDbDataLayer
     Properties:
       Description: Layer for accessing the database.
       ContentUri: ../backend/RenTracker-service/ecs/layers/dbData
@@ -348,6 +390,7 @@ Resources:
 
   DocumentUtilsLayer:
     Type: AWS::Serverless::LayerVersion
+    Condition: CreateDocumentUtilsLayer
     Properties:
       Description: Document utilities layer (markdown, uuid, puppeteer)
       ContentUri: ../backend/layers/document-utils
@@ -385,11 +428,11 @@ Resources:
       Runtime: nodejs20.x
       Timeout: 10 # seconds
       Layers:
-        - !Ref RedisClientLayer
-        - !Ref AwsSdkV3Layer
-        - !Ref ConnectionsUsernamesLayer
-        - !Ref CommandsHandlersLayer
-        - !Ref DbDataLayer
+        - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
+        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
+        - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
+        - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
@@ -419,8 +462,8 @@ Resources:
       Handler: disconnect.handler
       Runtime: nodejs20.x
       Layers:
-        - !Ref RedisClientLayer
-        - !Ref ConnectionsUsernamesLayer
+        - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
+        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
@@ -444,11 +487,11 @@ Resources:
       Runtime: nodejs20.x
       Timeout: 5 # seconds
       Layers:
-        - !Ref RedisClientLayer
-        - !Ref AwsSdkV3Layer
-        - !Ref ConnectionsUsernamesLayer
-        - !Ref CommandsHandlersLayer
-        - !Ref DbDataLayer
+        - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
+        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
+        - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
+        - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
@@ -738,11 +781,11 @@ Resources:
       Timeout: 300 # seconds
       MemorySize: 2048
       Layers:
-        - 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
-        - !Ref DbDataLayer
-        - !Ref RedisClientLayer
-        - !Ref DocumentUtilsLayer
-        - !Ref AwsSdkV3Layer
+        - !Ref ExistingCorsHeadersLayerArn
+        - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
+        - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
+        - !If [CreateDocumentUtilsLayer, !Ref DocumentUtilsLayer, !Ref ExistingDocumentUtilsLayerArn]
+        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
@@ -895,10 +938,10 @@ Resources:
       Timeout: 60 # seconds
       MemorySize: 2048
       Layers:
-        - !Ref AwsSdkV3Layer
-        - !Ref DocumentUtilsLayer
-        - !Ref RedisClientLayer
-        - !Ref DbDataLayer
+        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !If [CreateDocumentUtilsLayer, !Ref DocumentUtilsLayer, !Ref ExistingDocumentUtilsLayerArn]
+        - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
+        - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
@@ -1158,7 +1201,7 @@ Resources:
   #     Handler: dbManagement.handler
   #     Runtime: nodejs20.x
   #     Layers:
-  #       - !Ref DbDataLayer
+  #       - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
   #     Timeout: 300 # seconds
   #     Environment:
   #       Variables:
@@ -1196,7 +1239,7 @@ Resources:
       Timeout: 10 # seconds
       CodeUri: ../backend/websockets/connections/
       Layers:
-        - !Ref AwsSdkV3Layer
+        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
       Environment:
         Variables:
           WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
@@ -1308,6 +1351,10 @@ Resources:
                 activity:
                   pending_confirmation:
                     - true
+            - dataCreated:
+                saasTenants:
+                  is_disabled:
+                    - false
       State: ENABLED
       Targets:
         - Arn: !Ref TargetChattyLambdaArn
