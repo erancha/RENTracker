@@ -40,7 +40,7 @@ textarea {
   input,
   textarea,
   .MuiInputBase-root {
-    background-color: color-mix(in srgb, lightcyan 60%, white 80%);
+    background-color: color-mix(in srgb, lightcyan 50%, white 80%);
     border-bottom: 1px solid darkred;
     border-radius: 0;
 
@@ -112,8 +112,7 @@ input.error-message {
 /* Actions and Buttons */
 .actions {
   display: grid;
-  grid-template-columns: repeat(2, 2.5rem);
-  gap: 4px;
+  grid-template-columns: repeat(2, 2.2rem);
 }
 
 form > .actions {
@@ -709,7 +708,8 @@ form > .actions {
   }
 
   .actions {
-    gap: 1px;
+    row-gap: 4px;
+    column-gap: 0px;
     place-content: start;
   }
 
@@ -797,7 +797,7 @@ form > .actions {
   grid-template-columns: 5rem 12rem 5rem 5rem 5rem;
 
   &:not(.input) .actions {
-    opacity: 0.6;
+    opacity: 0.5;
     pointer-events: none;
   }
 
@@ -813,7 +813,6 @@ form > .actions {
   .apartment-housing-unit-container {
     display: grid;
     grid-template-columns: repeat(2, minmax(8rem, 1fr));
-    width: fit-content;
     overflow-x: hidden;
 
     &::before {

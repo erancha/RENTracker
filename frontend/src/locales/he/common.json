@@ -54,6 +54,7 @@
     "months": "חודשים",
     "roomCount": "מספר חדרים",
     "confirmUnsavedChanges": "יש לך שינויים שלא נשמרו. האם אתם בטוחים שברצונכם לבטל?",
+    "successfullyDeleted": "נמחקה בהצלחה",
     "fields": {
       "id": "מזהה",
       "name": "שם",
@@ -93,7 +94,8 @@
     "mustStartWithZero": "חייב להתחיל ב-0",
     "invalidPhone": "מספר טלפון לא תקין",
     "missingDigits": "חסרות ספרות",
-    "tooManyDigits": "יותר מדי ספרות",
+    "valueTooShort": "ערך קצר מדי",
+    "valueTooLong": "ערך ארוך מדי",
     "invalidDate": "תאריך לא תקין",
     "dateMustBeAfterAgreement": "התאריך חייב להיות אחרי תאריך ההסכם",
     "endDateMinMonths": "תאריך סיום חייב להיות לפחות {{months}} חודשים אחרי תאריך התחלה",

@@ -385,7 +385,7 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
   private handleDataDeleted(dataDeleted: any) {
     if (dataDeleted.apartments) {
       this.props.deleteApartmentAction(dataDeleted.apartments.apartment_id);
-      toast(`Apartment ${dataDeleted.apartments.apartment_id} was deleted.`);
+      toast(`${this.props.t('apartments.fields.apartment')} ${this.props.t('common.successfullyDeleted')}.`);
     } else if (dataDeleted.activity) {
       // console.log(dataDeleted.activity); //TODO
     } else if (dataDeleted.saasTenants) {

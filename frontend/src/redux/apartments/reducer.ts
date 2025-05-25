@@ -96,7 +96,10 @@ export const apartmentsReducer = (state: IApartmentsState = initialState.apartme
         apartmentForm: {
           ...state.apartmentForm,
           [action.payload.field]: action.payload.value,
-          errors: {},
+          errors: {
+            ...state.apartmentForm.errors,
+            [action.payload.field]: ''
+          },
         },
       };
 

@@ -663,7 +663,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
         } else if (digits.length < 10) {
           return t('validation.missingDigits');
         } else if (digits.length > 10) {
-          return t('validation.tooManyDigits');
+          return t('validation.valueTooLong');
         } else if (!validateIsraeliPhone(stringValue)) {
           return t('validation.invalidPhone');
         }

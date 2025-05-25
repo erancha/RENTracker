@@ -29,7 +29,7 @@
     "tooltips": {
       "saveNew": "Save the new apartment",
       "saveModified": "Save the modified apartment",
-      "toggleView": "Toggle from Apartment {{from}} to {{to}}"
+      "toggleView": "Toggle from {{from}} to {{to}}"
     }
   },
   "auth": {
@@ -54,6 +54,7 @@
     "months": "months",
     "roomCount": "Rooms count",
     "confirmUnsavedChanges": "You have unsaved changes. Are you sure you want to cancel?",
+    "successfullyDeleted": "successfully deleted",
     "fields": {
       "id": "Identifier",
       "name": "Name",
@@ -93,7 +94,8 @@
     "mustStartWithZero": "Must start with 0",
     "invalidPhone": "Invalid phone number",
     "missingDigits": "Missing digits",
-    "tooManyDigits": "Too many digits",
+    "valueTooShort": "Value too short",
+    "valueTooLong": "Value too long",
     "invalidDate": "Invalid date",
     "dateMustBeAfterAgreement": "Date must be after agreement date",
     "endDateMinMonths": "End date must be at least {{months}} months after start date",

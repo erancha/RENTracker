@@ -28,7 +28,6 @@ import { filterAndSortApartments } from '../utils/utils';
 import { ApartmentForm } from './ApartmentForm';
 import ApartmentDocumentList from './ApartmentDocumentList';
 import ApartmentActivity from './ApartmentActivity';
-import { v4 as uuidv4 } from 'uuid';
 import { IDocument } from 'redux/documents/types';
 import { toast } from 'react-toastify';
 
@@ -38,15 +37,9 @@ import { toast } from 'react-toastify';
  * @extends React.Component<IApartmentsProps, { showDocuments: boolean }>
  */
 class Apartments extends React.Component<IApartmentsProps, { showDocuments: boolean }> {
-  // Refs for form elements
-  private newApartmentInputRef = React.createRef<HTMLInputElement>();
-  private currentApartmentRef = React.createRef<HTMLInputElement>();
-
   constructor(props: IApartmentsProps) {
     super(props);
-    this.state = {
-      showDocuments: true,
-    };
+    this.state = { showDocuments: true };
   }
 
   // Initialize focus and visibility change listeners
@@ -56,31 +49,9 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
         if (this.props.userType === UserType.Landlord) {
           this.props.setNoApartmentsNotifiedAction(true);
           this.props.toggleApartmentFormAction(true);
-          setTimeout(() => this.newApartmentInputRef.current?.focus(), 1000);
         }
       }
     }, 3000);
-
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
-  }
-
-  /**
-   * Handles visibility change to focus on new apartment input
-   */
-  handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') setTimeout(() => this.newApartmentInputRef.current?.focus(), 1000);
-  };
-
-  componentDidUpdate(prevProps: IApartmentsProps) {
-    if (prevProps.currentApartmentId !== this.props.currentApartmentId) {
-      setTimeout(() => {
-        const currentElement = this.currentApartmentRef.current;
-        if (currentElement) {
-          currentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          currentElement.focus();
-        }
-      }, 100);
-    }
   }
 
   /**
@@ -88,7 +59,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
    * @returns {JSX.Element} The rendered component
    */
   render() {
-    const { userType, showApartmentForm, isWsConnected, currentApartmentId, apartmentForm, t } = this.props;
+    const { userType, showApartmentForm, isWsConnected, currentApartmentId, t } = this.props;
     const { showDocuments } = this.state;
     const filteredApartments = this.getFilteredApartments();
 
@@ -103,24 +74,7 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
           </header>
           <div className='data-container apartments-list'>
             {showApartmentForm ? (
-              <ApartmentForm
-                mode={apartmentForm.id ? 'edit' : 'create'}
-                initialValues={{
-                  address: apartmentForm.address,
-                  is_housing_unit: apartmentForm.is_housing_unit,
-                  unit_number: apartmentForm.unit_number,
-                  rooms_count: apartmentForm.rooms_count,
-                  rent_amount: apartmentForm.rent_amount,
-                  is_disabled: apartmentForm.is_disabled,
-                }}
-                errors={apartmentForm.errors}
-                onSubmit={apartmentForm.id ? this.handleUpdateApartment : this.handleCreateApartment}
-                onCancel={() => {
-                  this.props.toggleApartmentFormAction(false);
-                  this.props.resetApartmentFormAction();
-                }}
-                inputRef={this.newApartmentInputRef}
-              />
+              <ApartmentForm />
             ) : filteredApartments.length > 0 ? (
               filteredApartments.map((apartment) => (
                 <div
@@ -129,7 +83,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     userType === UserType.Landlord ? ' isLandlord' : ''
                   }${apartment.apartment_id === currentApartmentId ? ' current' : ''}`}
                   onClick={() => this.handleApartmentClick(apartment.apartment_id)}
-                  ref={apartment.apartment_id === currentApartmentId ? this.currentApartmentRef : undefined}
                   title={apartment.apartment_id}
                 >
                   {apartment.updated_at && (
@@ -158,12 +111,21 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
                     <button onClick={() => this.handleDeleteApartment(apartment)} className='action-button delete' title={t('common.delete')}>
                       <Trash2 />
                     </button>
-                    {this.renderDocumentsToggleButton(apartment.apartment_id)}
+                    <button
+                      onClick={() => this.handleToggleDocumentsActivity(apartment.apartment_id)}
+                      className='action-button documents activity'
+                      title={t('apartments.tooltips.toggleView', {
+                        from: this.state.showDocuments ? t('documents.title') : t('apartmentActivity.title'),
+                        to: this.state.showDocuments ? t('apartmentActivity.title') : t('documents.title'),
+                      })}
+                    >
+                      {this.state.showDocuments ? <FileText /> : <List />}
+                    </button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className='empty-message'>{this.props.t('apartments.noApartments')}</div>
+              <div className='empty-message'>{t('apartments.noApartments')}</div>
             )}
           </div>
         </div>
@@ -182,23 +144,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   };
 
   /**
-   * Renders the documents/activity toggle button
-   * @returns {JSX.Element} Button with appropriate styling based on state
-   */
-  renderDocumentsToggleButton = (apartment_id: string) => (
-    <button
-      onClick={() => this.handleToggleDocumentsActivity(apartment_id)}
-      className='action-button documents activity'
-      title={this.props.t('apartments.tooltips.toggleView', {
-        from: this.state.showDocuments ? 'Rental Agreements' : 'Activity',
-        to: this.state.showDocuments ? 'Activity' : 'Rental Agreements',
-      })}
-    >
-      {this.state.showDocuments ? <FileText /> : <List />}
-    </button>
-  );
-
-  /**
    * Toggles between documents and activity view
    */
   handleToggleDocumentsActivity = (apartment_id: string) => {
@@ -209,60 +154,6 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
 
   handleShowActivity = () => {
     this.setState({ showDocuments: false });
-  };
-
-  /**
-   * Creates a new apartment if form validation passes
-   * @param {object} values - Form values for new apartment
-   */
-  handleCreateApartment = (values: { address: string; is_housing_unit: boolean; unit_number: string; rooms_count: number; rent_amount: number }) => {
-    const errors = this.validateForm(values);
-
-    if (Object.keys(errors).length === 0) {
-      const apartment_id = uuidv4();
-      this.props.prepareCreateApartmentCommandAction(
-        apartment_id,
-        values.address,
-        values.is_housing_unit,
-        values.unit_number,
-        values.rooms_count,
-        values.rent_amount
-      );
-      this.props.toggleApartmentFormAction(false);
-      this.props.addApartmentAction({
-        ...values,
-        apartment_id,
-        onroute: true,
-        is_disabled: false,
-        user_id: this.props.userId || '',
-      });
-      this.props.resetApartmentFormAction();
-      this.props.setCurrentApartmentAction(apartment_id);
-      this.props.clearApartmentActivityAction();
-    } else {
-      this.props.setApartmentFormErrorsAction(errors);
-    }
-  };
-
-  /**
-   * Validates apartment form fields
-   * @param {object} values - Form values to validate
-   * @returns {Record<string, string>} Validation errors if any
-   */
-  validateForm = (values: { address: string; unit_number: string; rooms_count: number; rent_amount: number }) => {
-    const errors: Record<string, string> = {};
-    const { t } = this.props;
-
-    if (!values.address) errors.address = t('validation.required');
-
-    if (!values.unit_number) errors.unit_number = t('validation.required');
-
-    if (!values.rooms_count) errors.rooms_count = t('validation.required');
-    else if (values.rooms_count < 1 || values.rooms_count > 20 || values.rooms_count % 0.5 !== 0) errors.rooms_count = t('validation.roomsCount');
-
-    if (!values.rent_amount || values.rent_amount <= 0) errors.rent_amount = t('validation.required');
-
-    return errors;
   };
 
   /**
@@ -295,58 +186,17 @@ class Apartments extends React.Component<IApartmentsProps, { showDocuments: bool
   };
 
   /**
-   * Updates an existing apartment if validation passes
-   * @param {object} values - Updated apartment values
-   */
-  handleUpdateApartment = (values: {
-    address: string;
-    is_housing_unit: boolean;
-    unit_number: string;
-    rooms_count: number;
-    rent_amount: number;
-    is_disabled?: boolean;
-  }) => {
-    const { prepareUpdateApartmentCommandAction, apartmentForm, setApartmentStateAction, setApartmentFormErrorsAction } = this.props;
-
-    // Validate form
-    const errors = this.validateForm(values);
-
-    if (Object.keys(errors).length === 0) {
-      if (apartmentForm.id) {
-        // Update local state first (in redux)
-        setApartmentStateAction({
-          ...values,
-          apartment_id: apartmentForm.id,
-          onroute: true,
-          is_disabled: values.is_disabled ?? false,
-        });
-
-        // Send update command (to the backend)
-        prepareUpdateApartmentCommandAction(apartmentForm.id, {
-          ...values,
-          is_disabled: values.is_disabled ?? false,
-        });
-
-        // Reset form state
-        this.props.toggleApartmentFormAction(false);
-        this.props.resetApartmentFormAction();
-      }
-    } else {
-      setApartmentFormErrorsAction(errors);
-    }
-  };
-
-  /**
    * Duplicates an apartment
    * @param {IDocument} doc - Document to duplicate
    */
   handleDuplicateApartment = async (apartment: IApartment) => {
-    this.props.toggleApartmentFormAction(true);
-    this.props.updateApartmentFieldAction('address', apartment.address);
-    this.props.updateApartmentFieldAction('is_housing_unit', apartment.is_housing_unit);
-    this.props.updateApartmentFieldAction('unit_number', apartment.unit_number);
-    this.props.updateApartmentFieldAction('rooms_count', apartment.rooms_count);
-    this.props.updateApartmentFieldAction('rent_amount', apartment.rent_amount);
+    const { toggleApartmentFormAction, updateApartmentFieldAction } = this.props;
+
+    toggleApartmentFormAction(true);
+    updateApartmentFieldAction('address', apartment.address);
+    updateApartmentFieldAction('is_housing_unit', apartment.is_housing_unit);
+    updateApartmentFieldAction('rooms_count', apartment.rooms_count);
+    updateApartmentFieldAction('rent_amount', apartment.rent_amount);
   };
 
   /**
@@ -380,16 +230,6 @@ interface IApartmentsProps {
   currentApartmentDocuments: IDocument[];
   noApartmentsNotified: boolean;
   showApartmentForm: boolean;
-  apartmentForm: {
-    id: string;
-    address: string;
-    is_housing_unit: boolean;
-    unit_number: string;
-    rooms_count: number;
-    rent_amount: number;
-    is_disabled: boolean;
-    errors: Record<string, string>;
-  };
   setMenuSelectedPageAction: typeof setMenuSelectedPageAction;
   setNoApartmentsNotifiedAction: typeof setNoApartmentsNotifiedAction;
   prepareCreateApartmentCommandAction: typeof prepareCreateApartmentCommandAction;
@@ -418,7 +258,6 @@ const mapStateToProps = (state: IAppState) => ({
   currentApartmentDocuments: state.documents.documents,
   noApartmentsNotified: state.apartments.noApartmentsNotified,
   showApartmentForm: state.apartments.showApartmentForm,
-  apartmentForm: state.apartments.apartmentForm,
 });
 
 // Map Redux actions to component props
