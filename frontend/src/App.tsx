@@ -146,13 +146,15 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
           <span className='may-switch-language'>{this.t('overview.maySwitchLanguage')}</span>
           <LanguageSwitcher className='language-switcher' />
           <hr />
-          <p className='signin'>
-            {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
-            {this.t('overview.throughGoogle')}{' '}
-            <span className='text-link sign-in-from-overview draw-attention-during-overview' onClick={() => loginWithGoogleAction(auth)}>
+          <div className='signin'>
+            <div>
+              {this.t('overview.authDescription')} <span className='secure-authentication'>{this.t('overview.secureAuth')}</span>{' '}
+              {this.t('overview.throughGoogle')}
+            </div>
+            <div className='text-link sign-in-from-overview draw-attention-during-overview' onClick={() => loginWithGoogleAction(auth)}>
               {this.t('auth.signIn')}
-            </span>
-          </p>
+            </div>
+          </div>
 
           <div className={`header3 ${showOverview ? 'visible' : 'hidden'}`}>
             {!showOverview && (

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox } from '@mui/material';
-import { getClipboardDocumentId } from '../utils/clipboard';
+import { getDocumentIdFromClipboard } from '../utils/clipboard';
 import { UserType } from 'redux/auth/types';
 import { useTranslation } from 'react-i18next';
 import { SAAS_TENANTS_VIEW } from 'redux/menu/types';
@@ -100,7 +100,7 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
 
     // Check clipboard on mount and when user clicks anywhere in the component
     const checkClipboard = async () => {
-      const documentId = await getClipboardDocumentId();
+      const { documentId } = await getDocumentIdFromClipboard();
       if (documentId) startAutoSelect(documentId);
     };
 

@@ -7,6 +7,10 @@ html[dir='rtl'] .action-button {
   transform: scaleX(-1);
 }
 
+html[dir='rtl'] .action-button {
+  animation-name: scale-up-animation-rtl;
+}
+
 /* Base Styles */
 body {
   display: flex;
@@ -108,7 +112,7 @@ input.error-message {
 /* Actions and Buttons */
 .actions {
   display: grid;
-  grid-template-columns: repeat(2, 2rem);
+  grid-template-columns: repeat(2, 2.5rem);
   gap: 4px;
 }
 
@@ -127,12 +131,25 @@ form > .actions {
   transition: background-color 0.2s;
   scale: 0.8;
 
-  &.add {
-    animation: fade-in-from-30-percent 1s 3 5s;
+  /* &.add, */
+  &.cancel,
+  &.save {
+    color: black;
+    scale: 110%;
+    border: solid 1px gray;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    place-content: center;
+    flex-wrap: wrap;
+    padding: 1px;
+    margin: 3px;
+    height: 2rem;
+    width: 2rem;
+    animation: scale-up-animation 60s linear forwards;
   }
 
-  &.cancel {
-    color: red !important;
+  &.add {
+    animation: fade-in-from-60-percent 1s 3 5s;
   }
 
   &.save {
@@ -141,6 +158,11 @@ form > .actions {
     &.has-changes {
       border: 2px solid blue;
     }
+  }
+
+  &.cancel.has-changes {
+    color: red;
+    border: 2px solid red;
   }
 
   &.delete {
@@ -167,6 +189,34 @@ form > .actions {
   &.pdf,
   &.share {
     color: green;
+  }
+
+  &.share {
+    animation: pulsate-brightness 1s ease-in-out 5 forwards 3s;
+  }
+}
+
+@keyframes scale-up-animation {
+  0% {
+    transform: scale(0.6);
+  }
+  66.67% {
+    transform: scale(0.7);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+@keyframes scale-up-animation-rtl {
+  0% {
+    transform: scale(0.6) scaleX(-1);
+  }
+  66.67% {
+    transform: scale(0.7) scaleX(-1);
+  }
+  100% {
+    transform: scale(0.8) scaleX(-1);
   }
 }
 
@@ -355,6 +405,7 @@ form > .actions {
 
   .may-switch-language {
     margin-inline: 1rem;
+    font-size: medium;
   }
 
   > hr {
@@ -390,11 +441,16 @@ form > .actions {
           font-weight: bolder;
         }
       }
+    }
 
-      &.signin {
-        margin-top: 2rem;
-        margin-bottom: 2rem;
-      }
+    .signin {
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+      gap: 0.5rem;
+      align-items: center;
     }
 
     hr {
@@ -477,8 +533,36 @@ form > .actions {
     &.sign-in-from-overview {
       font-size: large;
       font-weight: 600;
-      animation-iteration-count: infinite;
+      padding: 0.5rem 1rem;
+      border-radius: 1rem;
+
+      /* start flashing after 5 seconds, transform to button after 30 seconds */
+      animation: sign-in-button-appear 1s ease-in-out 30s forwards, sign-in-button-pulse 1s ease-in-out 5s infinite;
     }
+  }
+}
+
+@keyframes sign-in-button-appear {
+  0% {
+    background-color: transparent;
+    color: inherit;
+    border: none;
+  }
+  100% {
+    background-color: royalblue;
+    color: white;
+    border: 1px solid white;
+    border-radius: 1rem;
+  }
+}
+
+@keyframes sign-in-button-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
   }
 }
 
@@ -763,10 +847,6 @@ form > .actions {
     .css-1qm1lh {
       margin-bottom: 0.5rem;
     }
-
-    .cancel {
-      color: black !important;
-    }
   }
 
   > .data-container .actions {
@@ -793,7 +873,7 @@ form > .actions {
 
 /* Table Row / Document */
 .table-row.document {
-  grid-template-columns: 5rem 16rem 10rem 12rem;
+  grid-template-columns: 6rem 16rem 10rem 12rem;
   border-radius: 0.5rem;
   column-gap: 0.5rem;
 
@@ -914,31 +994,37 @@ form > .actions {
   .pdf {
     animation: pulsate-brightness 1s ease-in-out 3 forwards 3s;
   }
-  .share {
-    animation: pulsate-brightness 1s ease-in-out 3 forwards 6s;
-  }
 
   .document-id-input-container {
     display: grid;
-    grid-template-columns: minmax(12rem, 25rem) 2rem max-content;
+    grid-template-columns: minmax(12rem, 50rem) 2rem max-content;
     padding: 1rem 0.2rem 1rem 0.5rem;
     background-color: white;
     border-radius: 0.5rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin: 1rem 0;
+    margin: 1rem;
 
     .document-id-input {
       flex: 1;
-      padding: 0.5rem;
+      margin: 0.5rem;
+      padding: 5px;
       border: 1px solid #ccc;
       border-radius: 0.25rem;
       font-size: 1rem;
-      max-width: 25rem;
 
       &:focus {
         outline: none;
         border-color: #1976d2;
         box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+      }
+    }
+
+    .actions {
+      grid-template-columns: 1fr;
+      grid-template-rows: max-content;
+
+      .action-button.has-changes {
+        scale: 120% !important;
       }
     }
   }
@@ -1129,7 +1215,7 @@ form > .actions {
   }
 
   .actions {
-    grid-template-columns: repeat(4, 1.5rem);
+    grid-template-columns: repeat(4, 2.5rem);
     align-content: center;
   }
 
@@ -1261,8 +1347,21 @@ form > .actions {
     }
   }
 
-  .app-overview-container .header2 ul {
-    width: 85%;
+  .app-overview-container .header2 {
+    ul {
+      width: 85%;
+    }
+
+    .signin {
+      grid-template-columns: 1fr;
+      grid-auto-flow: row;
+
+      .sign-in-from-overview {
+        width: 9rem;
+        padding: 3px 3px 5px 3px;
+        justify-self: center;
+      }
+    }
   }
 
   .menu-container {

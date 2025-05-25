@@ -299,10 +299,10 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Grid container spacing={2}>
-                    <Grid item xs={8} sm={5} md={4}>
+                    <Grid item xs={12} sm={5} md={4}>
                       {this.renderTextField('propertyAddress', t('documentForm.fields.propertyAddress'), { isDisabled: true })}
                     </Grid>
-                    <Grid item xs={4} sm={3} md={1}>
+                    <Grid item xs={12} sm={3} md={1}>
                       {this.renderNumberField('roomCount', t('common.roomCount'), { min: 1, max: 20, step: '0.5', isDisabled: true })}
                     </Grid>
                     <Grid item xs={12}>
@@ -556,7 +556,12 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
   }
 
   private renderCancelButton = () => (
-    <button type='button' className='action-button cancel' title={this.props.t('common.cancel')} onClick={this.handleCancel}>
+    <button
+      type='button'
+      className={`action-button cancel${this.hasUnsavedChanges() ? ' has-changes' : ''}`}
+      title={this.props.t('common.cancel')}
+      onClick={this.handleCancel}
+    >
       <Undo2 />
     </button>
   );

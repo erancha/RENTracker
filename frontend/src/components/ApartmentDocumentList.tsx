@@ -125,7 +125,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                         <Trash2 />
                       </button>
                       <button
-                        className='action-button documents'
+                        className='action-button pdf'
                         title={t('documents.downloadPdf')}
                         onClick={async () => {
                           const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
@@ -137,7 +137,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                       </button>
                       {!document.template_fields.tenant1Email /* the document was linked to a tenant - it's pointless and confusing to share it again */ && (
                         <button
-                          className='action-button pdf'
+                          className='action-button share'
                           title={t('documents.shareWhatsapp')}
                           onClick={async () => {
                             const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);

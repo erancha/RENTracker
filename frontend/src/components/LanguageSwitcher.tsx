@@ -27,6 +27,18 @@ const LanguageSwitcher: React.FC<Props> = ({ className, onLanguageChange }) => {
           '&:nth-of-type(2)': {
             order: document.documentElement.dir === 'rtl' ? 1 : 2,
           },
+          '&.MuiButton-outlined': {
+            backgroundColor: 'transparent',
+            '&:hover': {
+              backgroundColor: 'rgba(65, 105, 225, 0.04)',
+              border: '3px solid royalblue',
+              fontWeight: 'bolder',
+            },
+          },
+          '&.MuiButton-contained': {
+            backgroundColor: 'royalblue',
+            color: 'white',
+          },
         },
       }}
     >

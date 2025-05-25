@@ -10,7 +10,7 @@ import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getTenantDocumentsThunk } from '../redux/documents/thunks';
 import { Pencil, FileText, Plus, ArrowRight, Undo2, Share2 } from 'lucide-react';
 import { timeShortDisplay, formatDate } from 'utils/utils';
-import { getClipboardDocumentId, parseDocumentIdFromText } from '../utils/clipboard';
+import { getDocumentIdFromClipboard, parseDocumentIdFromText } from '../utils/clipboard';
 import DocumentForm from './DocumentForm';
 import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
@@ -21,7 +21,6 @@ import { toast } from 'react-toastify';
  */
 class TenantDocumentList extends React.Component<DocumentListProps, DocumentListState> {
   state: DocumentListState = {
-    showForm: false,
     editMode: false,
     showDocumentIdInput: false,
     documentIdInput: '',
@@ -41,34 +40,65 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    * Fetches tenant documents when user ID changes
    * @param {DocumentListProps} prevProps - Previous component props
    */
-  componentDidUpdate(prevProps: DocumentListProps) {
-    const { userId, getTenantDocumentsThunk, t } = this.props;
-    // Fetch when userId becomes available or changes
-    if (userId && (!prevProps.userId || userId !== prevProps.userId)) {
-      getTenantDocumentsThunk(userId);
+  private findObjectDifferences(obj1: any, obj2: any, path: string = ''): any {
+    if (obj1 === obj2) return {};
+    if (!obj1 || !obj2) return { [path.slice(1)]: { from: obj1, to: obj2 } };
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') {
+      return { [path.slice(1)]: { from: obj1, to: obj2 } };
     }
 
-    // console.log(
-    //   `
-    //    this.State: ${JSON.stringify(this.state)},
-    //    loading: ${this.props.loading} <== ${prevProps.loading},
-    //    selectedDocument.Id: ${this.props.selectedDocument?.document_id} <== ${prevProps.selectedDocument?.document_id},
-    //    documents.length: ${this.props.documents.length} <== ${prevProps.documents.length}
-    //    `
-    // );
+    const diffs: any = {};
+
+    // Handle arrays
+    if (Array.isArray(obj1) && Array.isArray(obj2)) {
+      if (obj1.length !== obj2.length) {
+        return { [path.slice(1)]: { from: obj1, to: obj2 } };
+      }
+      // For arrays, compare each element
+      obj1.forEach((item, index) => {
+        const elementDiffs = this.findObjectDifferences(item, obj2[index], `${path}.${index}`);
+        Object.assign(diffs, elementDiffs);
+      });
+      return diffs;
+    }
+
+    // Handle objects
+    const allKeys = Array.from(new Set([...Object.keys(obj1), ...Object.keys(obj2)]));
+    for (const key of allKeys) {
+      if (obj1[key] !== obj2[key]) {
+        const newPath = path ? `${path}.${key}` : `.${key}`;
+        const diff = this.findObjectDifferences(obj1[key], obj2[key], newPath);
+        Object.assign(diffs, diff);
+      }
+    }
+
+    return diffs;
+  }
+
+  componentDidUpdate(prevProps: DocumentListProps) {
+    const { userId, getTenantDocumentsThunk, t } = this.props;
+
+    // Compare props recursively and show only changes
+    // const differences = this.findObjectDifferences(prevProps, this.props);
+    // if (Object.keys(differences).length > 0) {
+    //   console.log(`Changed props: ${JSON.stringify(differences, null, 2)}, state: ${JSON.stringify(this.state, null, 2)}`);
+    // }
+
+    // Fetch the document when userId exists for the first time, or changes
+    if (userId && (!prevProps.userId || userId !== prevProps.userId)) getTenantDocumentsThunk(userId);
 
     if (this.props.selectedDocument && (!prevProps.selectedDocument || prevProps.selectedDocument.document_id !== this.props.selectedDocument.document_id)) {
       const template_fields = this.props.selectedDocument.template_fields;
       // the selected document is either not linked yet or already linked to the current tenant:
       if (!template_fields.tenant1Email || template_fields.tenant1Email.toLowerCase() === this.props.email.toLowerCase())
-        this.setState({ showDocumentIdInput: false, showForm: true });
+        this.setState({ showDocumentIdInput: false });
       else {
         toast.error(t('tenantDocuments.errorLinkedEmail'));
-        this.setState({ showDocumentIdInput: true, showForm: false, documentIdInput: '' });
+        this.setState({ showDocumentIdInput: true, documentIdInput: '' });
       }
-    } else if (!this.props.loading && prevProps.loading && !this.state.showForm) {
+    } else if (!this.props.loading && prevProps.loading) {
       // no documments yet - open the new document id form:
-      if (this.props.documents.length === 0) {
+      if (this.props.documents.length === 0 && !this.props.selectedDocument) {
         this.setState({ showDocumentIdInput: true });
       } // if selected document changed, update the edit mode:
     }
@@ -80,14 +110,14 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    */
   render() {
     const { documents = [], error, t } = this.props;
-    const { showForm, showDocumentIdInput, documentIdInput } = this.state;
+    const { showDocumentIdInput, documentIdInput } = this.state;
     const documentWasSigned = (document: IDocument) => !!document.template_fields.landlordSignature;
 
     return (
       <div className='page body-container' id='tenant-documents'>
         <header className='header'>
           {t('documents.title')}
-          {!this.state.showDocumentIdInput && !this.state.showForm && (
+          {!this.state.showDocumentIdInput && !this.props.selectedDocument && (
             <button className='action-button add' onClick={() => this.setState({ showDocumentIdInput: true })}>
               <Plus />
             </button>
@@ -100,28 +130,41 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
               <div className='input-and-error-container'>
                 <textarea
                   autoFocus
-                  rows={2}
+                  rows={4}
                   value={documentIdInput}
-                  onChange={(e) => this.setState({ documentIdInput: parseDocumentIdFromText(e.target.value) || '' })}
+                  onChange={(e) => this.handleDocumentIdExtraction(e.target.value)}
+                  onFocus={() => this.handleDocumentIdExtraction()}
+                  onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+                    const text = e.clipboardData.getData('text');
+                    this.handleDocumentIdExtraction(text);
+                  }}
                   onKeyDown={this.handleKeyDown}
-                  onFocus={this.handleFocus}
                   placeholder={t('tenantDocuments.documentIdPlaceholder')}
                   className='document-id-input'
                 />
                 {error && <span className='error-message'>{error}</span>}
               </div>
-              <button className='action-button save' title={t('common.save')} onClick={this.handleSubmit}>
-                <ArrowRight />
-              </button>
-              <button className='action-button cancel' title={t('common.cancel')} onClick={() => this.setState({ showDocumentIdInput: false })}>
-                <Undo2 />
-              </button>
+              <div className='actions'>
+                <button className={`action-button save${documentIdInput ? ' has-changes' : ''}`} title={t('common.save')} onClick={this.handleSubmit}>
+                  <ArrowRight />
+                </button>
+                <button
+                  className='action-button cancel'
+                  title={t('common.cancel')}
+                  onClick={() => {
+                    if (this.state.documentIdInput) this.setState({ documentIdInput: '' });
+                    else this.setState({ showDocumentIdInput: false });
+                  }}
+                >
+                  <Undo2 />
+                </button>
+              </div>
             </div>
-          ) : showForm ? (
+          ) : this.props.selectedDocument ? (
             <DocumentForm
-              documentId={this.props.selectedDocument?.document_id}
+              documentId={this.props.selectedDocument.document_id}
               onClose={async () => {
-                this.setState({ showForm: false, editMode: false, documentIdInput: '' });
+                this.setState({ editMode: false, documentIdInput: '' });
                 this.props.setSelectedDocument(null);
               }}
             />
@@ -145,7 +188,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                         title={t('common.edit')}
                         onClick={async () => {
                           await this.props.getDocumentThunk(document.document_id);
-                          this.setState({ showForm: true, editMode: true });
+                          this.setState({ editMode: true });
                         }}
                       >
                         <Pencil />
@@ -191,28 +234,29 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
   }
 
   /**
-   * Handles key press in document ID input
-   * @param {React.KeyboardEvent<HTMLInputElement>} e - The keyboard event
+   * Handles click on document ID input
    */
-  handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter') {
-      this.handleSubmit();
+  handleDocumentIdExtraction = async (manualInput: string | null = null) => {
+    // console.log('handleDocumentIdExtraction:', manualInput);
+    if (manualInput) {
+      const documentIdInput = parseDocumentIdFromText(manualInput);
+      this.setState({ documentIdInput: documentIdInput || manualInput });
+    } else {
+      const { documentId, text } = await getDocumentIdFromClipboard();
+      // console.log('handleDocumentIdExtraction:', { documentId, text });
+      if (documentId) {
+        this.setState({ documentIdInput: documentId });
+        await this.fetchDocument(documentId);
+      } else if (text) this.setState({ documentIdInput: text });
     }
   };
 
   /**
-   * Handles click on document ID input
+   * Handles key press in document ID input
+   * @param {React.KeyboardEvent<HTMLInputElement>} e - The keyboard event
    */
-  handleFocus = async () => {
-    try {
-      const documentId = await getClipboardDocumentId();
-      if (documentId) {
-        this.setState({ documentIdInput: documentId });
-        this.props.getDocumentThunk(documentId);
-      }
-    } catch (error) {
-      // Ignore clipboard read errors
-    }
+  handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') this.handleSubmit();
   };
 
   /**
@@ -220,10 +264,17 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
    */
   handleSubmit = async () => {
     const { documentIdInput } = this.state;
-    if (!documentIdInput.trim()) return;
+    // console.log('handleSubmit:', documentIdInput);
+    if (documentIdInput) await this.fetchDocument(documentIdInput);
+  };
 
+  /**
+   * Helper method to fetch a document
+   * @param {string} documentId - The document ID to fetch
+   */
+  fetchDocument = async (documentId: string) => {
     try {
-      this.props.getDocumentThunk(documentIdInput.trim());
+      await this.props.getDocumentThunk(documentId);
     } catch (error) {
       toast.error(this.props.t('tenantDocuments.fetchError'));
     }
@@ -283,7 +334,6 @@ const mapStateToProps = (state: RootState) => ({
  * @interface DocumentListState
  */
 interface DocumentListState {
-  showForm: boolean;
   editMode: boolean;
   showDocumentIdInput: boolean;
   documentIdInput: string;

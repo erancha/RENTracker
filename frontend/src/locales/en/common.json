@@ -218,8 +218,8 @@
     "additionalDetails": "For additional details"
   },
   "tenantDocuments": {
-    "documentIdPlaceholder": "Paste the message shared via WhatsApp or enter the rental agreement id ...",
-    "errorLinkedEmail": "You cannot edit this document. It is linked to another tenant.",
+    "documentIdPlaceholder": "Paste a message shared via WhatsApp or enter a rental agreement id ...",
+    "errorLinkedEmail": "This rental agreement cannot be edited - It is linked to another tenant.",
     "fetchError": "Failed to fetch document. Please check the ID and try again.",
     "pleaseSignAndShare": "Please sign the document and share with the landlord.",
     "shareMessage": "Please find below a link to the *signed* rental agreement: *'{{title}}'*:\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
