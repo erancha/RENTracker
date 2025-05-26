@@ -217,6 +217,7 @@
     "architecture": "Architecture",
     "techStack": "The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates",
     "ui": "The app offers an intuitive, mobile-friendly UI/UX",
+    "saas": "Built as a SaaS solution using Pool Model (Fully Shared) architecture",
     "additionalDetails": "For additional details"
   },
   "tenantDocuments": {

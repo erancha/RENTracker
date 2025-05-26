@@ -8,9 +8,11 @@ Designed with scalability in mind, the application employs a serverless computin
 
 The application features an intuitive mobile-friendly design and monitoring capabilities through AWS CloudWatch. The app is developed using AWS, React, REST APIs, and WebSockets to provide real-time updates.
 
+The application is built as a SaaS solution using the Pool Model (Fully Shared), where all tenants share the same infrastructure and database with data separation through tenant IDs (in this context, referring to SaaS customers, not to be confused with apartments rental tenants, as described above).
+
 User authentication is securely handled through Google.
 
-The app is available online at https://d1qes2uy1amux4.cloudfront.net
+The app is available online at https://d3foa0cm4szuix.cloudfront.net
 
 # Table Of Content
 
@@ -94,7 +96,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 ##### Example of Relationships
 
 - A landlord can have multiple apartments.
-- A tenant can make multiple activity for their rented apartment.
+- A tenant can sign rental agreements on apartments of multiple landlords (probably not simultanously ..).
 
 #### **SQS**
 
@@ -126,7 +128,13 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - Uses AWS SAM (Serverless Application Model) for deployment
 - Infrastructure is defined with CloudFormation templates
 - Deploy with a single command: `sam build` and `sam deploy`
-- The app is available online at https://d1qes2uy1amux4.cloudfront.net
+- The app is available online at https://d3foa0cm4szuix.cloudfront.net
+- **SaaS Capabilities**:
+  - Multi-tenant architecture using Pool Model (Fully Shared)
+  - Self-service onboarding for landlords (and each landlord's tenants).
+  - Centralized cloud-based delivery
+  - Automatic updates and maintenance
+  - Note: Currently free to use (no subscription model implemented)
 
 ### 6. **Monitoring and Logging**
 
