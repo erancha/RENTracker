@@ -225,7 +225,7 @@
     "errorLinkedEmail": "This rental agreement cannot be edited - It is linked to another tenant.",
     "fetchError": "Failed to fetch document. Please check the ID and try again.",
     "pleaseSignAndShare": "Please sign the document and share with the landlord.",
-    "shareMessage": "Please find below a link to the *signed* rental agreement: *'{{title}}'*:\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
+    "shareMessage": "Please find below a link to *'{{title}}'* signed by the tenant(s):\n\n{{url}}\n\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "tooltips": {
       "addSecondTenant": "Add second tenant"
     }
