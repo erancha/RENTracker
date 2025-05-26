@@ -4,16 +4,16 @@
 
 - [Preface](#preface)
 - [High-Level Design (HLD)](#high-level-design-hld)
-  * [Architecture Diagram](#architecture-diagram)
-  * [Overview](#overview)
-  * [Frontend](#frontend)
-  * [Backend](#backend)
-  * [Non-functional attributes](#non-functional-attributes)
-    + [Security](#security)
-    + [Scalability, Performance and Resiliency](#scalability-performance-and-resiliency)
-    + [Deployment](#deployment)
-    + [Monitoring and Logging](#monitoring-and-logging)
-  * [Data Model](#data-model)
+  - [Architecture Diagram](#architecture-diagram)
+  - [Overview](#overview)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [Non-functional attributes](#non-functional-attributes)
+    - [Security](#security)
+    - [Scalability, Performance and Resiliency](#scalability-performance-and-resiliency)
+    - [Deployment](#deployment)
+    - [Monitoring and Logging](#monitoring-and-logging)
+  - [Data Model](#data-model)
 
 <!-- tocstop -->
 
@@ -61,10 +61,7 @@ The app is available online at https://d3foa0cm4szuix.cloudfront.net
 - Frontend communicates with backend through API Gateway over both REST APIs and WebSocket connections
 - All requests (REST and WebSocket) are processed by Lambda functions
 - Data is persisted in S3 and DynamoDB with ElastiCache Redis for improved read performance
-
-**SQS**
-
-- Purpose: To decouple websockets notifications from business logic in Lambda functions.
+- SQS queues handle WebSocket notifications asynchronously, allowing Lambda functions in private subnets to process data requests immediately without waiting for notification delivery.
 
 ## Non-functional attributes
 
@@ -72,7 +69,7 @@ The app is available online at https://d3foa0cm4szuix.cloudfront.net
 
 - Data in transit is encrypted with HTTPS
 - User authentication via AWS Cognito with **Google integration**
-- Lambda functions and Elasticache Redis are in a **private subnet**
+- Lambda functions and Elasticache Redis are in **private subnet**s
 - IAM roles follow the least privilege principle
 - Sensitive documents in S3 are shared via presigned URLs, which are configured with an expiration time (e.g., 1 day) to limit exposure.
 
