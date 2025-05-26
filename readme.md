@@ -30,7 +30,7 @@ The app supports two user roles:
 
 ## Architecture Diagram
 
-![Architecture diagram](https://lucid.app/publicSegments/view/3c5a66a2-7a1d-4ca0-9c1b-f79361f76804/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/83f22943-eee4-458d-8ac0-f0c408b8096e/image.jpeg)
 
 ## Overview
 
@@ -61,7 +61,7 @@ The app is available online at https://d3foa0cm4szuix.cloudfront.net
 - Frontend communicates with backend through API Gateway over both REST APIs and WebSocket connections
 - All requests (REST and WebSocket) are processed by Lambda functions
 - Data is persisted in S3 and DynamoDB with ElastiCache Redis for improved read performance
-- SQS queues handle WebSocket notifications asynchronously, allowing Lambda functions in private subnets to process data requests immediately without waiting for notification delivery.
+- SQS queues handle WebSocket notifications asynchronously, allowing Lambda functions in private subnets to process data requests immediately without waiting for notification delivery. In addition, the lambda function processing the queue is also responsible to send emails via SES, to publish to EventBridge, and to handle CloudFront cache invalidation when needed.
 
 ## Non-functional attributes
 
