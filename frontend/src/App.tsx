@@ -167,8 +167,8 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
             )}
             <ul>
               <li>{this.t('overview.techStack')}.</li>
-              <li>{this.t('overview.ui')}.</li>
               <li>{this.t('overview.saas')}.</li>
+              <li>{this.t('overview.ui')}.</li>
               <li>
                 <div className='link-container'>
                   {this.t('overview.additionalDetails')}:

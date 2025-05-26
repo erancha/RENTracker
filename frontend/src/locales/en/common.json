@@ -200,7 +200,7 @@
     "landlordSettings": "Landlord Settings"
   },
   "overview": {
-    "description": "is a property rent tracking app that streamlines rent agreements and activity.",
+    "description": "is a property rental tracking app that streamlines rental agreements and activity.",
     "maySwitchLanguage": "Want to switch language?",
     "authDescription": "The app provides",
     "secureAuth": "secure authentication",
@@ -215,7 +215,7 @@
       "tenantsDesc": "who complete their details and sign rental agreements"
     },
     "architecture": "Architecture",
-    "techStack": "The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS services, with robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates",
+    "techStack": "The app is designed for scalability, utilizing serverless computing and storage, with global content delivery through CloudFront. Built with AWS services, robust monitoring via AWS CloudWatch and X-Ray, and WebSockets for real-time updates",
     "ui": "The app offers an intuitive, mobile-friendly UI/UX",
     "saas": "Built as a SaaS solution using Pool Model (Fully Shared) architecture",
     "additionalDetails": "For additional details"

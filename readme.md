@@ -1,14 +1,22 @@
 # Preface
 
-**RENTracker** is a property rent tracking app that streamlines rent agreements and activity.
+**RENTracker** is a property rental tracking app that streamlines rental agreements and activity management.
 
-The app supports two user roles: Landlords who manage properties, rental agreements, and activity, and Tenants who complete their details and sign rental agreements.
+The app supports two user roles:
 
-Designed with scalability in mind, the application employs a serverless computing, alongside global content distribution via CloudFront.
+- Landlords who manage properties and rental agreements
+- Tenants who complete their details and sign agreements
 
-The application features an intuitive mobile-friendly design and monitoring capabilities through AWS CloudWatch. The app is developed using AWS, React, REST APIs, and WebSockets to provide real-time updates.
+Designed with scalability in mind, the application employs:
 
-The application is built as a SaaS solution using the Pool Model (Fully Shared), where all tenants share the same infrastructure and database with data separation through tenant IDs (in this context, referring to SaaS customers, not to be confused with apartments rental tenants, as described above).
+- AWS serverless computing and storage with ElastiCache Redis for distributed caching
+- Global content distribution via CloudFront
+- Comprehensive monitoring through AWS CloudWatch and X-Ray
+- Real-time updates via WebSockets
+
+Built as a SaaS solution using the Pool Model (Fully Shared), where all tenants share the same infrastructure and database with data separation through tenant IDs (in this context, referring to SaaS customers, not to be confused with properties rental tenants, as described above).
+
+The app features an intuitive mobile-friendly design.
 
 User authentication is securely handled through Google.
 
@@ -30,11 +38,12 @@ The app is available online at https://d3foa0cm4szuix.cloudfront.net
         - [Example of Relationships](#example-of-relationships)
       - [**SQS**](#sqs)
     - [2. **Frontend**](#2-frontend)
-    - [3. **Security** Considerations](#3-security-considerations)
-    - [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
-    - [5. **Deployment**](#5-deployment)
-    - [6. **Monitoring and Logging**](#6-monitoring-and-logging)
-      - [6.1 **AWS X-Ray**](#61-aws-x-ray)
+    - [3. **Backend**](#3-backend)
+    - [4. **Security** Considerations](#4-security-considerations)
+    - [5. **Scalability**, **Performance** and **Resiliency**](#5-scalability-performance-and-resiliency)
+    - [6. **Deployment**](#6-deployment)
+    - [7. **Monitoring and Logging**](#7-monitoring-and-logging)
+      - [7.1 **AWS X-Ray**](#71-aws-x-ray)
   - [Summary](#summary)
 
 <!-- tocstop -->
@@ -96,7 +105,7 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 ##### Example of Relationships
 
 - A landlord can have multiple apartments.
-- A tenant can sign rental agreements on apartments of multiple landlords (probably not simultanously ..).
+- A tenant can sign rental agreements on apartments of multiple landlords (probably not simultaneously...).
 
 #### **SQS**
 
@@ -109,7 +118,13 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - Delivered globally via **AWS CloudFront**
 - Technology stack: **React**, **Redux** (HOC), **TypeScript**
 
-### 3. **Security** Considerations
+### 3. **Backend**
+
+- Frontend communicates with backend through both REST APIs and WebSocket connections
+- All requests (REST and WebSocket) are processed by Lambda functions
+- Data is persisted in S3 and DynamoDB with ElastiCache Redis for improved read performance
+
+### 4. **Security** Considerations
 
 - Data in transit is encrypted with **HTTPS**
 - User authentication via AWS Cognito with **Google** integration
@@ -117,18 +132,19 @@ Serverless deployment option where Lambda functions run in private subnets, usin
 - IAM roles follow the least privilege principle
 - Sensitive documents in S3 are shared via presigned URLs, which are configured with an expiration time (e.g., 2 days) to limit exposure.
 
-### 4. **Scalability**, **Performance** and **Resiliency**
+### 5. **Scalability**, **Performance** and **Resiliency**
 
 - Serverless architecture enables automatic scaling
 - Elasticache Redis enhances the scalability of read operations
 - CloudFront provides low-latency content delivery
 
-### 5. **Deployment**
+### 6. **Deployment**
 
 - Uses AWS SAM (Serverless Application Model) for deployment
 - Infrastructure is defined with CloudFormation templates
 - Deploy with a single command: `sam build` and `sam deploy`
 - The app is available online at https://d3foa0cm4szuix.cloudfront.net
+
 - **SaaS Capabilities**:
   - Multi-tenant architecture using Pool Model (Fully Shared)
   - Self-service onboarding for landlords (and each landlord's tenants).
@@ -136,11 +152,11 @@ Serverless deployment option where Lambda functions run in private subnets, usin
   - Automatic updates and maintenance
   - Note: Currently free to use (no subscription model implemented)
 
-### 6. **Monitoring and Logging**
+### 7. **Monitoring and Logging**
 
 - **Monitoring** and **logging** via AWS CloudWatch and X-Ray
 
-#### 6.1 **AWS X-Ray**
+#### 7.1 **AWS X-Ray**
 
 - **Purpose**: AWS X-Ray is used to trace requests as they travel through the application, providing insights into performance bottlenecks and service dependencies.
 - **Impact on Production Performance**: Minimal impact when sampling is enabled. Sampling ensures that only a subset of requests are traced, reducing overhead.
