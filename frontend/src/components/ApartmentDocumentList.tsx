@@ -95,7 +95,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
               {documents.length > 0 ? (
                 documents.map((document) => (
                   <div key={document.document_id} className={`table-row document${(documentWasSigned(document) && ' signed') || ''}`}>
-                    <div className='updated' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
+                    <div className='updated-at' data-title={t('common.fields.lastUpdated')} title={t('common.fields.lastUpdated')}>
                       {timeShortDisplay(new Date(document.updated_at))}
                     </div>
                     <div className='name' data-title={t('common.fields.name')} title={`Document ${document.document_id}`}>

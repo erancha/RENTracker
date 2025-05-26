@@ -676,7 +676,7 @@ form > .actions {
       content: attr(data-title);
       display: flex;
       flex-direction: column;
-      font-size: xx-small;
+      font-size: x-small;
       color: gray;
       text-transform: capitalize;
       padding-bottom: 3px;
@@ -685,7 +685,7 @@ form > .actions {
     &,
     & > * {
       width: 100%;
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       transition: background-color 0.2s ease;
       box-sizing: border-box;
     }
@@ -694,6 +694,10 @@ form > .actions {
       margin: 2px;
       background-color: white;
       font-size: 0.8rem;
+    }
+
+    &.updated-at {
+      font-size: small;
     }
   }
 
@@ -882,7 +886,7 @@ form > .actions {
     border-width: 3px;
   }
 
-  > .updated,
+  > .updated-at,
   > .period {
     font-size: 0.8rem;
   }
@@ -1383,11 +1387,14 @@ form > .actions {
     }
 
     &.apartment {
+      width: 95%;
+
       &:not(.input) {
         grid-template-areas:
           'col1 col2 col5'
           'col3 col4 col5';
-        grid-template-columns: 5rem 10rem 5rem;
+        grid-template-columns: 5rem auto 5rem;
+
         grid-template-rows: auto auto;
         & > *:nth-child(1) {
           grid-area: col1;
@@ -1426,6 +1433,13 @@ form > .actions {
 
   .table-row.saas-tenant {
     grid-template-columns: 1fr;
-    width: 90%;
+    width: 95%;
+
+    & > div {
+      &,
+      & > * {
+        font-size: 1.1rem;
+      }
+    }
   }
 }
