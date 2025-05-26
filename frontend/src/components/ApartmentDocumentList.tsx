@@ -12,7 +12,7 @@ import { Pencil, Plus, Copy, Share2, Trash2, FileText } from 'lucide-react';
 import { timeShortDisplay, formatDate } from 'utils/utils';
 import { fieldsToResetOnDuplicate } from '../constants/documentFields';
 import DocumentForm from './DocumentForm';
-import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
+import { handlePdfDownload, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
 import Spinner from './Spinner';
 
@@ -124,15 +124,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                       <button onClick={() => this.handleDeleteDocument(document)} className='action-button delete' title={t('common.delete')}>
                         <Trash2 />
                       </button>
-                      <button
-                        className='action-button pdf'
-                        title={t('documents.downloadPdf')}
-                        onClick={async () => {
-                          const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
-                          if (pdfUrl) window.open(pdfUrl, '_blank');
-                          else toast.error(t('messages.error'));
-                        }}
-                      >
+                      <button className='action-button pdf' title={t('documents.downloadPdf')} onClick={() => this.handlePdfDownload(document)}>
                         <FileText />
                       </button>
                       {!document.template_fields.tenant1Email /* the document was linked to a tenant - it's pointless and confusing to share it again */ && (
@@ -140,7 +132,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
                           className='action-button share'
                           title={t('documents.shareWhatsapp')}
                           onClick={async () => {
-                            const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                            const pdf_url: string | null = await handlePdfDownload(document.document_id, this.props.JWT);
                             if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
                             else toast.error(t('messages.error'));
                           }}
@@ -163,6 +155,39 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
         </div>
       </div>
     );
+  }
+
+  /**
+   * Handles the PDF download process for a document, including waiting for recent updates
+   * to be processed by the backend stream processor if necessary.
+   * @param {IDocument} document - The document to download as PDF
+   * @returns {Promise<void>}
+   * @private
+   */
+  private async handlePdfDownload(document: IDocument): Promise<void> {
+    const { t } = this.props;
+
+    // Wait at least 10 seconds after document update before allowing PDF download
+    // (this is a rough way to allow backend\documents\documentsStreamProcessor.js more time to generate the PDF)
+    const timeDelta = new Date().getTime() - new Date(document.created_at).getTime();
+    if (timeDelta < 10000) {
+      const sleepTime = 10000 - timeDelta;
+      await new Promise((resolve) => setTimeout(resolve, sleepTime));
+    }
+
+    // Download the PDF
+    const pdfUrl: string | null = await handlePdfDownload(document.document_id, this.props.JWT);
+    if (!pdfUrl) toast.error(t('messages.error'));
+    else if (timeDelta >= 10000) window.open(pdfUrl, '_blank');
+    else
+      toast.success(
+        <div>
+          <a href={pdfUrl} target='_blank' rel='noopener noreferrer' style={{ color: 'blue', textDecoration: 'underline' }}>
+            {getDocumentTitle(document?.template_fields?.tenant1Name, t('documents.rentalAgreement'))}
+          </a>
+        </div>,
+        { autoClose: 10000 }
+      );
   }
 
   /**

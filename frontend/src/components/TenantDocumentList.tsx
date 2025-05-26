@@ -12,7 +12,7 @@ import { Pencil, FileText, Plus, ArrowRight, Undo2, Share2 } from 'lucide-react'
 import { timeShortDisplay, formatDate } from 'utils/utils';
 import { getDocumentIdFromClipboard, parseDocumentIdFromText } from '../utils/clipboard';
 import DocumentForm from './DocumentForm';
-import { handlePdfGeneration, getDocumentTitle } from '../utils/documentUtils';
+import { handlePdfDownload, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
 
 /**
@@ -198,7 +198,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                         className='action-button pdf'
                         title={t('documents.downloadPdf')}
                         onClick={async () => {
-                          const pdfUrl: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                          const pdfUrl: string | null = await handlePdfDownload(document.document_id, this.props.JWT);
                           if (pdfUrl) window.open(pdfUrl, '_blank');
                           else toast.error(t('messages.error'));
                         }}
@@ -212,7 +212,7 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                             className='action-button share'
                             title={t('documents.shareWhatsapp')}
                             onClick={async () => {
-                              const pdf_url: string | null = await handlePdfGeneration(document.document_id, this.props.JWT);
+                              const pdf_url: string | null = await handlePdfDownload(document.document_id, this.props.JWT);
                               if (pdf_url) this.handleShareViaWhatsApp(document.document_id, pdf_url);
                               else toast.error(t('messages.error'));
                             }}

@@ -191,7 +191,8 @@ form > .actions {
   }
 
   &.share {
-    animation: pulsate-brightness 1s ease-in-out 5 forwards 3s;
+    animation: pulsate-brightness 1s ease-in-out 10 forwards 3s;
+    scale: 100%;
   }
 }
 

@@ -5,7 +5,7 @@ import appConfigData from '../appConfig.json';
  * @param {string} documentId - ID of document to download
  * @param {string | null} JWT - JSON Web Token for authentication
  */
-export const handlePdfGeneration = async (documentId: string, JWT: string | null): Promise<string | null> => {
+export const handlePdfDownload = async (documentId: string, JWT: string | null): Promise<string | null> => {
   if (!JWT) {
     console.error('No JWT token available');
     return null;
