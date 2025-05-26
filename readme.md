@@ -1,3 +1,22 @@
+# Table Of Content
+
+<!-- toc -->
+
+- [Preface](#preface)
+- [High-Level Design (HLD)](#high-level-design-hld)
+  * [Architecture Diagram](#architecture-diagram)
+  * [Overview](#overview)
+  * [Frontend](#frontend)
+  * [Backend](#backend)
+  * [Non-functional attributes](#non-functional-attributes)
+    + [Security](#security)
+    + [Scalability, Performance and Resiliency](#scalability-performance-and-resiliency)
+    + [Deployment](#deployment)
+    + [Monitoring and Logging](#monitoring-and-logging)
+  * [Data Model](#data-model)
+
+<!-- tocstop -->
+
 # Preface
 
 **RENTracker** is a property rental tracking app that streamlines rental agreements and activity management.
@@ -6,6 +25,14 @@ The app supports two user roles:
 
 - Landlords who manage properties and rental agreements
 - Tenants who complete their details and sign agreements
+
+# High-Level Design (HLD)
+
+## Architecture Diagram
+
+![Architecture diagram](https://lucid.app/publicSegments/view/3c5a66a2-7a1d-4ca0-9c1b-f79361f76804/image.jpeg)
+
+## Overview
 
 Designed with scalability in mind, the application employs:
 
@@ -22,46 +49,64 @@ User authentication is securely handled through Google.
 
 The app is available online at https://d3foa0cm4szuix.cloudfront.net
 
-# Table Of Content
-
-<!-- toc -->
-
-- [High-Level Design (HLD) Document for RENTracker](#high-level-design-hld-document-for-rentracker)
-  - [Architecture](#architecture)
-    - [1. **Frontend**](#1-frontend)
-    - [2. **Backend**](#2-backend)
-      - [**Data Model**:](#data-model)
-      - [**SQS**](#sqs)
-    - [3. **Security** Considerations](#3-security-considerations)
-    - [4. **Scalability**, **Performance** and **Resiliency**](#4-scalability-performance-and-resiliency)
-    - [5. **Deployment**](#5-deployment)
-    - [6. **Monitoring and Logging**](#6-monitoring-and-logging)
-      - [6.1 **AWS X-Ray**](#61-aws-x-ray)
-  - [Summary](#summary)
-
-<!-- tocstop -->
-
-# High-Level Design (HLD) Document for RENTracker
-
-## Architecture
-
-**API Gateway + Lambda**
-![Architecture diagram](https://lucid.app/publicSegments/view/3c5a66a2-7a1d-4ca0-9c1b-f79361f76804/image.jpeg)
-
-### 1. **Frontend**
+## Frontend
 
 - Single Page Application (SPA) developed with React
 - Hosted on AWS S3
 - Delivered globally via **AWS CloudFront**
 - Technology stack: **React**, **Redux**, **TypeScript**
 
-### 2. **Backend**
+## Backend
 
 - Frontend communicates with backend through API Gateway over both REST APIs and WebSocket connections
 - All requests (REST and WebSocket) are processed by Lambda functions
 - Data is persisted in S3 and DynamoDB with ElastiCache Redis for improved read performance
 
-#### **Data Model**
+**SQS**
+
+- Purpose: To decouple websockets notifications from business logic in Lambda functions.
+
+## Non-functional attributes
+
+### Security
+
+- Data in transit is encrypted with HTTPS
+- User authentication via AWS Cognito with **Google integration**
+- Lambda functions and Elasticache Redis are in a **private subnet**
+- IAM roles follow the least privilege principle
+- Sensitive documents in S3 are shared via presigned URLs, which are configured with an expiration time (e.g., 1 day) to limit exposure.
+
+### Scalability, Performance and Resiliency
+
+- Serverless architecture enables automatic scaling
+- Elasticache Redis enhances the scalability of read operations
+- CloudFront provides low-latency content delivery
+
+### Deployment
+
+- Uses AWS SAM (Serverless Application Model) for deployment
+- Infrastructure is defined with CloudFormation templates
+- Deploy with a single command: `sam build` and `sam deploy`
+- The app is available online at https://d3foa0cm4szuix.cloudfront.net
+
+- **SaaS Capabilities**:
+  - Multi-tenant architecture using Pool Model (Fully Shared)
+  - Self-service onboarding for landlords (and each landlord's tenants).
+  - Centralized cloud-based delivery
+  - Automatic updates and maintenance
+  - Note: Currently free to use (no subscription model implemented)
+
+### Monitoring and Logging
+
+- **Monitoring** and **logging** via AWS CloudWatch and X-Ray
+
+**AWS X-Ray**
+
+- **Purpose**: AWS X-Ray is used to trace requests as they travel through the application, providing insights into performance bottlenecks and service dependencies.
+- **Impact on Production Performance**: Minimal impact when sampling is enabled. Sampling ensures that only a subset of requests are traced, reducing overhead.
+- **Benefits**: Helps in identifying latency issues, debugging errors, and understanding the application's behavior under load.
+
+## Data Model
 
 **1. SaaS Tenants Table**:
 
@@ -107,49 +152,3 @@ The app is available online at https://d3foa0cm4szuix.cloudfront.net
 
 - A landlord can have multiple apartments.
 - A tenant can sign rental agreements on apartments of multiple landlords (probably not simultaneously...).
-
-#### **SQS**
-
-- Purpose: To decouple websockets notifications from business logic in Lambda functions.
-
-### 3. **Security** Considerations
-
-- Data in transit is encrypted with HTTPS
-- User authentication via AWS Cognito with **Google integration**
-- Lambda functions and Elasticache Redis are in a **private subnet**
-- IAM roles follow the least privilege principle
-- Sensitive documents in S3 are shared via presigned URLs, which are configured with an expiration time (e.g., 1 day) to limit exposure.
-
-### 4. **Scalability**, **Performance** and **Resiliency**
-
-- Serverless architecture enables automatic scaling
-- Elasticache Redis enhances the scalability of read operations
-- CloudFront provides low-latency content delivery
-
-### 5. **Deployment**
-
-- Uses AWS SAM (Serverless Application Model) for deployment
-- Infrastructure is defined with CloudFormation templates
-- Deploy with a single command: `sam build` and `sam deploy`
-- The app is available online at https://d3foa0cm4szuix.cloudfront.net
-
-- **SaaS Capabilities**:
-  - Multi-tenant architecture using Pool Model (Fully Shared)
-  - Self-service onboarding for landlords (and each landlord's tenants).
-  - Centralized cloud-based delivery
-  - Automatic updates and maintenance
-  - Note: Currently free to use (no subscription model implemented)
-
-### 6. **Monitoring and Logging**
-
-- **Monitoring** and **logging** via AWS CloudWatch and X-Ray
-
-#### 6.1 **AWS X-Ray**
-
-- **Purpose**: AWS X-Ray is used to trace requests as they travel through the application, providing insights into performance bottlenecks and service dependencies.
-- **Impact on Production Performance**: Minimal impact when sampling is enabled. Sampling ensures that only a subset of requests are traced, reducing overhead.
-- **Benefits**: Helps in identifying latency issues, debugging errors, and understanding the application's behavior under load.
-
-## Summary
-
-RENTracker's architecture utilizes AWS for a scalable, secure, and highly available backend. It supports both single-tenant and multi-tenant deployments, focusing on a robust backend.
