@@ -119,7 +119,13 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
         </button>
       </div>
     ) : userType === UserType.Pending ? (
-      <FirstTimeLanding userId={this.props.userId} setUserTypeAction={this.props.setUserTypeAction} setMenuSelectedPageAction={setMenuSelectedPageAction} />
+      <FirstTimeLanding
+        userId={this.props.userId}
+        userName={this.props.userName}
+        userEmail={this.props.userEmail}
+        setUserTypeAction={this.props.setUserTypeAction}
+        setMenuSelectedPageAction={setMenuSelectedPageAction}
+      />
     ) : userType === UserType.Tenant ? (
       <TenantDocumentList />
     ) : (
@@ -209,6 +215,8 @@ interface IAppProps {
   setUserTypeAction: typeof setUserTypeAction;
   apartments: IApartment[];
   userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
   userType: UserType | undefined;
   currentApartmentId: string | null;
   selectedDocument: IDocument | null;
@@ -224,6 +232,8 @@ const mapStateToProps = (state: IAppState) => ({
   menuSelectedPage: state.menu.menuSelectedPage,
   apartments: state.apartments.apartments,
   userId: state.auth.userId,
+  userName: state.auth.userName,
+  userEmail: state.auth.email,
   userType: state.auth.userType,
   currentApartmentId: state.apartments.currentApartmentId,
   JWT: state.auth.JWT,

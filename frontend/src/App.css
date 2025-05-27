@@ -8,7 +8,7 @@ html[dir='rtl'] .action-button {
 }
 
 html[dir='rtl'] .action-button {
-  animation-name: scale-up-animation-rtl;
+  animation-name: scale-up-rtl;
 }
 
 /* Base Styles */
@@ -144,7 +144,7 @@ form > .actions {
     margin: 3px;
     height: 2rem;
     width: 2rem;
-    animation: scale-up-animation 60s linear forwards;
+    animation: scale-up 60s linear forwards;
   }
 
   &.add {
@@ -196,7 +196,7 @@ form > .actions {
   }
 }
 
-@keyframes scale-up-animation {
+@keyframes scale-up {
   0% {
     transform: scale(0.6);
   }
@@ -208,7 +208,7 @@ form > .actions {
   }
 }
 
-@keyframes scale-up-animation-rtl {
+@keyframes scale-up-rtl {
   0% {
     transform: scale(0.6) scaleX(-1);
   }
@@ -1029,6 +1029,11 @@ form > .actions {
 
       .action-button.has-changes {
         scale: 120% !important;
+
+        &.valid-uuid {
+          animation: pulsate-brightness 0.75s linear infinite;
+          scale: 90% !important;
+        }
       }
     }
   }

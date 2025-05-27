@@ -10,7 +10,7 @@ import { IDocument } from '../redux/documents/types';
 import { getDocumentThunk, getTenantDocumentsThunk } from '../redux/documents/thunks';
 import { Pencil, FileText, Plus, ArrowRight, Undo2, Share2 } from 'lucide-react';
 import { timeShortDisplay, formatDate } from 'utils/utils';
-import { getDocumentIdFromClipboard, parseDocumentIdFromText } from '../utils/clipboard';
+import { getDocumentIdFromClipboard, isValidUUID, parseDocumentIdFromText } from '../utils/clipboard';
 import DocumentForm from './DocumentForm';
 import { handlePdfDownload, getDocumentTitle } from '../utils/documentUtils';
 import { toast } from 'react-toastify';
@@ -145,7 +145,11 @@ class TenantDocumentList extends React.Component<DocumentListProps, DocumentList
                 {error && <span className='error-message'>{error}</span>}
               </div>
               <div className='actions'>
-                <button className={`action-button save${documentIdInput ? ' has-changes' : ''}`} title={t('common.save')} onClick={this.handleSubmit}>
+                <button
+                  className={`action-button save${documentIdInput ? ' has-changes' : ''}${isValidUUID(documentIdInput) ? ' valid-uuid' : ''}`}
+                  title={t('common.save')}
+                  onClick={this.handleSubmit}
+                >
                   <ArrowRight />
                 </button>
                 <button

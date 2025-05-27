@@ -12,7 +12,7 @@ import { ISetMenuSelectedPageAction } from 'redux/menu/actions';
  * If a document ID is detected in the clipboard, it will highlight the Tenant option
  * and auto-select it after 10 seconds.
  */
-export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setUserTypeAction, setMenuSelectedPageAction }) => {
+export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, userName, userEmail, setUserTypeAction, setMenuSelectedPageAction }) => {
   const { t } = useTranslation();
   const [hasDocumentId, setHasDocumentId] = useState(false);
   const [countdown, setCountdown] = useState(10);
@@ -146,6 +146,9 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
   return (
     <div className='first-time-landing'>
       <div className='content'>
+        <Typography variant='body1' paragraph align='center'>
+          {userName} ({userEmail})
+        </Typography>
         <Typography variant='h4' gutterBottom align='center'>
           {t('welcome.title')}
         </Typography>
@@ -207,6 +210,8 @@ export const FirstTimeLanding: React.FC<FirstTimeLandingProps> = ({ userId, setU
  */
 interface FirstTimeLandingProps {
   userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
   setUserTypeAction: (userType: UserType) => void;
   setMenuSelectedPageAction: (menuSelectedPage: string | null) => ISetMenuSelectedPageAction;
 }

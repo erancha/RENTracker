@@ -57,6 +57,8 @@ export const parseDocumentIdFromText = (text: string): string | null => {
   return documentId;
 };
 
+export const isValidUUID = (text: string): boolean => !!text.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+
 /**
  * Checks if we have clipboard read permission
  * @returns {Promise<boolean>} Whether we have permission
