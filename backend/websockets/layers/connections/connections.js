@@ -1,3 +1,6 @@
+// Updated to force new layer version
+const { PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
+
 //================================================================
 // Prepares an array of {connection, username}:
 //================================================================
@@ -44,4 +47,33 @@ async function collectConnectionsAndUsernames(connectionIds, redisClient, STACK_
   return connectionsAndUsernames;
 }
 
-module.exports = { collectConnectionsAndUsernames };
+//=========================================================================================================================================
+// Send message to each connection of targetConnectionIds.
+//=========================================================================================================================================
+async function sendMessageToConnectedClients({ targetConnectionIds, message, appGatewayClient }) {
+  const MAX_LOG_LENGTH = 1000;
+  const logMessage = `${message.substring(0, MAX_LOG_LENGTH)}${message.length > MAX_LOG_LENGTH ? ' ...' : ''}, message length: ${message.length} bytes`;
+  console.log(`Sending websocket messages: ${logMessage}, to: ${JSON.stringify(targetConnectionIds)} ...`);
+
+  const bufferData = Buffer.from(message);
+  for (const connectionId of targetConnectionIds) {
+    try {
+      await appGatewayClient.send(
+        new PostToConnectionCommand({
+          ConnectionId: connectionId,
+          Data: bufferData,
+        })
+      );
+      console.log(`Sent websocket messages to: ${targetConnectionIds}`);
+    } catch (error) {
+      const errorMessage = `connectionId: ${connectionId}, payload size: ${bufferData.length} bytes: ${logMessage}`;
+      if (error.name === 'GoneException') console.warn(error.name, errorMessage);
+      else console.error(error, errorMessage);
+    }
+  }
+}
+
+module.exports = {
+  collectConnectionsAndUsernames,
+  sendMessageToConnectedClients,
+};

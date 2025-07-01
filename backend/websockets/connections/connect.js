@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 const AWSXRay = require('aws-xray-sdk');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
+const { ApiGatewayManagementApiClient } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { SQSClient } = require('@aws-sdk/client-sqs');
-const { collectConnectionsAndUsernames } = require('/opt/connections');
+const { collectConnectionsAndUsernames, sendMessageToConnectedClients } = require('/opt/connections');
 const dbData = require('/opt/dbData');
 const { handleRead } = require('/opt/commandsHandlers');
 const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
@@ -11,6 +12,7 @@ const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;
 const STACK_NAME = process.env.STACK_NAME;
+const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL ? process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https') : null;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
 
@@ -45,6 +47,7 @@ exports.handler = async (event) => {
     const connectedUserName = decodedJwt.name;
     const connectedUserEmail = decodedJwt.email;
     const connectedUserPhoneNumber = decodedJwt.phone_number;
+    console.log(`currentConnectionId: ${currentConnectionId}`);
     // console.log(JSON.stringify(decodedJwt, null, 2));
 
     /*
@@ -109,10 +112,21 @@ exports.handler = async (event) => {
     const connectionsAndUsernames = await collectConnectionsAndUsernames(connectionIds, redisClient, STACK_NAME);
 
     const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+
+    const appGatewayClient = WEBSOCKET_API_URL
+      ? captureAWSv3Client(new ApiGatewayManagementApiClient({ apiVersion: '2018-11-29', endpoint: WEBSOCKET_API_URL }))
+      : null;
+
     // Send all connected usernames (including the current user) to all connected users excluding the current user (handled below):
     const targetConnectionIds = connectionIds.filter((connectionId) => connectionId !== currentConnectionId);
     if (targetConnectionIds.length > 0) {
-      await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: { connectionsAndUsernames } }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
+      if (WEBSOCKET_API_URL)
+        await sendMessageToConnectedClients({
+          targetConnectionIds,
+          message: JSON.stringify({ connectionsAndUsernames }),
+          appGatewayClient,
+        });
+      else await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: { connectionsAndUsernames } }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
     }
     connectionsAndUsernamesSubsegment.close();
 
@@ -122,7 +136,6 @@ exports.handler = async (event) => {
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database operation timeout')), MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS));
     const dbOperationPromise = async () => {
       // Read and send data to the frontend:
-
       let response = {
         targetConnectionIds: [currentConnectionId],
         message: { currentUserEmail: connectedUserEmail, connectionsAndUsernames },
@@ -144,18 +157,24 @@ exports.handler = async (event) => {
           };
         }
       }
-      return JSON.stringify(response);
+      return response;
     };
 
-    let sqsMessageBody;
+    let response;
     try {
-      sqsMessageBody = await Promise.race([dbOperationPromise(), timeoutPromise]);
+      response = await Promise.race([dbOperationPromise(), timeoutPromise]);
     } catch (error) {
       console.error('$connect: Database operation failed:', error);
-      sqsMessageBody = JSON.stringify({ targetConnectionIds: [currentConnectionId], message: { dbAccess: { MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS } } });
+      response = { targetConnectionIds: [currentConnectionId], message: { dbAccess: { MAX_TIME_TO_WAIT_FOR_DB_OPERATION_MS } } };
     }
 
-    await insertMessageToSQS(sqsMessageBody, sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
+    if (WEBSOCKET_API_URL)
+      await sendMessageToConnectedClients({
+        targetConnectionIds: response.targetConnectionIds,
+        message: JSON.stringify(response.message),
+        appGatewayClient,
+      });
+    else await insertMessageToSQS(JSON.stringify(response), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
     dbOperationSubsegment.close();
 
     return { statusCode: 200 };

@@ -10,7 +10,14 @@ $startTime = Get-Date
 $scriptName = Split-Path -Leaf $PSCommandPath
 $commonConstants = . ../constants.ps1
 $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
-Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : $scriptName --region $($commonConstants.region) ..." -ForegroundColor White -BackgroundColor DarkBlue
+
+# Log non-empty parameters
+$params = @{}
+if ($deleteLogGroupsSuffix -ne "") { $params.Add("deleteLogGroupsSuffix", $deleteLogGroupsSuffix) }
+if ($deleteLogStreamsSuffix -ne "") { $params.Add("deleteLogStreamsSuffix", $deleteLogStreamsSuffix) }
+if ($manageRetentionLogGroupsSuffix -ne "") { $params.Add("manageRetentionLogGroupsSuffix", $manageRetentionLogGroupsSuffix) }
+$paramsString = if ($params.Count -gt 0) { " with params: " + ($params.GetEnumerator() | ForEach-Object { "$($_.Key)='$($_.Value)'" }) -join ", " } else { "" }
+Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : $scriptName --region $($commonConstants.region) $paramsString ..." -ForegroundColor White -BackgroundColor DarkBlue
 
 # Get the list of all existing log groups, ensuring output is trimmed and split correctly
 $logGroups = aws logs --region $commonConstants.region describe-log-groups --query 'logGroups[*].logGroupName' --output text | Out-String | ForEach-Object { $_.Trim() }

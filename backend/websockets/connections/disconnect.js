@@ -1,11 +1,13 @@
+const { ApiGatewayManagementApiClient } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { SQSClient } = require('@aws-sdk/client-sqs');
-const { collectConnectionsAndUsernames } = require('/opt/connections');
+const { collectConnectionsAndUsernames, sendMessageToConnectedClients } = require('/opt/connections');
 const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
 
 const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;
 const STACK_NAME = process.env.STACK_NAME;
+const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL ? process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https') : null;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 
 //===========================================
@@ -13,6 +15,7 @@ const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 //===========================================
 exports.handler = async (event) => {
   const currentConnectionId = event.requestContext.connectionId;
+  // console.log(`currentConnectionId: ${currentConnectionId}`);
 
   try {
     // Lua script to handle disconnection atomically
@@ -51,16 +54,26 @@ exports.handler = async (event) => {
     `;
     const updatedConnectionIds = await redisClient.eval(luaScript, 1, currentConnectionId, STACK_NAME);
     if (updatedConnectionIds.length > 0) {
-      // Send all connected usernames (after removing the current disconnecting user) to all other connected users:
-      const sqsClient = new SQSClient({ region: AWS_REGION });
-      await insertMessageToSQS(
-        JSON.stringify({
+      const connectionsAndUsernames = await collectConnectionsAndUsernames(updatedConnectionIds, redisClient, STACK_NAME);
+      if (WEBSOCKET_API_URL) {
+        const appGatewayClient = new ApiGatewayManagementApiClient({ apiVersion: '2018-11-29', endpoint: WEBSOCKET_API_URL });
+        await sendMessageToConnectedClients({
           targetConnectionIds: updatedConnectionIds,
-          message: { connectionsAndUsernames: await collectConnectionsAndUsernames(updatedConnectionIds, redisClient, STACK_NAME) },
-        }),
-        sqsClient,
-        SQS_MESSAGES_TO_CLIENTS_Q_URL
-      );
+          message: JSON.stringify({ connectionsAndUsernames }),
+          appGatewayClient,
+        });
+      } else {
+        // Send all connected usernames (after removing the current disconnecting user) to all other connected users:
+        const sqsClient = new SQSClient({ region: AWS_REGION });
+        await insertMessageToSQS(
+          JSON.stringify({
+            targetConnectionIds: updatedConnectionIds,
+            message: { connectionsAndUsernames },
+          }),
+          sqsClient,
+          SQS_MESSAGES_TO_CLIENTS_Q_URL
+        );
+      }
     } else console.info(`No remaining connected users were found, STACK_NAME: ${STACK_NAME}`);
     return { statusCode: 200 };
   } catch (error) {

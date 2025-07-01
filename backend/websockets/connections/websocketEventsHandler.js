@@ -1,4 +1,5 @@
-const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
+const { ApiGatewayManagementApiClient } = require('@aws-sdk/client-apigatewaymanagementapi');
+const { sendMessageToConnectedClients } = require('/opt/connections');
 const { EventBridgeClient, PutEventsCommand } = require('@aws-sdk/client-eventbridge');
 const AWSXRay = require('aws-xray-sdk');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
@@ -25,47 +26,43 @@ exports.handler = async (event) => {
   const handlerSubsegment = segment.addNewSubsegment('websocketEventsHandler');
 
   try {
-    const appGatewayClient = new ApiGatewayManagementApiClient({
-      apiVersion: '2018-11-29',
-      endpoint: WEBSOCKET_API_URL.replace(/^wss/, 'https'),
-    });
+    const appGatewayClient = new ApiGatewayManagementApiClient({ apiVersion: '2018-11-29', endpoint: WEBSOCKET_API_URL });
 
     const recordsExtractedFromQueue = event.Records;
     await Promise.all(
       recordsExtractedFromQueue.map(async (record) => {
-        const extractedRecord = JSON.parse(record.body);
-        const MAX_LOG_LENGTH = 1000;
-        const extractedRecordLogMessage = `Extracted record: ${record.body.substring(0, MAX_LOG_LENGTH)}${
-          record.body.length > MAX_LOG_LENGTH ? ' ...' : ''
-        }, record.body length: ${record.body.length} bytes`;
-        console.log(extractedRecordLogMessage);
+        const extractedParsedRecord = JSON.parse(record.body);
 
         // Trigger email verification if not already verified
-        const pendingEmailVerification = extractedRecord.message?.currentUserEmail
-          ? !(await verifyEmailInSES(extractedRecord.message?.currentUserEmail))
+        const pendingEmailVerification = extractedParsedRecord.message?.currentUserEmail
+          ? !(await verifyEmailInSES(extractedParsedRecord.message?.currentUserEmail))
           : undefined;
 
         // Sending to targetConnectionIds Websockets clients:
-        if (extractedRecord.targetConnectionIds && extractedRecord.message) {
+        if (extractedParsedRecord.targetConnectionIds && extractedParsedRecord.message) {
           const websocketsSubsegment = handlerSubsegment.addNewSubsegment('sendMessageToConnectedClients');
           try {
-            // Send the message to all connected websocket clients:
-            const jsonMessage = JSON.stringify({ ...extractedRecord.message, pendingEmailVerification });
-            const bufferData = Buffer.from(jsonMessage);
             await sendMessageToConnectedClients({
+              targetConnectionIds: extractedParsedRecord.targetConnectionIds,
+              message: JSON.stringify({ ...extractedParsedRecord.message, pendingEmailVerification }),
               appGatewayClient,
-              targetConnectionIds: extractedRecord.targetConnectionIds,
-              bufferData,
-              extractedRecordMessage: extractedRecordLogMessage,
             });
           } finally {
             websocketsSubsegment.close();
           }
         }
 
+        // Optionally, email user(s):
+        // TODO (v): Refactor to a dedicated SES handler, also in the default lambda space, via a dedicated queue (+ new VPC endpoint...)
+        if (extractedParsedRecord.emailParams) {
+          const emailSubsegment = handlerSubsegment.addNewSubsegment('sendEmail');
+          await sendEmail(extractedParsedRecord.emailParams);
+          emailSubsegment.close();
+        }
+
         // Publishing to EventBridge:
-        if (extractedRecord.message) {
-          const extractedMessage = extractedRecord.message;
+        if (extractedParsedRecord.message) {
+          const extractedMessage = extractedParsedRecord.message;
           if (extractedMessage.dataCreated || extractedMessage.dataUpdated || extractedMessage.dataDeleted) {
             const eventBridgeSubsegment = handlerSubsegment.addNewSubsegment('publishToEventBridge');
             await publishToEventBridge({ extractedMessage });
@@ -73,17 +70,9 @@ exports.handler = async (event) => {
           }
         }
 
-        // Optionally, email user(s):
-        // TODO (v): Refactor to a dedicated SES handler, also in the default lambda space, via a dedicated queue (+ new VPC endpoint...)
-        if (extractedRecord.emailParams) {
-          const emailSubsegment = handlerSubsegment.addNewSubsegment('sendEmail');
-          await sendEmail(extractedRecord.emailParams);
-          emailSubsegment.close();
-        }
-
         // Optionally, invalidate an S3 key:
-        if (extractedRecord.cloudfrontInvalidationParams) {
-          await handleInvalidate(extractedRecord.cloudfrontInvalidationParams.s3Key);
+        if (extractedParsedRecord.cloudfrontInvalidationParams) {
+          await handleInvalidate(extractedParsedRecord.cloudfrontInvalidationParams.s3Key);
         }
       })
     );
@@ -97,27 +86,6 @@ exports.handler = async (event) => {
 //=============================================================================================================================================
 // Utilities
 //=============================================================================================================================================
-
-//=========================================================================================================================================
-// Send bufferData to each connection of targetConnectionIds.
-// (extractedRecordMessage is used for logging in case of an error ..)
-//=========================================================================================================================================
-const sendMessageToConnectedClients = async ({ appGatewayClient, targetConnectionIds, bufferData, extractedRecordMessage }) => {
-  for (const connectionId of targetConnectionIds) {
-    try {
-      await appGatewayClient.send(
-        new PostToConnectionCommand({
-          ConnectionId: connectionId,
-          Data: bufferData,
-        })
-      );
-    } catch (error) {
-      const errorMessage = `connectionId: ${connectionId}, payload size: ${bufferData.length} bytes: ${extractedRecordMessage}`;
-      if (error.name === 'GoneException') console.warn(error.name, errorMessage);
-      else console.error(error, errorMessage);
-    }
-  }
-};
 
 //=========================================================================================================================================
 // Helper function to publish events to EventBridge

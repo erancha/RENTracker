@@ -288,6 +288,8 @@ class WebSocketService extends React.Component<IWebSocketProps, WebSocketState> 
 
   // Main handler for incoming WebSocket messages
   private handleWebsocketIncomingEvent(eventData: string) {
+    // console.log(eventData);
+
     const parsedEventData = JSON.parse(eventData);
     if (parsedEventData.userType) {
       this.props.setUserTypeAction(parsedEventData.userType);

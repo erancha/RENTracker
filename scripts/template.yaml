@@ -18,6 +18,11 @@ Parameters:
     Type: String
     Description: 'App/business logic Lambda functions security group (leave empty to create a new one)'
     Default: 'sg-d3289ca9'
+  ExistingApiGatewayVpcEndpointId:
+    Type: String
+    Description: 'Optional - Existing VPC Endpoint ID for API Gateway'
+    Default: ''
+
   ExistingRDSEndpoint:
     Type: String
     Description: 'Address of an existing RDS instance (leave empty to create a new one)'
@@ -45,7 +50,7 @@ Parameters:
     Type: String
     Description: 'ARN of existing Redis Client Layer'
     Default: ''
-  ExistingConnectionsUsernamesLayerArn:
+  ExistingWebsocketsConnectionsLayerArn:
     Type: String
     Description: 'ARN of existing Connections Usernames Layer'
     Default: ''
@@ -134,6 +139,7 @@ Parameters:
 
 Conditions:
   CreateAppPrivateSubnets: !Equals [!Ref ExistingAppPrivateSubnetId, '']
+  CreateApiGatewayVpcEndpoint: !Equals [!Ref ExistingApiGatewayVpcEndpointId, '']
   # CreateRDSInstance: !Equals [!Ref ExistingRDSEndpoint, '']
   # HasDeveloperIP: !Not [!Equals [!Ref DeveloperIP, '']]
   # DeployForProductionCondition: !Equals [!Ref StageName, 'prod']
@@ -147,7 +153,7 @@ Conditions:
   # Lambda Layer ARNs
   CreateAwsSdkV3Layer: !Equals [!Ref ExistingAwsSdkV3LayerArn, '']
   CreateRedisClientLayer: !Equals [!Ref ExistingRedisClientLayerArn, '']
-  CreateConnectionsUsernamesLayer: !Equals [!Ref ExistingConnectionsUsernamesLayerArn, '']
+  CreateWebsocketsConnectionsLayer: !Equals [!Ref ExistingWebsocketsConnectionsLayerArn, '']
   CreateCommandsHandlersLayer: !Equals [!Ref ExistingCommandsHandlersLayerArn, '']
   CreateDbDataLayer: !Equals [!Ref ExistingDbDataLayerArn, '']
   CreateDocumentUtilsLayer: !Equals [!Ref ExistingDocumentUtilsLayerArn, '']
@@ -364,9 +370,9 @@ Resources:
       ContentUri: ../backend/RenTracker-service/ecs/layers/redisClient
       CompatibleRuntimes: ['nodejs20.x']
 
-  ConnectionsUsernamesLayer:
+  WebsocketsConnectionsLayer:
     Type: AWS::Serverless::LayerVersion
-    Condition: CreateConnectionsUsernamesLayer
+    Condition: CreateWebsocketsConnectionsLayer
     Properties:
       Description: Layer for collecting an array [{connection, username}].
       ContentUri: ../backend/websockets/layers/connections
@@ -430,13 +436,14 @@ Resources:
       Layers:
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
         - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
-        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
+        - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
         - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
+          # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
@@ -463,11 +470,12 @@ Resources:
       Runtime: nodejs20.x
       Layers:
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
-        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
+        - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
+          # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
       VpcConfig:
@@ -489,13 +497,14 @@ Resources:
       Layers:
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
         - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
-        - !If [CreateConnectionsUsernamesLayer, !Ref ConnectionsUsernamesLayer, !Ref ExistingConnectionsUsernamesLayerArn]
+        - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
         - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
+          # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
           ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           ADMIN_USER_ID: !Ref AdminUserId
@@ -554,6 +563,51 @@ Resources:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
         - !Ref ElasticacheSQSPolicy
 
+  # We already have: IPv4 HTTPS TCP 443 0.0.0.0/0
+  # LambdaToVPCEndpointEgressRule:
+  #   Type: AWS::EC2::SecurityGroupEgress
+  #   Properties:
+  #     Description: Allow Lambda to make HTTPS calls to VPC endpoint
+  #     GroupId: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
+  #     IpProtocol: tcp
+  #     FromPort: 443
+  #     ToPort: 443
+  #     DestinationSecurityGroupId: !Ref VPCEndpointSecurityGroup
+
+  VPCEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for API Gateway VPC Endpoint
+      VpcId: !Ref ExistingVpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-VPCEndpoint-SG'
+
+  WebSocketVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Condition: CreateApiGatewayVpcEndpoint
+    Properties:
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.execute-api'
+      VpcEndpointType: Interface
+      VpcId: !Ref ExistingVpcId
+      SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
+      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]
+      PrivateDnsEnabled: true
+      # PolicyDocument:
+      #   Version: '2012-10-17'
+      #   Statement:
+      #     - Effect: Allow
+      #       Principal: '*'
+      #       Action:
+      #         - 'execute-api:Invoke'
+      #         - 'execute-api:ManageConnections'
+      #       Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
+
   WebSocketConnectLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -563,6 +617,14 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
         - !Ref ElasticacheSQSPolicy
       Policies:
+        - PolicyName: WebSocketManageConnections
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'execute-api:ManageConnections'
+                Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
         - PolicyName: DDBAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -1240,6 +1302,7 @@ Resources:
       CodeUri: ../backend/websockets/connections/
       Layers:
         - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
       Environment:
         Variables:
           WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'

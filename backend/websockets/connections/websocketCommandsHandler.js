@@ -1,13 +1,16 @@
 const AWSXRay = require('aws-xray-sdk-core');
 const { captureAWSv3Client } = require('aws-xray-sdk-core');
+const { ApiGatewayManagementApiClient } = require('@aws-sdk/client-apigatewaymanagementapi');
 const { SQSClient } = require('@aws-sdk/client-sqs');
 const { handleCommand, determineTargetUsers } = require('/opt/commandsHandlers');
+const { sendMessageToConnectedClients } = require('/opt/connections');
 const { getRedisClient /*, disposeRedisClient*/, insertMessageToSQS } = require('/opt/redisClient');
 
 const redisClient = getRedisClient();
 
 const AWS_REGION = process.env.APP_AWS_REGION;
 const STACK_NAME = process.env.STACK_NAME;
+const WEBSOCKET_API_URL = process.env.WEBSOCKET_API_URL ? process.env.WEBSOCKET_API_URL.replace(/^wss/, 'https') : null;
 const SQS_MESSAGES_TO_CLIENTS_Q_URL = process.env.SQS_MESSAGES_TO_CLIENTS_Q_URL;
 
 //=============================================================================================================================================
@@ -42,8 +45,17 @@ exports.handler = async (event) => {
     if (response) {
       const targetConnectionIds = await getConnectionIdsForUsers(targetUserIds);
       if (targetConnectionIds.length > 0) {
-        const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
-        await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: response }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
+        if (WEBSOCKET_API_URL) {
+          const appGatewayClient = new ApiGatewayManagementApiClient({ apiVersion: '2018-11-29', endpoint: WEBSOCKET_API_URL });
+          await sendMessageToConnectedClients({
+            targetConnectionIds,
+            message: JSON.stringify({ response }),
+            appGatewayClient,
+          });
+        } else {
+          const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
+          await insertMessageToSQS(JSON.stringify({ targetConnectionIds, message: response }), sqsClient, SQS_MESSAGES_TO_CLIENTS_Q_URL);
+        }
       }
     } else statusCode = 400; // bad request
   } catch (error) {

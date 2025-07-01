@@ -818,6 +818,7 @@ form > .actions {
   .apartment-housing-unit-container {
     display: grid;
     grid-template-columns: repeat(2, minmax(8rem, 1fr));
+    gap: 0.5rem;
     overflow-x: hidden;
 
     &::before {
@@ -828,6 +829,11 @@ form > .actions {
       content: attr(data-title);
       display: flex;
       flex-direction: column;
+    }
+
+    .is-housing-unit {
+      border: 1px solid whitesmoke;
+      padding: 3px;
     }
   }
 }
