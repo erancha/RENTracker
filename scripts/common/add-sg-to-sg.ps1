@@ -7,7 +7,7 @@ param(
 
 $commonConstants = ./constants.ps1
 if (-not $stackOutputs) {
-    $stackOutputs = ./get-stack-outputs.ps1
+    $stackOutputs = ./util/get-stack-outputs.ps1
 }
 $mySGId = ($stackOutputs | Where-Object { $_.OutputKey -eq $mySGName }).OutputValue
 if (-not $mySGId) {

@@ -21,7 +21,7 @@ Parameters:
     Description: 'ID of an existing Cognito User Pool'
     Type: String
 
-  ExistingElasticacheRedisClusterAddress:
+  ExistingRedisAddress:
     Type: String
     Description: 'Address of an existing Redis cluster'
 
@@ -634,8 +634,8 @@ Resources:
               Value: !Ref AWS::Region
             - Name: EXECUTED_APARTMENT_ACTIVITY_QUEUE_URL
               Value: !Ref RentTrackingSavedActivityQueue
-            - Name: ELASTICACHE_REDIS_ADDRESS
-              Value: !Ref ExistingElasticacheRedisClusterAddress
+            - Name: REDIS_ADDRESS
+              Value: !Ref ExistingRedisAddress
             - Name: STACK_NAME
               Value: !Ref AWS::StackName
             - Name: ADMIN_USER_ID

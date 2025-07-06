@@ -14,3 +14,4 @@ scripts/.aws-sam/
 scripts/.aws-sam/*
 scripts/common/util/node_modules/
 scripts/common/.aws-sam/*
+scripts/aws-configure.ps1

@@ -47,7 +47,7 @@ try {
             Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Build completed. Deploying .."
 
             # Get outputs from the main stack for use as parameters
-            $mainStackOutputs = ./common/get-stack-outputs.ps1
+            $mainStackOutputs = ./common/util/get-stack-outputs.ps1
             $rdsEndpoint = ($mainStackOutputs | Where-Object { $_.OutputKey -eq "MyRDSEndpoint" }).OutputValue
             $rdsSecurityGroupId = ($mainStackOutputs | Where-Object { $_.OutputKey -eq "MyRDSSecurityGroupId" }).OutputValue
 
@@ -56,7 +56,7 @@ try {
                 "ExistingVpcId='vpc-08016eb77e7ac9962'", # en-VPC
                 "ExistingIgwId='igw-0fd7e050083dec0b9'", # en-IGW
                 "ExistingUserPoolId='eu-central-1_OHq1aZYju'", # en-UserPool
-                "ExistingElasticacheRedisClusterAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'", # https://eu-central-1.console.aws.amazon.com/cognito/v2/idp/user-pools/eu-central-1_OHq1aZYju/branding/domain?region=eu-central-1
+                "ExistingRedisAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'", # https://eu-central-1.console.aws.amazon.com/cognito/v2/idp/user-pools/eu-central-1_OHq1aZYju/branding/domain?region=eu-central-1
                 "RentTrackingServiceName='$rentTrackingServiceName'",
                 "RentTrackingTaskEcrImageUri='$($rentTrackingDockerResults.ecrImageUri)'",
                 "ExistingRDSEndpoint='$rdsEndpoint'",

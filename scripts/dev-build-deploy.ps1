@@ -28,13 +28,7 @@ try {
             $appFolder = (Split-Path $PSScriptRoot -Parent)
             $folderBeforeLayers = Get-Location
 
-            Push-Location "${appFolder}/backend/layers/awssdkv3/nodejs/"
-            npm install
-            Set-Location ..
-            Compress-Archive -Update -Path nodejs/* -DestinationPath ../awssdkv3-layer.zip
-            Pop-Location
-
-            Push-Location "${appFolder}/backend/layers/document-utils/"
+            Push-Location "${appFolder}/backend/RenTracker-service/ecs/layers/redisClient/"
             npm install
             Pop-Location
 
@@ -42,7 +36,7 @@ try {
             npm install
             Pop-Location
 
-            Push-Location "${appFolder}/backend/RenTracker-service/ecs/layers/redisClient/"
+            Push-Location "${appFolder}/backend/layers/document-utils/"
             npm install
             Pop-Location
 
@@ -57,31 +51,52 @@ try {
             Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Build completed. Deploying .."
 
             # Build the parameter overrides string dynamically
-            $parameterOverrides = @(
-                "ExistingVpcId='vpc-08016eb77e7ac9962'", # en-VPC
-                "ExistingUserPoolId='eu-central-1_OHq1aZYju'", # en-UserPool
-                "ExistingCognitoDomain='ena-575491442067.auth.eu-central-1.amazoncognito.com'",
-                "ExistingAppPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
-                "ExistingAppSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
-                # "ExistingApiGatewayVpcEndpointId='vpce-09b43cef3bc0d3cef'",
-                "ExistingElasticacheRedisClusterAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'", # https://eu-central-1.console.aws.amazon.com/cognito/v2/idp/user-pools/eu-central-1_OHq1aZYju/branding/domain?region=eu-central-1
-                "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'",
-                # Lambda Layer ARNs
-                "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:AwsSdkV3Layer:154'",
-                "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:RedisClientLayer:49'",
-                "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:WebsocketsConnectionsLayer:6'",
-                "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CommandsHandlersLayer:157'",
-                "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DbDataLayer:389'",
-                "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DocumentUtilsLayer:45'",
-                "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'"
+            $accountId = aws sts get-caller-identity --query "Account" --output text
+
+            # Shared parameter overrides (FFU for both accounts)
+            $sharedParameterOverrides = @(
                 # "DisableAppCache='true'",
-                # "ExistingRDSEndpoint='crud-rds.ctqgw46o4gm3.eu-central-1.rds.amazonaws.com'", # crud-rds
-                # "ExistingRDSSecurityGroupId='sg-0280f7af5f31cb24d'", # crud-RDSSG
-                # "DeveloperIP='149.106.249.221/32'"
+                # "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'"
             )
+
+            if ($accountId -eq '575491442067') {
+                $accountParameterOverrides = @(
+                    "ExistingAppPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
+                    "ExistingAppSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
+                    "ExistingUserPoolId='eu-central-1_OHq1aZYju'", # en-UserPool
+                    "ExistingCognitoDomain='ena-575491442067.auth.eu-central-1.amazoncognito.com'",
+                    "ExistingRedisAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'",
+                    # Lambda Layer ARNs
+                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:AwsSdkV3Layer:154'",
+                    "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'",
+                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:RedisClientLayer:50'",
+                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:WebsocketsConnectionsLayer:6'",
+                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CommandsHandlersLayer:157'",
+                    "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DbDataLayer:389'",
+                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DocumentUtilsLayer:45'"
+                )
+            } else {
+                $accountParameterOverrides = @(
+                    "ExistingUserPoolId='eu-central-1_AGzi24ZGD'", # vsdb-cognito
+                    "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'", # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
+                    "ExistingRedisAddress='3.76.210.203'", # vsdb
+                    "ExistingRedisPassword='vsdb-redis'", # vsdb
+                    # Lambda Layer ARNs
+                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:AwsSdkV3Layer:13'",
+                    "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:CorsHeadersLayer:8'",
+                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-RedisClientLayer:1'",
+                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-WebsocketsConnectionsLayer:1'",
+                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-CommandsHandlersLayer:1'",
+                    "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-DbDataLayer:1'",
+                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-DocumentUtilsLayer:1'"
+                )
+            }
+
+            $parameterOverrides = $sharedParameterOverrides + $accountParameterOverrides
 
             if ($commonConstants.isMainBranch) {
                 $parameterOverrides += "StageName='prod'"
+                $parameterOverrides += "RetainResourcesOnDelete='true'"
             }
             else {
                 # $parameterOverrides += "EnableAdditionalMetrics='true'" # TODO: In actual production, these metrics will be more relevant than during development ..
@@ -92,13 +107,12 @@ try {
 
             $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
             Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Starting a deployment, stack '$($commonConstants.stackName)' .."
-            # CAPABILITY_IAM: This capability allows AWS CloudFormation to create IAM resources (such as roles and policies) on your behalf
             sam deploy --region $commonConstants.region --template-file $TEMPLATE_FILE --stack-name $commonConstants.stackName `
                 --capabilities CAPABILITY_IAM `
                 --fail-on-empty-changeset false `
                 --resolve-s3 `
                 --parameter-overrides $parameterOverridesString
-                # --force-upload `
+            # --force-upload `
             $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
             if (($LASTEXITCODE -ne 0) -and ($LASTEXITCODE -ne 1)) {
                 Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Deployment failed with exit code ${LASTEXITCODE}."

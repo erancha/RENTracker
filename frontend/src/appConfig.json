@@ -1,10 +1,10 @@
 {
-    "REST_API_URL":  "https://wkal2vhcb9.execute-api.eu-central-1.amazonaws.com/dev",
-    "WEBSOCKET_API_URL":  "wss://3yycxw00yl.execute-api.eu-central-1.amazonaws.com/dev",
-    "BUILD":  "rntrkf1 2025 04/22_15:42",
+    "REST_API_URL":  "https://930jhp7lp7.execute-api.eu-central-1.amazonaws.com/dev",
+    "WEBSOCKET_API_URL":  "wss://5l5pom9ta5.execute-api.eu-central-1.amazonaws.com/dev",
+    "BUILD":  "rntrk-fb 2025 07/06_21:45",
     "COGNITO":  {
                     "userPoolId":  "eu-central-1_OHq1aZYju",
-                    "userPoolWebClientId":  "3si8ro2oa8hbh8ku5can95n852",
+                    "userPoolWebClientId":  "76eld2tvm71rgr9cm93unkhsd0",
                     "domain":  "ena-575491442067.auth.eu-central-1.amazoncognito.com",
                     "region":  "eu-central-1",
                     "redirectSignIn":  "http://localhost:3000",

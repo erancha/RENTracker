@@ -14,6 +14,10 @@ try {
         $stackName = "${appName}-fb"
     }
 
+    # if (Test-Path "$PSScriptRoot/../aws-configure.ps1") {
+    #     . "$PSScriptRoot/../aws-configure.ps1"
+    # }
+
     $appFolder = "$PSScriptRoot/../.."
     
     return @{

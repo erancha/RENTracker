@@ -3,13 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: RENTracker - AWS/React/WebSockets-based serverless rental tracking application
 
 Parameters:
-  AdminUserId:
-    Description: 'User id of the admin'
-    Type: String
-    Default: '53b408f2-d071-70e2-f4da-24618fa52c03'
-  ExistingVpcId:
-    Type: String
-    Description: 'ID of an existing VPC'
   ExistingAppPrivateSubnetId:
     Type: String
     Description: 'ID of an existing private subnet for app/business logic Lambda functions (leave empty to create a new one)'
@@ -17,29 +10,16 @@ Parameters:
   ExistingAppSG:
     Type: String
     Description: 'App/business logic Lambda functions security group (leave empty to create a new one)'
-    Default: 'sg-d3289ca9'
-  ExistingApiGatewayVpcEndpointId:
-    Type: String
-    Description: 'Optional - Existing VPC Endpoint ID for API Gateway'
-    Default: ''
+    Default: 'sg-99999999' # must be set with a proper value from scripts\dev-build-deploy.ps1 when ExistingAppPrivateSubnetId is set.
 
-  ExistingRDSEndpoint:
-    Type: String
-    Description: 'Address of an existing RDS instance (leave empty to create a new one)'
-    Default: ''
-  ExistingRDSSecurityGroupId:
-    Type: String
-    Description: 'RDS security group (leave empty to create a new one)'
-    Default: 'sg-d3289ca9'
-
-  # DeveloperIP:
-  #   Type: String
-  #   Description: 'Developer IP address for RDS access via DBeaver (CIDR format, e.g., 1.2.3.4/32)'
-  #   Default: ''
-
-  ExistingElasticacheRedisClusterAddress:
+  ExistingRedisAddress:
     Type: String
     Description: 'Address of an existing Redis cluster'
+  ExistingRedisPassword:
+    Type: String
+    Description: 'Password of an existing Redis cluster'
+    NoEcho: true # Do not show the password in the CloudFormation console or logs
+    Default: ''
 
   # Lambda Layer ARNs
   ExistingAwsSdkV3LayerArn:
@@ -112,6 +92,11 @@ Parameters:
     Default: "'*'" # TODO
     Description: 'Allowed origins for CORS'
 
+  AdminUserId:
+    Description: 'User id of the admin'
+    Type: String
+    Default: '53b408f2-d071-70e2-f4da-24618fa52c03'
+
   # CrudDatabaseName:
   #   Type: String
   #   Default: cruddb
@@ -136,13 +121,18 @@ Parameters:
   TargetChattyLambdaArn:
     Type: String
     Description: 'ARN of the Lambda function to be invoked by EventBridge'
+    Default: ''
+
+  RetainResourcesOnDelete:
+    Description: 'Set to true to retain resources on stack deletion or replacement'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
 
 Conditions:
-  CreateAppPrivateSubnets: !Equals [!Ref ExistingAppPrivateSubnetId, '']
-  CreateApiGatewayVpcEndpoint: !Equals [!Ref ExistingApiGatewayVpcEndpointId, '']
-  # CreateRDSInstance: !Equals [!Ref ExistingRDSEndpoint, '']
-  # HasDeveloperIP: !Not [!Equals [!Ref DeveloperIP, '']]
-  # DeployForProductionCondition: !Equals [!Ref StageName, 'prod']
+  IsLambdaInPrivateSubnet: !Not [!Equals [!Ref ExistingAppPrivateSubnetId, '']]
   HasCustomDomainName: !Not [!Equals [!Ref CustomDomainName, '']]
   HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
   UseCustomDomain: !And
@@ -151,12 +141,13 @@ Conditions:
   EnableAdditionalMetricsCondition: !Equals [!Ref EnableAdditionalMetrics, 'true']
   AllowOnlyCloudfrontOriginCondition: !Equals [!Ref AllowOnlyCloudfrontOrigin, 'true']
   # Lambda Layer ARNs
-  CreateAwsSdkV3Layer: !Equals [!Ref ExistingAwsSdkV3LayerArn, '']
   CreateRedisClientLayer: !Equals [!Ref ExistingRedisClientLayerArn, '']
   CreateWebsocketsConnectionsLayer: !Equals [!Ref ExistingWebsocketsConnectionsLayerArn, '']
   CreateCommandsHandlersLayer: !Equals [!Ref ExistingCommandsHandlersLayerArn, '']
   CreateDbDataLayer: !Equals [!Ref ExistingDbDataLayerArn, '']
   CreateDocumentUtilsLayer: !Equals [!Ref ExistingDocumentUtilsLayerArn, '']
+  HasTargetChattyLambdaArn: !Not [!Equals [!Ref TargetChattyLambdaArn, '']]
+  RetainResourcesCondition: !Equals [!Ref RetainResourcesOnDelete, 'true']
 
 Globals:
   Function:
@@ -175,197 +166,14 @@ Globals:
     TracingEnabled: true
 
 Resources:
-  #==========================================================================================================================================================
-  # X-Ray
-  #==========================================================================================================================================================
-
-  # ------------------------------------------------------------------------------
-  # XRayDaemonRole and XRayDaemon Lambda Function
-  # ------------------------------------------------------------------------------
-  # Purpose: Provides permissions and functionality for a daemon to send trace data to AWS X-Ray.
-  # Note: Not required for Lambda and API Gateway tracing. Currently unused and can be commented out.
-  #
-  # Tracing Behavior:
-  # - All requests are eligible to be traced when Tracing is set to Active for Lambda functions and TracingEnabled is true for API Gateway.
-  # - However, AWS X-Ray applies default sampling rules:
-  #   - The first request each second is traced.
-  #   - 5% of additional requests are traced.
-  # - This ensures that only a subset of requests are actually traced, balancing performance and trace coverage.
-
-  # XRayDaemonRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service: lambda.amazonaws.com
-  #           Action: sts:AssumeRole
-  #     ManagedPolicyArns:
-  #       - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-
-  # XRayDaemon:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub 'XRayDaemon-${AWS::StackName}'
-  #     Handler: xray-daemon.handler
-  #     Runtime: nodejs20.x
-  #     CodeUri: ../backend/layers/xray-daemon/
-  #     Timeout: 10
-  #     MemorySize: 128
-  #     Role: !GetAtt XRayDaemonRole.Arn
-
-  #==========================================================================================================================================================
-  # Networking resources:
-  #  - 1 private subnet for Websocket Lambda functions, allowing inbound traffic only from the API gateway, and outbound traffic only to the RDS service.
-  #  - 1 private subnet for RDS, allowing inbound traffic only from the Websocket Lambda functions, and outbound traffic only to the RDS service.
-  #==========================================================================================================================================================
-  # Traffic Flow Overview
-  #   Client to API gateway: The client sends a request to the API gateway on port 443.
-  #   The API gateway forwards the requests to the Lambda functions.
-  #==========================================================================================================================================================
-
-  # Private subnet(s) for app/business logic Lambda functions
-  MyAppPrivateSubnet1:
-    Type: AWS::EC2::Subnet
-    Condition: CreateAppPrivateSubnets
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      VpcId: !Ref ExistingVpcId
-      CidrBlock: 10.0.1.0/24
-      AvailabilityZone: !Select [0, !GetAZs '']
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-AppPrivateSubnet1'
-
-  MyAppSG:
-    Type: AWS::EC2::SecurityGroup
-    Condition: CreateAppPrivateSubnets
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      GroupDescription: Allow WebSocket Lambda functions to access required AWS services
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-WebSocketLambda-SG'
-      VpcId: !Ref ExistingVpcId
-      SecurityGroupIngress: []
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 6379 # redis
-          ToPort: 6379
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443 # SQS, DDB, ...
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-
-  # MyRDSPrivateSubnet1:
-  #   Type: AWS::EC2::Subnet
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     VpcId: !Ref ExistingVpcId
-  #     CidrBlock: 10.0.9.0/24
-  #     AvailabilityZone: !Select [0, !GetAZs '']
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub '${AWS::StackName}-RDSPrivateSubnet1'
-  # MyRDSPrivateSubnet2:
-  #   Type: AWS::EC2::Subnet
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     VpcId: !Ref ExistingVpcId
-  #     CidrBlock: 10.0.10.0/24
-  #     AvailabilityZone: !Select [1, !GetAZs '']
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub '${AWS::StackName}-RDSPrivateSubnet2'
-
-  # MyRDSBasedFunctionSG:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     GroupDescription: Security group for Lambda Functions inside RDS private subnets
-  #     VpcId: !Ref ExistingVpcId
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub '${AWS::StackName}-RDSBasedFunction-SG'
-
-  # MyRDSSG:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     GroupDescription: RDS Security Group
-  #     VpcId: !Ref ExistingVpcId
-  #     SecurityGroupIngress:
-  #       - IpProtocol: tcp
-  #         FromPort: 5432
-  #         ToPort: 5432
-  #         SourceSecurityGroupId: !Ref MyAppSG
-  #       - IpProtocol: tcp
-  #         FromPort: 5432
-  #         ToPort: 5432
-  #         SourceSecurityGroupId: !Ref MyRDSBasedFunctionSG
-  #     - !If
-  #       - HasDeveloperIP
-  #       - IpProtocol: tcp
-  #         FromPort: 5432
-  #         ToPort: 5432
-  #         CidrIp: !Ref DeveloperIP
-  #       - !Ref AWS::NoValue
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub '${AWS::StackName}-RDS-SG'
-
-  # MyAppSGEgressRule:
-  #   Type: AWS::EC2::SecurityGroupEgress # MyAppSG --> MyRDSSG
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     GroupId: !Ref MyAppSG
-  #     IpProtocol: tcp
-  #     FromPort: 5432
-  #     ToPort: 5432
-  #     DestinationSecurityGroupId: !Ref MyRDSSG
-
-  # MyRDSBasedFunctionEgressRule:
-  #   Type: AWS::EC2::SecurityGroupEgress # MyRDSBasedFunctionSG --> MyRDSSG.
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     GroupId: !Ref MyRDSBasedFunctionSG
-  #     IpProtocol: tcp
-  #     FromPort: 5432
-  #     ToPort: 5432
-  #     DestinationSecurityGroupId: !Ref MyRDSSG
-
   # ------------------------------------------------------------------------------
   # Lambda layers.
   # ------------------------------------------------------------------------------
-  AwsSdkV3Layer:
-    Type: AWS::Serverless::LayerVersion
-    Condition: CreateAwsSdkV3Layer
-    Properties:
-      Description: AWS SDK v3 Layer
-      ContentUri: ../backend/layers/awssdkv3-layer.zip
-      CompatibleRuntimes: ['nodejs20.x']
-
   RedisClientLayer:
     Type: AWS::Serverless::LayerVersion
     Condition: CreateRedisClientLayer
     Properties:
+      LayerName: !Sub '${AWS::StackName}-RedisClientLayer'
       Description: Redis Layer
       ContentUri: ../backend/RenTracker-service/ecs/layers/redisClient
       CompatibleRuntimes: ['nodejs20.x']
@@ -374,6 +182,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Condition: CreateWebsocketsConnectionsLayer
     Properties:
+      LayerName: !Sub '${AWS::StackName}-WebsocketsConnectionsLayer'
       Description: Layer for collecting an array [{connection, username}].
       ContentUri: ../backend/websockets/layers/connections
       CompatibleRuntimes: ['nodejs20.x']
@@ -382,6 +191,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Condition: CreateCommandsHandlersLayer
     Properties:
+      LayerName: !Sub '${AWS::StackName}-CommandsHandlersLayer'
       Description: Layer for processing commands from the frontend.
       ContentUri: ../backend/RenTracker-service/ecs/layers/commandsHandlers
       CompatibleRuntimes: ['nodejs20.x']
@@ -390,6 +200,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Condition: CreateDbDataLayer
     Properties:
+      LayerName: !Sub '${AWS::StackName}-DbDataLayer'
       Description: Layer for accessing the database.
       ContentUri: ../backend/RenTracker-service/ecs/layers/dbData
       CompatibleRuntimes: ['nodejs20.x']
@@ -398,6 +209,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Condition: CreateDocumentUtilsLayer
     Properties:
+      LayerName: !Sub '${AWS::StackName}-DocumentUtilsLayer'
       Description: Document utilities layer (markdown, uuid, puppeteer)
       ContentUri: ../backend/layers/document-utils
       CompatibleRuntimes: ['nodejs20.x']
@@ -435,7 +247,7 @@ Resources:
       Timeout: 10 # seconds
       Layers:
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
-        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !Ref ExistingAwsSdkV3LayerArn
         - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
         - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
@@ -444,19 +256,18 @@ Resources:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
           # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
-          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          REDIS_ADDRESS: !Ref ExistingRedisAddress
+          REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
           ACTIVITY_TABLE_NAME: !Ref ActivityTable
           SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
           ADMIN_USER_ID: !Ref AdminUserId
-          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-          # DB_NAME: !Ref CrudDatabaseName
-          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-      VpcConfig:
-        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
+      VpcConfig: !If
+        - IsLambdaInPrivateSubnet
+        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+          SecurityGroupIds: [!Ref ExistingAppSG]
+        - !Ref AWS::NoValue
       Role: !GetAtt WebSocketConnectLambdaRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -476,11 +287,14 @@ Resources:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
           # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
-          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          REDIS_ADDRESS: !Ref ExistingRedisAddress
+          REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
-      VpcConfig:
-        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
+      VpcConfig: !If
+        - IsLambdaInPrivateSubnet
+        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+          SecurityGroupIds: [!Ref ExistingAppSG]
+        - !Ref AWS::NoValue
       Role: !GetAtt WebSocketLambdaElasticacheSQSRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -496,7 +310,7 @@ Resources:
       Timeout: 5 # seconds
       Layers:
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
-        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !Ref ExistingAwsSdkV3LayerArn
         - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
         - !If [CreateCommandsHandlersLayer, !Ref CommandsHandlersLayer, !Ref ExistingCommandsHandlersLayerArn]
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
@@ -505,21 +319,20 @@ Resources:
           APP_AWS_REGION: !Ref AWS::Region
           STACK_NAME: !Ref AWS::StackName
           # WEBSOCKET_API_URL: !Sub 'wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}'
-          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          REDIS_ADDRESS: !Ref ExistingRedisAddress
+          REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
           ADMIN_USER_ID: !Ref AdminUserId
           APARTMENTS_TABLE_NAME: !Ref ApartmentsTable
           ACTIVITY_TABLE_NAME: !Ref ActivityTable
           SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
-          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-          # DB_NAME: !Ref CrudDatabaseName
-          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
           ENABLE_ENHANCED_LOGGING: false
           DISABLE_APP_CACHE: !Ref DisableAppCache
-      VpcConfig:
-        SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
-        SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
+      VpcConfig: !If
+        - IsLambdaInPrivateSubnet
+        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+          SecurityGroupIds: [!Ref ExistingAppSG]
+        - !Ref AWS::NoValue
       Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
       # TracingConfig:
       #   Mode: Active
@@ -563,51 +376,6 @@ Resources:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
         - !Ref ElasticacheSQSPolicy
 
-  # We already have: IPv4 HTTPS TCP 443 0.0.0.0/0
-  # LambdaToVPCEndpointEgressRule:
-  #   Type: AWS::EC2::SecurityGroupEgress
-  #   Properties:
-  #     Description: Allow Lambda to make HTTPS calls to VPC endpoint
-  #     GroupId: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
-  #     IpProtocol: tcp
-  #     FromPort: 443
-  #     ToPort: 443
-  #     DestinationSecurityGroupId: !Ref VPCEndpointSecurityGroup
-
-  VPCEndpointSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for API Gateway VPC Endpoint
-      VpcId: !Ref ExistingVpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          SourceSecurityGroupId: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-VPCEndpoint-SG'
-
-  WebSocketVPCEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Condition: CreateApiGatewayVpcEndpoint
-    Properties:
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.execute-api'
-      VpcEndpointType: Interface
-      VpcId: !Ref ExistingVpcId
-      SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
-      SecurityGroupIds: [!Ref VPCEndpointSecurityGroup]
-      PrivateDnsEnabled: true
-      # PolicyDocument:
-      #   Version: '2012-10-17'
-      #   Statement:
-      #     - Effect: Allow
-      #       Principal: '*'
-      #       Action:
-      #         - 'execute-api:Invoke'
-      #         - 'execute-api:ManageConnections'
-      #       Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
-
   WebSocketConnectLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -640,15 +408,6 @@ Resources:
                   - dynamodb:GetItem
                 Resource:
                   - !GetAtt SaaSTenantsTable.Arn
-        # - PolicyName: LambdaRDSAccessPolicy
-        #   PolicyDocument:
-        #     Version: '2012-10-17'
-        #     Statement:
-        #       - Effect: Allow
-        #         Action:
-        #           - rds:DescribeDBInstances
-        #           - rds:Connect
-        #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
 
   WebsocketCommandsHandlerLambdaRole:
     Type: AWS::IAM::Role
@@ -683,15 +442,6 @@ Resources:
                   - dynamodb:GetItem
                 Resource:
                   - !GetAtt SaaSTenantsTable.Arn
-      # - PolicyName: LambdaRDSAccessPolicy
-      #   PolicyDocument:
-      #     Version: '2012-10-17'
-      #     Statement:
-      #       - Effect: Allow
-      #         Action:
-      #           - rds:DescribeDBInstances
-      #           - rds:Connect
-      #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
 
   ConnectIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -847,11 +597,12 @@ Resources:
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
         - !If [CreateDocumentUtilsLayer, !Ref DocumentUtilsLayer, !Ref ExistingDocumentUtilsLayerArn]
-        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !Ref ExistingAwsSdkV3LayerArn
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          REDIS_ADDRESS: !Ref ExistingRedisAddress
+          REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           ALLOWED_ORIGIN: !If
             - AllowOnlyCloudfrontOriginCondition
             - !Sub 'https://${FrontendDistribution.DomainName}'
@@ -860,10 +611,6 @@ Resources:
           DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           DOCUMENTS_CLOUDFRONT_DOMAIN: !GetAtt DocumentsDistribution.DomainName
-          # RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-          # DB_NAME: !Ref CrudDatabaseName
-          # DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-          # DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
       Role: !GetAtt DocumentsRestFunctionExecutionRole.Arn
       Events:
@@ -923,9 +670,11 @@ Resources:
             RestApiId: !Ref RestApi
             Auth:
               Authorizer: CognitoAuthorizer
-      VpcConfig:
-        SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-        SecurityGroupIds: [!Ref ExistingAppSG]
+      VpcConfig: !If
+        - IsLambdaInPrivateSubnet
+        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+          SecurityGroupIds: [!Ref ExistingAppSG]
+        - !Ref AWS::NoValue
       # TracingConfig:
       #   Mode: Active
 
@@ -980,15 +729,6 @@ Resources:
                   - s3:PutObject
                 Resource:
                   - !Sub 'arn:aws:s3:::${DocumentsBucket}/*'
-      # - PolicyName: LambdaRDSAccessPolicy
-      #   PolicyDocument:
-      #     Version: '2012-10-17'
-      #     Statement:
-      #       - Effect: Allow
-      #         Action:
-      #           - rds:DescribeDBInstances
-      #           - rds:Connect
-      #         Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${AWS::StackName}-RDS'
 
   DocumentsStreamProcessor:
     Type: AWS::Serverless::Function
@@ -1000,20 +740,23 @@ Resources:
       Timeout: 60 # seconds
       MemorySize: 2048
       Layers:
-        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !Ref ExistingAwsSdkV3LayerArn
         - !If [CreateDocumentUtilsLayer, !Ref DocumentUtilsLayer, !Ref ExistingDocumentUtilsLayerArn]
         - !If [CreateRedisClientLayer, !Ref RedisClientLayer, !Ref ExistingRedisClientLayerArn]
         - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
       Environment:
         Variables:
           STACK_NAME: !Ref AWS::StackName
-          ELASTICACHE_REDIS_ADDRESS: !Ref ExistingElasticacheRedisClusterAddress
+          REDIS_ADDRESS: !Ref ExistingRedisAddress
+          REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           DOCUMENTS_BUCKET_NAME: !Ref DocumentsBucket
           # DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
-      VpcConfig:
-        SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-        SecurityGroupIds: [!Ref ExistingAppSG]
+      VpcConfig: !If
+        - IsLambdaInPrivateSubnet
+        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
+          SecurityGroupIds: [!Ref ExistingAppSG]
+        - !Ref AWS::NoValue
       Events:
         DocumentsTableStream:
           Type: DynamoDB
@@ -1097,6 +840,8 @@ Resources:
 
   SaaSTenantsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [RetainResourcesCondition, Retain, Delete]
+    UpdateReplacePolicy: !If [RetainResourcesCondition, Retain, Delete]
     Properties:
       TableName: !Sub 'SaaSTenants-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
@@ -1109,6 +854,8 @@ Resources:
 
   ApartmentsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [RetainResourcesCondition, Retain, Delete]
+    UpdateReplacePolicy: !If [RetainResourcesCondition, Retain, Delete]
     Properties:
       TableName: !Sub 'Apartments-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
@@ -1136,6 +883,8 @@ Resources:
 
   DocumentsTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [RetainResourcesCondition, Retain, Delete]
+    UpdateReplacePolicy: !If [RetainResourcesCondition, Retain, Delete]
     Properties:
       TableName: !Sub 'Documents-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
@@ -1185,6 +934,8 @@ Resources:
 
   ActivityTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [RetainResourcesCondition, Retain, Delete]
+    UpdateReplacePolicy: !If [RetainResourcesCondition, Retain, Delete]
     Properties:
       TableName: !Sub 'ApartmentActivity-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
@@ -1221,62 +972,6 @@ Resources:
         #     ProjectionType: ALL
 
   #==========================================================================================================================================================
-  # RDS
-  #==========================================================================================================================================================
-  # MyRDSDBInstance:
-  #   Type: AWS::RDS::DBInstance
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     DBInstanceIdentifier: !Sub '${AWS::StackName}-RDS'
-  #     AllocatedStorage: 20
-  #     DBInstanceClass: db.t3.micro
-  #     Engine: postgres
-  #     EngineVersion: '16.4'
-  #     MasterUsername: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-  #     MasterUserPassword: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-  #     DBSubnetGroupName: !Ref MyRDSSubnetGroup
-  #     VPCSecurityGroups: [!Ref MyRDSSG]
-  #     DBName: !Ref CrudDatabaseName
-  #     BackupRetentionPeriod: 0
-  #     PubliclyAccessible: !If [DeployForProductionCondition, false, true]
-  #     # MultiAZ: !If [DeployForProductionCondition, true, false]
-
-  # MyRDSSubnetGroup:
-  #   Type: AWS::RDS::DBSubnetGroup
-  #   Condition: CreateRDSInstance
-  #   DeletionPolicy: Retain
-  #   UpdateReplacePolicy: Retain
-  #   Properties:
-  #     DBSubnetGroupDescription: !Sub '${AWS::StackName}-RDSSubnetGroup'
-  #     SubnetIds:
-  #       - !Ref MyRDSPrivateSubnet1
-  #       - !Ref MyRDSPrivateSubnet2
-  #     DBSubnetGroupName: !Sub '${AWS::StackName}-RDSSubnetGroup'
-
-  # DbManagementFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     FunctionName: !Sub 'DbManagementFunction-${AWS::StackName}'
-  #     CodeUri: ../backend/dbManagement/
-  #     Handler: dbManagement.handler
-  #     Runtime: nodejs20.x
-  #     Layers:
-  #       - !If [CreateDbDataLayer, !Ref DbDataLayer, !Ref ExistingDbDataLayerArn]
-  #     Timeout: 300 # seconds
-  #     Environment:
-  #       Variables:
-  #         RDS_ENDPOINT: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-  #         DB_NAME: !Ref CrudDatabaseName
-  #         DB_USERNAME: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:username}}'
-  #         DB_PASSWORD: '{{resolve:secretsmanager:arn:aws:secretsmanager:eu-central-1:575491442067:secret:/sb/rdscredentials-T3ztmQ:SecretString:password}}'
-  #     VpcConfig:
-  #       SubnetIds: [!If [CreateAppPrivateSubnets, !Ref MyAppPrivateSubnet1, !Ref ExistingAppPrivateSubnetId]]
-  #       SecurityGroupIds: [!If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]]
-  #     Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
-
-  #==========================================================================================================================================================
   # SQS
   #==========================================================================================================================================================
   MessagesToClientsQueue:
@@ -1301,7 +996,7 @@ Resources:
       Timeout: 10 # seconds
       CodeUri: ../backend/websockets/connections/
       Layers:
-        - !If [CreateAwsSdkV3Layer, !Ref AwsSdkV3Layer, !Ref ExistingAwsSdkV3LayerArn]
+        - !Ref ExistingAwsSdkV3LayerArn
         - !If [CreateWebsocketsConnectionsLayer, !Ref WebsocketsConnectionsLayer, !Ref ExistingWebsocketsConnectionsLayerArn]
       Environment:
         Variables:
@@ -1394,6 +1089,7 @@ Resources:
 
   EventBridgeRules:
     Type: AWS::Events::Rule
+    Condition: HasTargetChattyLambdaArn
     Properties:
       EventBusName: !Ref CommandsEventBus
       EventPattern:
@@ -1425,6 +1121,7 @@ Resources:
 
   TargetLambdaPermission:
     Type: AWS::Lambda::Permission
+    Condition: HasTargetChattyLambdaArn
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref TargetChattyLambdaArn
@@ -1438,7 +1135,7 @@ Resources:
   FrontendBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-frontend
+      BucketName: !Sub ${AWS::StackName}-frontend-${AWS::AccountId}
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
@@ -1521,7 +1218,7 @@ Resources:
   DocumentsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-documents
+      BucketName: !Sub ${AWS::StackName}-documents-${AWS::AccountId}
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ['*']
@@ -1645,17 +1342,6 @@ Outputs:
   CognitoDomain:
     Description: 'Cognito User Pool Domain'
     Value: !Ref ExistingCognitoDomain
-
-  MyAppSG:
-    Description: 'App/business logic lambda functions security group'
-    Value: !If [CreateAppPrivateSubnets, !Ref MyAppSG, !Ref ExistingAppSG]
-
-  # MyRDSEndpoint:
-  #   Description: 'RDS instance endpoint'
-  #   Value: !If [CreateRDSInstance, !GetAtt MyRDSDBInstance.Endpoint.Address, !Ref ExistingRDSEndpoint]
-  # MyRDSSecurityGroupId:
-  #   Description: 'RDS security group'
-  #   Value: !If [CreateRDSInstance, !Ref MyRDSSG, !Ref ExistingRDSSecurityGroupId]
 
   S3BucketName:
     Description: 'Name of the S3 bucket hosting the frontend'

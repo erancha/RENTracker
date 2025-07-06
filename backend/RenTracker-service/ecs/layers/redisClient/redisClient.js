@@ -1,22 +1,29 @@
 const Redis = require('ioredis');
 const { SendMessageCommand } = require('@aws-sdk/client-sqs');
 
+const REDIS_ADDRESS = process.env.REDIS_ADDRESS;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD; // Password for Redis, if required
+
 let _redisClient = null;
 let _publisherClient = null;
 let _subscriberClient = null;
 
 const getRedisClient = () => {
-  if (!_redisClient) _redisClient = new Redis(process.env.ELASTICACHE_REDIS_ADDRESS);
+  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+  if (!_redisClient) _redisClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+
   return _redisClient;
 };
 
 const getPublisherClient = () => {
-  if (!_publisherClient) _publisherClient = new Redis(process.env.ELASTICACHE_REDIS_ADDRESS);
+  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+  if (!_publisherClient) _publisherClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
   return _publisherClient;
 };
 
 const getSubscriberClient = () => {
-  if (!_subscriberClient) _subscriberClient = new Redis(process.env.ELASTICACHE_REDIS_ADDRESS);
+  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+  if (!_subscriberClient) _subscriberClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
   return _subscriberClient;
 };
 

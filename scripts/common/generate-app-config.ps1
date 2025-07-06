@@ -5,7 +5,7 @@ param (
   [string]$redirect_sign_out
 )
 
-$stackOutputs = ./get-stack-outputs.ps1
+$stackOutputs = ./util/get-stack-outputs.ps1
 $rest_api_url = ./get-api-url.ps1 -stackOutputs $stackOutputs -gatewayType 'Rest'
 $websocket_api_url = ./get-api-url.ps1 -stackOutputs $stackOutputs -gatewayType 'WebSocket'
 

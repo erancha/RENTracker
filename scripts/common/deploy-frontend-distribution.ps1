@@ -7,7 +7,7 @@ Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : $s
 
 $commonConstants = ./constants.ps1
 
-$stackOutputs = ./get-stack-outputs.ps1
+$stackOutputs = ./util/get-stack-outputs.ps1
 
 # Update the appConfig.json file
 $cloudfront_url = ($stackOutputs | Where-Object { $_.OutputKey -eq "CloudFrontUrl" }).OutputValue
