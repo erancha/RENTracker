@@ -20,7 +20,11 @@ const ADMIN_USER_ID = process.env.ADMIN_USER_ID;
 // $connect handler:
 //======================================================================================================
 exports.handler = async (event) => {
-  // console.log('Event: ', JSON.stringify(event, null, 2));
+  if (!event.requestContext) {
+    console.error('Invalid event: ', JSON.stringify(event, null, 2));
+    return { statusCode: 400, body: JSON.stringify({ error: 'Bad Request: Missing requestContext' }) };
+  }
+
   const segment = AWSXRay.getSegment();
   segment.addAnnotation('stackName', STACK_NAME);
   const handlerSubsegment = segment.addNewSubsegment('$connectHandler');

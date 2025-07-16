@@ -78,18 +78,18 @@ try {
             }
             else {
                 $accountParameterOverrides = @(
-                    "ExistingUserPoolId='eu-central-1_AGzi24ZGD'", # vsdb-cognito
-                    "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'", # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
-                    "ExistingRedisAddress='3.77.53.174'", # vsdb
-                    "ExistingRedisPassword='vsdb-redis'", # vsdb
+                    "ExistingUserPoolId='eu-central-1_AGzi24ZGD'",                                      # vsdb-cognito
+                    "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'",    # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
+                    "ExistingRedisAddress='ec2-3-71-112-31.eu-central-1.compute.amazonaws.com'",        # vsdb
+                    "ExistingRedisPassword='vsdb-redis'",                                               # vsdb  TODO: Use Secrets Manager
                     # Lambda Layer ARNs
                     "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:AwsSdkV3Layer:15'",
                     "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:CorsHeadersLayer:8'",
-                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-RedisClientLayer:2'",
-                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-WebsocketsConnectionsLayer:1'",
-                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-CommandsHandlersLayer:1'",
-                    "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-DbDataLayer:1'",
-                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-DocumentUtilsLayer:1'"
+                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:skl-RedisClientLayer:1'",
+                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:skl-WebsocketsConnectionsLayer:1'",
+                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-CommandsHandlersLayer:1'",
+                    "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-DbDataLayer:1'",
+                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-DocumentUtilsLayer:1'"
                 )
             }
 

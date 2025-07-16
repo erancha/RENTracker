@@ -7,7 +7,7 @@
     "confirmDelete": "Are you sure you want to delete activity '{{description}}'?"
   },
   "apartmentDocuments": {
-    "shareMessage": "*'{{title}}'*.\n\nTo complete your details and sign the agreement, copy this whatsapp message and sign into the application at:\n\n*{{origin}}*\n\nPlease find below a link to your rental agreement: \n{{url}}\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
+    "shareMessage": "Hi, I'm sending *'{{title}}'* - please complete your details and sign the agreement.\n\n*Copy this whatsapp message* and sign into the application at: *{{origin}}*\n\nPlease find below a link to your rental agreement: \n{{url}}\nPlease note that the *link* will remain *valid for 1 day*. After this period, the document can be accessed through the application.",
     "confirmDelete": "Are you sure you want to delete document '{{name}}'?",
     "tooltips": {
       "documentId": "Rental agreement {{id}}"
