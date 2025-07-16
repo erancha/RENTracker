@@ -75,16 +75,17 @@ try {
                     "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DbDataLayer:389'",
                     "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DocumentUtilsLayer:45'"
                 )
-            } else {
+            }
+            else {
                 $accountParameterOverrides = @(
                     "ExistingUserPoolId='eu-central-1_AGzi24ZGD'", # vsdb-cognito
                     "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'", # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
-                    "ExistingRedisAddress='3.76.210.203'", # vsdb
+                    "ExistingRedisAddress='3.77.53.174'", # vsdb
                     "ExistingRedisPassword='vsdb-redis'", # vsdb
                     # Lambda Layer ARNs
-                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:AwsSdkV3Layer:13'",
+                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:AwsSdkV3Layer:15'",
                     "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:CorsHeadersLayer:8'",
-                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-RedisClientLayer:1'",
+                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-RedisClientLayer:2'",
                     "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-WebsocketsConnectionsLayer:1'",
                     "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-CommandsHandlersLayer:1'",
                     "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:rntrk-fb-DbDataLayer:1'",

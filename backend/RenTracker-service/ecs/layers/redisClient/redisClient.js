@@ -9,21 +9,27 @@ let _publisherClient = null;
 let _subscriberClient = null;
 
 const getRedisClient = () => {
-  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
-  if (!_redisClient) _redisClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  if (!_redisClient) {
+    console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+    _redisClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  }
 
   return _redisClient;
 };
 
 const getPublisherClient = () => {
-  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
-  if (!_publisherClient) _publisherClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  if (!_publisherClient) {
+    console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+    _publisherClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  }
   return _publisherClient;
 };
 
 const getSubscriberClient = () => {
-  console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
-  if (!_subscriberClient) _subscriberClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  if (!_subscriberClient) {
+    console.log(`Connecting to Redis at ${REDIS_ADDRESS}`);
+    _subscriberClient = REDIS_PASSWORD ? new Redis({ host: REDIS_ADDRESS, password: REDIS_PASSWORD }) : new Redis(REDIS_ADDRESS);
+  }
   return _subscriberClient;
 };
 
