@@ -192,8 +192,8 @@ class AppComponent extends React.Component<IAppProps, Record<string, never>> {
 
         <div className={`header2 more ${showOverview ? 'visible' : 'hidden'}`}>
           <p className='diagram-caption'>{this.t('overview.architecture')}</p>
-          <a href='https://lucid.app/publicSegments/view/83f22943-eee4-458d-8ac0-f0c408b8096e/image.jpeg' target='_blank' rel='noopener noreferrer'>
-            <img src='https://lucid.app/publicSegments/view/83f22943-eee4-458d-8ac0-f0c408b8096e/image.jpeg' alt='**API Gateway + Lambda**' />
+          <a href='https://lucid.app/publicSegments/view/568892b6-6a77-4fd4-96c6-d3dffac3c9af/image.jpeg' target='_blank' rel='noopener noreferrer'>
+            <img src='https://lucid.app/publicSegments/view/568892b6-6a77-4fd4-96c6-d3dffac3c9af/image.jpeg' alt='**API Gateway + Lambda**' />
           </a>
         </div>
       </div>

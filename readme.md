@@ -30,7 +30,7 @@ The app supports two user roles:
 
 ## Architecture Diagram
 
-![Architecture diagram](https://lucid.app/publicSegments/view/83f22943-eee4-458d-8ac0-f0c408b8096e/image.jpeg)
+![Architecture diagram](https://lucid.app/publicSegments/view/568892b6-6a77-4fd4-96c6-d3dffac3c9af/image.jpeg)
 
 ## Overview
 
