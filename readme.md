@@ -47,7 +47,7 @@ The app features an intuitive mobile-friendly design.
 
 User authentication is securely handled through Google.
 
-The app is available online at https://d3foa0cm4szuix.cloudfront.net
+The app is available online at https://d2l1vd7zsm8hzy.cloudfront.net
 
 ## Frontend
 
