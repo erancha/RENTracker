@@ -47,8 +47,12 @@ try {
 
     #======== List NAT Instances ================================================================
     $natInstances = aws ec2 describe-instances --region $region --query "Reservations[*].Instances[?Tags[?Key=='NAT' && Value=='true']].{ID:InstanceId,Name:Tags[?Key=='Name'][0].Value}" --output json | ConvertFrom-Json
-    foreach ($natInstance in $natInstances) {
-        $nonDefaultResources += "NAT Instance: $($natInstance.Name.PadRight(25)) : $($natInstance.ID)"
+    if ($natInstances) {
+        foreach ($natInstance in $natInstances) {
+            if ($natInstance.Name -and $natInstance.ID) {
+                $nonDefaultResources += "NAT Instance: $($natInstance.Name.PadRight(25)) : $($natInstance.ID)"
+            }
+        }
     }
 
     #======== List Route Tables and filter out default route tables =============================
@@ -155,10 +159,11 @@ try {
     }
 
     #======== List EC2 Instances ==================================================================
-    $ec2Instances = aws ec2 describe-instances --region $region --query "Reservations[*].Instances[?Tags[?Key=='Name']].{ID:InstanceId,Name:Tags[?Key=='Name'][0].Value}" --output json | ConvertFrom-Json
+    $ec2Instances = aws ec2 describe-instances --region $region --query "Reservations[*].Instances[].{ID:InstanceId,Name:Tags[?Key=='Name'][0].Value}" --output json | ConvertFrom-Json
     foreach ($instance in $ec2Instances) {
-        if ($instance.Name -ne "Default") {
-            $nonDefaultResources += "EC2 Instance: $($instance.Name.PadRight(25)) : $($instance.ID)"
+        $instanceName = if ($instance.Name) { $instance.Name } else { "<No Name>" }
+        if ($instanceName -ne "Default") {
+            $nonDefaultResources += "EC2 Instance: $($instanceName.PadRight(25)) : $($instance.ID)"
         }
     }
 

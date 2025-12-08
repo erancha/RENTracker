@@ -80,7 +80,7 @@ try {
                 $accountParameterOverrides = @(
                     "ExistingUserPoolId='eu-central-1_AGzi24ZGD'",                                      # vsdb-cognito
                     "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'",    # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
-                    "ExistingRedisAddress='ec2-3-71-112-31.eu-central-1.compute.amazonaws.com'",        # vsdb
+                    "ExistingRedisAddress='ec2-63-180-181-179.eu-central-1.compute.amazonaws.com'",     # vsdb
                     "ExistingRedisPassword='vsdb-redis'",                                               # vsdb  TODO: Use Secrets Manager
                     # Lambda Layer ARNs
                     "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:306783770944:layer:AwsSdkV3Layer:15'",

@@ -46,7 +46,7 @@ $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
 Write-Host "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Creating CloudFront invalidation ..."
 $cloudfront_distribution_id = ($stackOutputs | Where-Object { $_.OutputKey -eq "CloudFrontDistributionId" }).OutputValue
 if ($cloudfront_distribution_id) {
-    aws cloudfront create-invalidation --distribution-id $cloudfront_distribution_id --paths "/*"
+    aws cloudfront create-invalidation --distribution-id $cloudfront_distribution_id --paths "/*" --output text
     $formattedElapsedTime = Get-ElapsedTimeFormatted -startTime $startTime
     if ($LASTEXITCODE -ne 0) {
         Write-Error "`n$(Get-Date -Format 'HH:mm:ss'), elapsed $formattedElapsedTime : Failed to create CloudFront invalidation. Please check your AWS credentials and permissions."

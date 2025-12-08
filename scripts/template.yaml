@@ -14,10 +14,10 @@ Parameters:
 
   ExistingRedisAddress:
     Type: String
-    Description: 'Address of an existing Redis cluster'
+    Description: 'Address of an existing Redis server'
   ExistingRedisPassword:
     Type: String
-    Description: 'Password of an existing Redis cluster'
+    Description: 'Password of an existing Redis server'
     NoEcho: true # Do not show the password in the CloudFormation console or logs
     Default: ''
 

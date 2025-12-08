@@ -23,7 +23,7 @@ Parameters:
 
   ExistingRedisAddress:
     Type: String
-    Description: 'Address of an existing Redis cluster'
+    Description: 'Address of an existing Redis server'
 
   LogGroupName:
     Type: String

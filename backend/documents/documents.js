@@ -520,9 +520,6 @@ async function sendRentalAgreementEmail(templateFields) {
 }
 
 /**
- * Send email notification about rental agreement updates
- * @param {Object} templateFields - The template fields from the document
- * @returns {Promise<void>}
  */
 async function sendCloudfrontInvalidationCommand(documentId, saasTenantId) {
   const sqsClient = captureAWSv3Client(new SQSClient({ region: AWS_REGION }));
