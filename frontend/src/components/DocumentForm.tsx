@@ -292,8 +292,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
               {/* Property Details */}
               <Accordion
                 expanded={this.isSectionExpanded('propertyDetails') || this.isSectionExpanded('utilityLimits')}
-                onChange={this.handleAccordionChange('propertyDetails')}
-              >
+                onChange={this.handleAccordionChange('propertyDetails')}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Typography className='section-header'>{t('documentForm.sections.property')}</Typography>
                 </AccordionSummary>
@@ -540,8 +539,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
                   <button
                     type='submit'
                     className={`action-button save${this.hasUnsavedChanges() ? ' has-changes' : ''}`}
-                    title={this.props.documentId ? 'Edit' : 'Create'}
-                  >
+                    title={this.props.documentId ? 'Edit' : 'Create'}>
                     <Save />
                   </button>
                 )}
@@ -560,8 +558,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       type='button'
       className={`action-button cancel${this.hasUnsavedChanges() ? ' has-changes' : ''}`}
       title={this.props.t('common.cancel')}
-      onClick={this.handleCancel}
-    >
+      onClick={this.handleCancel}>
       <Undo2 />
     </button>
   );
@@ -755,7 +752,16 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
       // console.log({ field, section });
       const allowedSections =
         this.props.userType === UserType.Landlord
-          ? ['landlordDetails', 'tenant1Details', 'tenant2Details', 'propertyDetails', 'leaseTerms', 'utilityLimits']
+          ? [
+              'landlordDetails',
+              'tenant1Details',
+              'tenant1Attachments',
+              'tenant2Details',
+              'tenant2Attachments',
+              'propertyDetails',
+              'leaseTerms',
+              'utilityLimits',
+            ]
           : ['tenant1Details', 'tenant1Attachments', 'tenant2Details', 'tenant2Attachments'];
 
       if (this.state.formData.securityRequired) {
@@ -958,8 +964,7 @@ class DocumentForm extends React.Component<DocumentFormProps, DocumentFormState>
             variant='body2'
             color='textSecondary'
             onClick={() => this.setState({ showImagesViewer: !this.state.showImagesViewer })}
-            style={{ cursor: 'pointer', textDecoration: 'underline' }}
-          >
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}>
             Existing file: {existingFileName}
           </Typography>
         )}
@@ -1280,8 +1285,7 @@ const TenantSection: React.FC<TenantSectionProps> = ({
   return (
     <Accordion
       expanded={state.expandSecondTenant || state.expandedSections.includes(sectionId) || state.expandedSections.includes(attachmentsId)}
-      onChange={handleAccordionChange(sectionId)}
-    >
+      onChange={handleAccordionChange(sectionId)}>
       <AccordionSummary expandIcon={<ExpandMore />}>
         <Typography className='section-header'>
           {t('documentForm.sections.tenant')}

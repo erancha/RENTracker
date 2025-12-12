@@ -431,7 +431,7 @@ const interpolateTemplate = (template, fields) => {
       ? value || ''
       : value !== undefined && value !== ''
       ? `<mark><i>${value}</i></mark>`
-      : '_'.repeat(3);
+      : '_'.repeat(10);
   });
 
   //==============================================
