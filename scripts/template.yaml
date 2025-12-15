@@ -3,14 +3,14 @@ Transform: AWS::Serverless-2016-10-31
 Description: RENTracker - AWS/React/WebSockets-based serverless rental tracking application
 
 Parameters:
-  ExistingAppPrivateSubnetId:
+  ExistingPrivateSubnetAppId:
     Type: String
-    Description: 'ID of an existing private subnet for app/business logic Lambda functions (leave empty to create a new one)'
+    Description: 'ID of an existing private subnet for application tier (leave empty to create new VPC/subnet)'
     Default: ''
-  ExistingAppSG:
+  ExistingAppSGId:
     Type: String
-    Description: 'App/business logic Lambda functions security group (leave empty to create a new one)'
-    Default: 'sg-99999999' # must be set with a proper value from scripts\dev-build-deploy.ps1 when ExistingAppPrivateSubnetId is set.
+    Description: 'ID of an existing security group for application tier (leave empty to create a new one)'
+    Default: ''
 
   ExistingRedisAddress:
     Type: String
@@ -49,7 +49,7 @@ Parameters:
   ExistingCorsHeadersLayerArn:
     Type: String
     Description: 'ARN of existing CORS Headers Layer'
-    Default: 'arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'
+    Default: ''
 
   StageName:
     Type: String
@@ -132,7 +132,9 @@ Parameters:
     Default: 'false'
 
 Conditions:
-  IsLambdaInPrivateSubnet: !Not [!Equals [!Ref ExistingAppPrivateSubnetId, '']]
+  IsAppInPrivateSubnet: !And
+    - !Not [!Equals [!Ref ExistingPrivateSubnetAppId, '']]
+    - !Not [!Equals [!Ref ExistingAppSGId, '']]
   HasCustomDomainName: !Not [!Equals [!Ref CustomDomainName, '']]
   HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
   UseCustomDomain: !And
@@ -264,9 +266,9 @@ Resources:
           SAAS_TENANTS_TABLE_NAME: !Ref SaaSTenantsTable
           ADMIN_USER_ID: !Ref AdminUserId
       VpcConfig: !If
-        - IsLambdaInPrivateSubnet
-        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-          SecurityGroupIds: [!Ref ExistingAppSG]
+        - IsAppInPrivateSubnet
+        - SubnetIds: [!Ref ExistingPrivateSubnetAppId]
+          SecurityGroupIds: [!Ref ExistingAppSGId]
         - !Ref AWS::NoValue
       Role: !GetAtt WebSocketConnectLambdaRole.Arn
       # TracingConfig:
@@ -291,9 +293,9 @@ Resources:
           REDIS_PASSWORD: !Ref ExistingRedisPassword # TODO: sse Secrets Manager
           SQS_MESSAGES_TO_CLIENTS_Q_URL: !Ref MessagesToClientsQueue
       VpcConfig: !If
-        - IsLambdaInPrivateSubnet
-        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-          SecurityGroupIds: [!Ref ExistingAppSG]
+        - IsAppInPrivateSubnet
+        - SubnetIds: [!Ref ExistingPrivateSubnetAppId]
+          SecurityGroupIds: [!Ref ExistingAppSGId]
         - !Ref AWS::NoValue
       Role: !GetAtt WebSocketLambdaElasticacheSQSRole.Arn
       # TracingConfig:
@@ -329,9 +331,9 @@ Resources:
           ENABLE_ENHANCED_LOGGING: false
           DISABLE_APP_CACHE: !Ref DisableAppCache
       VpcConfig: !If
-        - IsLambdaInPrivateSubnet
-        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-          SecurityGroupIds: [!Ref ExistingAppSG]
+        - IsAppInPrivateSubnet
+        - SubnetIds: [!Ref ExistingPrivateSubnetAppId]
+          SecurityGroupIds: [!Ref ExistingAppSGId]
         - !Ref AWS::NoValue
       Role: !GetAtt WebsocketCommandsHandlerLambdaRole.Arn
       # TracingConfig:
@@ -671,9 +673,9 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
       VpcConfig: !If
-        - IsLambdaInPrivateSubnet
-        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-          SecurityGroupIds: [!Ref ExistingAppSG]
+        - IsAppInPrivateSubnet
+        - SubnetIds: [!Ref ExistingPrivateSubnetAppId]
+          SecurityGroupIds: [!Ref ExistingAppSGId]
         - !Ref AWS::NoValue
       # TracingConfig:
       #   Mode: Active
@@ -753,9 +755,9 @@ Resources:
           # DOCUMENTS_CLOUDFRONT_DISTRIBUTION_ID: !Ref DocumentsDistribution
       Role: !GetAtt DocumentsStreamProcessorExecutionRole.Arn
       VpcConfig: !If
-        - IsLambdaInPrivateSubnet
-        - SubnetIds: [!Ref ExistingAppPrivateSubnetId]
-          SecurityGroupIds: [!Ref ExistingAppSG]
+        - IsAppInPrivateSubnet
+        - SubnetIds: [!Ref ExistingPrivateSubnetAppId]
+          SecurityGroupIds: [!Ref ExistingAppSGId]
         - !Ref AWS::NoValue
       Events:
         DocumentsTableStream:

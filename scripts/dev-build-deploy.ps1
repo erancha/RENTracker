@@ -59,39 +59,22 @@ try {
                 # "TargetChattyLambdaArn='arn:aws:lambda:eu-central-1:575491442067:function:cht-GenericWebsocketReceiverFunction-OWfDNLjFGPdu'"
             )
 
-            if ($accountId -eq '575491442067') {
-                $accountParameterOverrides = @(
-                    "ExistingAppPrivateSubnetId='subnet-0fae544467955a871'", # crud-WebsocketsPrivateSubnet1
-                    "ExistingAppSG='sg-0263cec5751eb503a'", # crud-WebSocketLambda-SG
-                    "ExistingUserPoolId='eu-central-1_OHq1aZYju'", # en-UserPool
-                    "ExistingCognitoDomain='ena-575491442067.auth.eu-central-1.amazoncognito.com'",
-                    "ExistingRedisAddress='en-elasticache-redis-cluster.hz2zez.0001.euc1.cache.amazonaws.com:6379'",
-                    # Lambda Layer ARNs
-                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:AwsSdkV3Layer:154'",
-                    "ExistingCorsHeadersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CorsHeadersLayer:28'",
-                    "ExistingRedisClientLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:RedisClientLayer:50'",
-                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:WebsocketsConnectionsLayer:6'",
-                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:CommandsHandlersLayer:157'",
-                    "ExistingDbDataLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DbDataLayer:389'",
-                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:eu-central-1:575491442067:layer:DocumentUtilsLayer:45'"
-                )
-            }
-            else {
-                $accountParameterOverrides = @(
-                    "ExistingUserPoolId='eu-central-1_AGzi24ZGD'",                                      # vsdb-cognito
-                    "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'",    # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
-                    "ExistingRedisAddress='ec2-63-180-240-69.eu-central-1.compute.amazonaws.com'",      # vsdb
-                    "ExistingRedisPassword='vsdb-redis'",                                               # vsdb  TODO: Use Secrets Manager
-                    # Lambda Layer ARNs
-                    "ExistingAwsSdkV3LayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:AwsSdkV3Layer:15'",
-                    "ExistingCorsHeadersLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:CorsHeadersLayer:8'",
-                    "ExistingRedisClientLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:skl-RedisClientLayer:1'",
-                    "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:skl-WebsocketsConnectionsLayer:1'",
-                    "ExistingCommandsHandlersLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-CommandsHandlersLayer:1'",
-                    "ExistingDbDataLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-DbDataLayer:1'",
-                    "ExistingDocumentUtilsLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-DocumentUtilsLayer:1'"
-                )
-            }
+            $accountParameterOverrides = @(
+                "ExistingUserPoolId='eu-central-1_AGzi24ZGD'",                                      # vsdb-cognito
+                "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'",    # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
+                "ExistingRedisAddress='ec2-18-156-129-121.eu-central-1.compute.amazonaws.com'",     # vsdb
+                "ExistingRedisPassword='vsdb-redis'",                                               # vsdb  TODO: Use Secrets Manager
+                "ExistingPrivateSubnetAppId='subnet-0326908018aa6fee0'",                            # vsdb-fb
+                "ExistingAppSGId='sg-029a3b380411664ed'",                                           # vsdb-fb
+                # Lambda Layer ARNs
+                "ExistingAwsSdkV3LayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:AwsSdkV3Layer:15'",
+                "ExistingCorsHeadersLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:CorsHeadersLayer:8'",
+                "ExistingRedisClientLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:skl-RedisClientLayer:1'",
+                "ExistingWebsocketsConnectionsLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:skl-WebsocketsConnectionsLayer:1'",
+                "ExistingCommandsHandlersLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-CommandsHandlersLayer:1'",
+                "ExistingDbDataLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-DbDataLayer:1'",
+                "ExistingDocumentUtilsLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:rntrk-DocumentUtilsLayer:1'"
+            )
 
             $parameterOverrides = $sharedParameterOverrides + $accountParameterOverrides
 
