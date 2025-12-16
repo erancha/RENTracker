@@ -64,8 +64,8 @@ try {
                 "ExistingCognitoDomain='vsdb-306783770944.auth.eu-central-1.amazoncognito.com'",    # vsdb-cognito (note: added to https://console.cloud.google.com/auth/clients?authuser=1&inv=1&invt=Ab2COw&project=neural-engine-437616-s8)
                 "ExistingRedisAddress='ec2-18-156-129-121.eu-central-1.compute.amazonaws.com'",     # vsdb
                 "ExistingRedisPassword='vsdb-redis'",                                               # vsdb  TODO: Use Secrets Manager
-                "ExistingPrivateSubnetAppId='subnet-0326908018aa6fee0'",                            # vsdb-fb
-                "ExistingAppSGId='sg-029a3b380411664ed'",                                           # vsdb-fb
+                # "ExistingPrivateSubnetAppId='subnet-0326908018aa6fee0'",                            # vsdb-fb
+                # "ExistingAppSGId='sg-029a3b380411664ed'",                                           # vsdb-fb
                 # Lambda Layer ARNs
                 "ExistingAwsSdkV3LayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:AwsSdkV3Layer:15'",
                 "ExistingCorsHeadersLayerArn='arn:aws:lambda:$($commonConstants.region):${accountId}:layer:CorsHeadersLayer:8'",
