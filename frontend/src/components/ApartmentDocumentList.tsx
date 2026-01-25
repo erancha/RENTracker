@@ -186,7 +186,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
             {getDocumentTitle(document?.template_fields?.tenant1Name, t('documents.rentalAgreement'))}
           </a>
         </div>,
-        { autoClose: 10000 }
+        { autoClose: 10000 },
       );
   }
 
@@ -222,6 +222,7 @@ class ApartmentDocumentList extends React.Component<DocumentListProps, DocumentL
     fieldsToResetOnDuplicate.forEach((field) => {
       fromTemplateFields[field] = '';
     });
+    fromTemplateFields['initialPaymentMonths'] = '0';
 
     // Show the form with duplicated fields
     this.setState({ showForm: true, editMode: false, duplicateTemplateFields: fromTemplateFields });
